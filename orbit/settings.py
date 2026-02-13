@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'accounts',
     'store',
     'brands',
+    'carts',
     ]
 
 MIDDLEWARE = [
@@ -116,4 +117,4 @@ STATICFILES_DIRS = [
 ]
 
 MEDIA_URL = '/media/'
-MEDI_ROOT = BASE_DIR / 'Media'
+MEDIA_ROOT = BASE_DIR / 'media'
