@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="section-content padding-y bg" style="min-height:84vh;">
+<div class="container">
+<div class="row">
+
+    <!-- ── SIDEBAR ───────────────────────────────── -->
+    <aside class="col-md-3">
+        <!-- Profile summary -->
+        <div class="card mb-3 text-center p-3">
+            {% if request.user.profile_photo %}
+                <img src="{{ request.user.profile_photo.url }}"
+                     class="rounded-circle mx-auto mb-2"
+                     style="width:80px;height:80px;object-fit:cover;">
+            {% else %}
+                <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center"
+                     style="width:80px;height:80px;background:#FF6B00;font-size:28px;color:#fff;">
+                    {{ request.user.first_name|first|upper }}
+                </div>
+            {% endif %}
+            <strong>{{ request.user.get_full_name }}</strong>
+            <small class="text-muted d-block">{{ request.user.email }}</small>
+        </div>
+
+        <!-- Nav -->
+        <ul class="list-group mb-3">
+            <a class="list-group-item {% block nav_profile %}{% endblock %}"
+               href="{% url 'dashboard_profile' %}">
+                <i class="fa fa-user mr-2"></i> My Profile
+            </a>
+            <a class="list-group-item {% block nav_orders %}{% endblock %}"
+               href="{% url 'dashboard_orders' %}">
+                <i class="fa fa-shopping-bag mr-2"></i> Order History
+            </a>
+            <a class="list-group-item {% block nav_transactions %}{% endblock %}"
+               href="{% url 'dashboard_transactions' %}">
+                <i class="fa fa-credit-card mr-2"></i> Transactions
+            </a>
+            <a class="list-group-item {% block nav_returns %}{% endblock %}"
+               href="{% url 'dashboard_returns' %}">
+                <i class="fa fa-undo mr-2"></i> Returns &amp; Refunds
+            </a>
+            <a class="list-group-item {% block nav_password %}{% endblock %}"
+               href="{% url 'dashboard_change_password' %}">
+                <i class="fa fa-lock mr-2"></i> Change Password
+            </a>
+            <a class="list-group-item text-danger {% block nav_delete %}{% endblock %}"
+               href="{% url 'dashboard_delete_account' %}">
+                <i class="fa fa-trash mr-2"></i> Delete Account
+            </a>
+        </ul>
+
+        <a href="{% url 'logout' %}" class="btn btn-block"
+           style="background:#FF6B00;color:#fff;font-weight:600;">
+            <i class="fa fa-power-off mr-1"></i> Log Out
+        </a>
+    </aside>
+    <!-- ── SIDEBAR END ───────────────────────────── -->
+
+    <!-- ── MAIN CONTENT ──────────────────────────── -->
+    <main class="col-md-9">
+        {% include 'includes/alert.html' %}
+        {% block dashboard_content %}{% endblock %}
+    </main>
+    <!-- ── MAIN CONTENT END ──────────────────────── -->
+
+</div>
+</div>
+</section>
+{% endblock %}

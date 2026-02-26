@@ -1,0 +1,37 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block nav_delete %}active{% endblock %}
+
+{% block dashboard_content %}
+<div class="card border-danger" style="max-width:500px;">
+    <div class="card-header bg-danger text-white">
+        <strong><i class="fa fa-trash mr-1"></i> Delete Account</strong>
+    </div>
+    <div class="card-body">
+
+        {% include 'includes/alert.html' %}
+
+        <div class="alert alert-warning">
+            <i class="fa fa-exclamation-triangle mr-1"></i>
+            <strong>Warning!</strong> This action is permanent and cannot be undone.
+            All your data, orders and history will be deleted.
+        </div>
+
+        <p class="text-muted mb-4">
+            To confirm, we'll send a verification code to<br>
+            <strong>{{ request.user.email }}</strong>
+        </p>
+
+        <form method="POST">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-block btn-lg">
+                <i class="fa fa-envelope mr-1"></i> Send Verification Code
+            </button>
+        </form>
+        <a href="{% url 'dashboard_profile' %}" class="btn btn-light btn-block mt-2">
+            Cancel
+        </a>
+    </div>
+</div>
+{% endblock %}

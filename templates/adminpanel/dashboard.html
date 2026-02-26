@@ -1,0 +1,136 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ total_users }}</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+    <div class="stat-icon si-blue">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ active_users }}</div>
+      <div class="stat-label">Active Users</div>
+    </div>
+    <div class="stat-icon si-green">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ blocked_users }}</div>
+      <div class="stat-label">Blocked Users</div>
+    </div>
+    <div class="stat-icon si-red">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ total_products }}</div>
+      <div class="stat-label">Total Products</div>
+    </div>
+    <div class="stat-icon si-amber">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+    <!-- Recent Users -->
+    <div class="a-card">
+      <div class="a-card-header">
+        <div class="a-card-title">Recent Registrations</div>
+        <a href="{% url 'admin_user_list' %}" class="btn-admin" style="font-size:12px;padding:5px 12px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+          View All
+        </a>
+      </div>
+      <table class="a-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Joined</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in recent_users %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:9px;">
+                <div class="ua">{{ user.first_name|first|upper }}</div>
+                <span style="color:#0F172A;font-weight:500;">{{ user.get_full_name }}</span>
+              </div>
+            </td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.date_joined|date:"d M Y" }}</td>
+            <td>
+              {% if user.is_active %}
+                <span class="abadge ab-active">Active</span>
+              {% else %}
+                <span class="abadge ab-blocked">Blocked</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" style="text-align:center;padding:32px;color:#94A3B8;">No users yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <!-- Store Summary -->
+    <div class="a-card">
+      <div class="a-card-header">
+        <div class="a-card-title">Store Summary</div>
+      </div>
+      <div class="a-card-body" style="padding:0;">
+        {% for item in store_summary %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #E2E8F0;">
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#475569;">
+            <div class="stat-icon {{ item.cls }}" style="width:30px;height:30px;border-radius:6px;">
+              {{ item.icon|safe }}
+            </div>
+            {{ item.label }}
+          </div>
+          <span style="font-weight:700;color:#0F172A;">{{ item.value }}</span>
+        </div>
+        {% empty %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #E2E8F0;">
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#475569;">Products</div>
+          <span style="font-weight:700;color:#0F172A;">{{ total_products }}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #E2E8F0;">
+          <div style="font-size:13px;color:#475569;">Active Products</div>
+          <span style="font-weight:700;color:#0F172A;">{{ active_products }}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #E2E8F0;">
+          <div style="font-size:13px;color:#475569;">Categories</div>
+          <span style="font-weight:700;color:#0F172A;">{{ total_categories }}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;">
+          <div style="font-size:13px;color:#475569;">Brands</div>
+          <span style="font-weight:700;color:#0F172A;">{{ total_brands }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

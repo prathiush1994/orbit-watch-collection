@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orbit Admin — Sign In</title>
+  <link href="{% static 'css/bootstrap.css' %}" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #F1F5F9; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .login-container { width: 100%; max-width: 400px; padding: 20px; }
+    .login-header { text-align: center; margin-bottom: 28px; }
+    .login-logo { width: 44px; height: 44px; background: #2563EB; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+    .login-logo svg { width: 20px; height: 20px; color: #fff; }
+    .login-title { font-size: 20px; font-weight: 700; color: #0F172A; margin-bottom: 4px; }
+    .login-subtitle { font-size: 13px; color: #94A3B8; }
+    .login-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 10px; padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 5px; }
+    .form-group { margin-bottom: 16px; }
+    .form-control { width: 100%; padding: 9px 12px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 13.5px; color: #0F172A; background: #fff; outline: none; font-family: 'Inter', sans-serif; transition: border-color 0.15s, box-shadow 0.15s; }
+    .form-control:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .form-control::placeholder { color: #94A3B8; }
+    .alert-danger { display: flex; align-items: center; gap: 8px; background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C; padding: 10px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; }
+    .alert-danger svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .btn-signin { width: 100%; background: #2563EB; color: #fff; border: none; padding: 10px; border-radius: 6px; font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; transition: background 0.15s; margin-top: 4px; }
+    .btn-signin:hover { background: #1D4ED8; }
+    .back-link { text-align: center; margin-top: 18px; font-size: 12.5px; color: #94A3B8; }
+    .back-link a { color: #2563EB; text-decoration: none; }
+    .back-link a:hover { text-decoration: underline; }
+    .divider { height: 1px; background: #E2E8F0; margin: 18px 0; }
+    .login-footer { text-align: center; font-size: 11.5px; color: #CBD5E1; margin-top: 24px; }
+  </style>
+</head>
+<body>
+<div class="login-container">
+  <div class="login-header">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div class="login-title">Orbit Admin Panel</div>
+    <div class="login-subtitle">Sign in to manage your store</div>
+  </div>
+
+  <div class="login-card">
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="alert-danger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {{ msg }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST" action="{% url 'admin_login' %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" name="email" class="form-control"
+               placeholder="admin@orbitwatch.com" required autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control"
+               placeholder="Enter your password" required>
+      </div>
+      <button type="submit" class="btn-signin">Sign In</button>
+    </form>
+  </div>
+
+  <div class="back-link">
+    <a href="{% url 'home' %}">
+      ← Back to store
+    </a>
+  </div>
+
+  <div class="login-footer">Orbit Watch Collection &copy; 2025 · Admin Portal</div>
+</div>
+</body>
+</html>

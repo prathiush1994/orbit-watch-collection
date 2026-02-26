@@ -1,0 +1,94 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block nav_profile %}active{% endblock %}
+
+{% block dashboard_content %}
+<div class="card">
+    <div class="card-header">
+        <strong>Edit Profile</strong>
+    </div>
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Profile Photo -->
+            <div class="form-group text-center mb-4">
+                {% if request.user.profile_photo %}
+                    <img src="{{ request.user.profile_photo.url }}" id="photo-preview"
+                         class="rounded-circle mb-3"
+                         style="width:100px;height:100px;object-fit:cover;border:3px solid #FF6B00;">
+                {% else %}
+                    <div id="photo-placeholder"
+                         class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                         style="width:100px;height:100px;background:#FF6B00;font-size:40px;color:#fff;">
+                        {{ request.user.first_name|first|upper }}
+                    </div>
+                    <img id="photo-preview" style="display:none;width:100px;height:100px;
+                         object-fit:cover;border-radius:50%;border:3px solid #FF6B00;" class="mb-3">
+                {% endif %}
+                <br>
+                <label for="profile_photo" class="btn btn-sm btn-outline-secondary">
+                    <i class="fa fa-camera mr-1"></i> Change Photo
+                </label>
+                <input type="file" name="profile_photo" id="profile_photo"
+                       accept="image/*" style="display:none;">
+            </div>
+
+            <div class="form-row">
+                <div class="col form-group">
+                    <label>First Name</label>
+                    <input type="text" name="first_name" class="form-control"
+                           value="{{ request.user.first_name }}" required>
+                </div>
+                <div class="col form-group">
+                    <label>Last Name</label>
+                    <input type="text" name="last_name" class="form-control"
+                           value="{{ request.user.last_name }}" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" class="form-control"
+                       value="{{ request.user.email }}" disabled>
+                <small class="text-muted">Email cannot be changed.</small>
+            </div>
+
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="text" name="phone_number" class="form-control"
+                       value="{{ request.user.phone_number|default:'' }}"
+                       placeholder="+91 9876543210">
+            </div>
+
+            <div class="form-group mt-3">
+                <button type="submit" class="btn btn-lg mr-2"
+                        style="background:#FF6B00;color:#fff;font-weight:600;">
+                    Save Changes
+                </button>
+                <a href="{% url 'dashboard_profile' %}" class="btn btn-lg btn-light">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Photo preview
+document.getElementById('profile_photo').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('photo-preview');
+        const placeholder = document.getElementById('photo-placeholder');
+        preview.src = e.target.result;
+        preview.style.display = 'inline-block';
+        if (placeholder) placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+});
+</script>
+{% endblock %}

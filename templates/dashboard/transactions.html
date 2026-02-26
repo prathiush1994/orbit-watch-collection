@@ -1,0 +1,61 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block nav_transactions %}active{% endblock %}
+
+{% block dashboard_content %}
+<div class="card">
+    <div class="card-header">
+        <strong>Transactions</strong>
+    </div>
+    <div class="card-body p-0">
+        {% if transactions %}
+        <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="thead-light">
+                <tr>
+                    <th>Transaction ID</th>
+                    <th>Order</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for txn in transactions %}
+                <tr>
+                    <td><small>{{ txn.transaction_id }}</small></td>
+                    <td>
+                        {% if txn.order %}
+                            #{{ txn.order.order_number }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>{{ txn.payment_method }}</td>
+                    <td>₹ {{ txn.amount }}</td>
+                    <td>
+                        <span class="badge {% if txn.type == 'refund' %}badge-warning{% else %}badge-info{% endif %}">
+                            {{ txn.get_type_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if txn.status == 'success' %}badge-success{% elif txn.status == 'failed' %}badge-danger{% else %}badge-secondary{% endif %}">
+                            {{ txn.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ txn.created_at|date:"d M Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fa fa-credit-card fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No transactions yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

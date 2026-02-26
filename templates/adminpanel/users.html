@@ -1,0 +1,237 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}User Management{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block nav_users %}active{% endblock %}
+
+{% block content %}
+
+<!-- Toolbar -->
+<div class="a-card" style="margin-bottom:16px;">
+  <div style="padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+
+    <form method="GET" action="{% url 'admin_user_list' %}" style="display:flex;align-items:center;gap:8px;">
+      <div class="search-wrap">
+        <svg class="s-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" name="q" id="searchInput" class="search-input"
+               value="{{ search_query }}" placeholder="Search by name or email…" autocomplete="off">
+        {% if search_query %}
+          <button type="button" class="search-clear" id="clearBtn" onclick="window.location='{% url 'admin_user_list' %}'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        {% endif %}
+      </div>
+      <button type="submit" class="btn-admin" style="padding:7px 14px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search
+      </button>
+      {% if search_query %}
+        <a href="{% url 'admin_user_list' %}"
+           style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border:1px solid #E2E8F0;border-radius:6px;font-size:13px;color:#475569;text-decoration:none;background:#fff;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Clear
+        </a>
+      {% endif %}
+    </form>
+
+    <div style="font-size:13px;color:#94A3B8;">
+      {% if search_query %}
+        Results for <strong style="color:#475569;">"{{ search_query }}"</strong> —
+      {% endif %}
+      <strong style="color:#0F172A;">{{ users.paginator.count }}</strong>
+      user{{ users.paginator.count|pluralize }} · sorted newest first
+    </div>
+
+  </div>
+</div>
+
+<!-- Table -->
+<div class="a-card">
+  <div class="a-card-header">
+    <div class="a-card-title">All Users</div>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="a-table">
+      <thead>
+        <tr>
+          <th style="width:40px;">#</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Joined</th>
+          <th>Verified</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td style="color:#CBD5E1;font-size:12px;">
+            {{ forloop.counter|add:users.start_index|add:"-1" }}
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:9px;">
+              {% if user.profile_photo %}
+                <img src="{{ user.profile_photo.url }}"
+                     style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid #E2E8F0;">
+              {% else %}
+                <div class="ua">{{ user.first_name|first|upper }}</div>
+              {% endif %}
+              <span style="font-weight:500;color:#0F172A;">{{ user.get_full_name }}</span>
+            </div>
+          </td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.phone_number|default:"—" }}</td>
+          <td>{{ user.date_joined|date:"d M Y" }}</td>
+          <td>
+            {% if user.email_verified %}
+              <span class="abadge ab-active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polyline points="20 6 9 17 4 12"/></svg>
+                Yes
+              </span>
+            {% else %}
+              <span class="abadge ab-blocked">No</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if user.is_active %}
+              <span class="abadge ab-active">Active</span>
+            {% else %}
+              <span class="abadge ab-blocked">Blocked</span>
+            {% endif %}
+          </td>
+          <td>
+            <button class="btn-action {% if user.is_active %}btn-block-u{% else %}btn-unblock-u{% endif %}"
+                    onclick="confirmToggle({{ user.id }}, '{{ user.get_full_name }}', {% if user.is_active %}true{% else %}false{% endif %})">
+              {% if user.is_active %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                Block
+              {% else %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Unblock
+              {% endif %}
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" style="text-align:center;padding:48px;color:#94A3B8;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36" style="display:block;margin:0 auto 12px;opacity:0.3;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            No users found{% if search_query %} for "{{ search_query }}"{% endif %}.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if users.has_other_pages %}
+  <div style="padding:12px 20px;border-top:1px solid #E2E8F0;">
+    <div class="a-pages">
+      {% if users.has_previous %}
+        <a class="a-page" href="?page={{ users.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+      {% else %}
+        <span class="a-page dis">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+        </span>
+      {% endif %}
+
+      {% for num in users.paginator.page_range %}
+        {% if users.number == num %}
+          <span class="a-page cur">{{ num }}</span>
+        {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+          <a class="a-page" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if users.has_next %}
+        <a class="a-page" href="?page={{ users.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      {% else %}
+        <span class="a-page dis">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
+        </span>
+      {% endif %}
+    </div>
+    <div style="text-align:center;font-size:12px;color:#CBD5E1;margin-top:8px;">
+      Page {{ users.number }} of {{ users.paginator.num_pages }}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Confirmation Modal -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-ico" id="cIcon">
+      <svg id="cIconSvg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"></svg>
+    </div>
+    <div class="confirm-title" id="cTitle"></div>
+    <div class="confirm-msg" id="cMsg"></div>
+    <div class="confirm-btns">
+      <button class="btn-cancel-c" onclick="closeModal()">Cancel</button>
+      <form method="POST" id="toggleForm" style="margin:0;display:inline;">
+        {% csrf_token %}
+        <button type="submit" id="cConfirmBtn"></button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmToggle(userId, userName, isActive) {
+  const overlay  = document.getElementById('confirmOverlay');
+  const icon     = document.getElementById('cIcon');
+  const iconSvg  = document.getElementById('cIconSvg');
+  const title    = document.getElementById('cTitle');
+  const msg      = document.getElementById('cMsg');
+  const confirmBtn = document.getElementById('cConfirmBtn');
+  const form     = document.getElementById('toggleForm');
+
+  form.action = '/adminpanel/users/toggle/' + userId + '/';
+
+  if (isActive) {
+    icon.className = 'confirm-ico block';
+    iconSvg.innerHTML = '<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>';
+    title.textContent = 'Block User Account?';
+    msg.textContent   = userName + ' will be unable to sign in until their account is unblocked.';
+    confirmBtn.className   = 'btn-do-block';
+    confirmBtn.textContent = 'Block Account';
+  } else {
+    icon.className = 'confirm-ico unblock';
+    iconSvg.innerHTML = '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>';
+    title.textContent = 'Unblock User Account?';
+    msg.textContent   = userName + ' will be able to sign in again after being unblocked.';
+    confirmBtn.className   = 'btn-do-unblock';
+    confirmBtn.textContent = 'Unblock Account';
+  }
+
+  overlay.classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('confirmOverlay').classList.remove('show');
+}
+
+document.getElementById('confirmOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Live clear button
+const si = document.getElementById('searchInput');
+if (si) {
+  si.addEventListener('input', function() {
+    const cb = document.getElementById('clearBtn');
+    if (cb) cb.style.display = this.value ? 'flex' : 'none';
+  });
+}
+</script>
+{% endblock %}

@@ -24,13 +24,24 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    
     'django.contrib.staticfiles',
+
+    'django.contrib.sites',   
+
     'category',
     'accounts',
     'store',
     'brands',
     'carts',
-    ]
+    'dashboard',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+
+    'adminpanel',
+]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -38,8 +49,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware', 
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'accounts.middleware.NoCacheMiddleware',
 ]
 
 ROOT_URLCONF = 'orbit.urls'
@@ -118,3 +131,56 @@ STATICFILES_DIRS = [
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@orbitwatch.com'
+
+
+
+from django.contrib.messages import constants as messages
+
+MESSAGE_TAGS = {
+    messages.ERROR: "danger",
+}
+
+
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+LOGIN_REDIRECT_URL  = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+# ── Allauth account settings ──────────────────────────
+ACCOUNT_ADAPTER                  = 'accounts.social_adapter.MyAccountAdapter'
+ACCOUNT_LOGIN_METHODS            = {'email'}
+ACCOUNT_SIGNUP_FIELDS            = ['email*', 'password1*', 'password2*']
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_USERNAME_REQUIRED        = False
+ACCOUNT_EMAIL_REQUIRED           = True
+ACCOUNT_EMAIL_VERIFICATION       = 'none'
+
+# ── Social account settings ───────────────────────────
+SOCIALACCOUNT_ADAPTER            = 'accounts.social_adapter.MySocialAccountAdapter'
+SOCIALACCOUNT_AUTO_SIGNUP        = True
+SOCIALACCOUNT_LOGIN_ON_GET       = True
+SOCIALACCOUNT_EMAIL_REQUIRED     = True
+SOCIALACCOUNT_QUERY_EMAIL        = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+
+# ── Google provider ───────────────────────────────────
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+            'prompt': 'select_account',
+        },
+        'VERIFIED_EMAIL': True,
+    }
+}
+
+DEFAULT_FROM_EMAIL = 'Orbit Watch <prathiush1994@gmail.com>'

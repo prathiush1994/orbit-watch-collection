@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<section class="section-content padding-y" style="min-height:84vh;">
+<div class="card mx-auto" style="max-width:450px; margin-top:80px;">
+    <div class="card-body text-center">
+
+        <i class="fa fa-lock" style="font-size:56px; color:#FF6B00;"></i>
+        <h4 class="card-title mt-3 mb-1">Enter Reset Code</h4>
+        <p class="text-muted mb-4">
+            We sent a 6-digit code to<br>
+            <strong>{{ user.email }}</strong>
+        </p>
+
+        {% include 'includes/alert.html' %}
+
+        {% if not expired %}
+        <form method="POST" id="otpForm">
+            {% csrf_token %}
+            <div class="form-group mb-4">
+                <input type="text" class="form-control form-control-lg text-center"
+                       name="otp" id="otpInput"
+                       placeholder="0 0 0 0 0 0"
+                       maxlength="6" pattern="[0-9]{6}"
+                       inputmode="numeric" required autofocus
+                       style="font-size:28px; letter-spacing:12px; font-weight:700;
+                              border:2px solid #FF6B00;">
+            </div>
+
+            <button type="submit" class="btn btn-block btn-lg mb-3"
+                    style="background:#FF6B00; color:#fff; font-weight:600;">
+                Verify Code
+            </button>
+        </form>
+
+        <div id="timer-container" class="text-muted mb-3">
+            Code expires in: <strong id="timer" style="color:#FF6B00;"></strong>
+        </div>
+
+        <div id="resend-container" style="display:none;">
+            <p class="text-muted">Didn't receive the code?</p>
+            <a href="{% url 'resend_forgot_otp' user.id %}"
+               class="btn btn-outline-secondary">
+                Resend Code
+            </a>
+        </div>
+
+        {% else %}
+        <div class="alert alert-warning">
+            <i class="fa fa-exclamation-triangle"></i>
+            Reset code has expired.
+        </div>
+        <a href="{% url 'resend_forgot_otp' user.id %}"
+           class="btn btn-lg"
+           style="background:#FF6B00; color:#fff; font-weight:600;">
+            Get New Code
+        </a>
+        {% endif %}
+
+    </div>
+</div>
+
+<p class="text-center mt-3">
+    <a href="{% url 'forgot_password' %}">← Back</a>
+</p>
+<br>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    {% if not expired %}
+
+    let timeLeft = {{ remaining_time }};
+    const timerEl         = document.getElementById('timer');
+    const timerContainer  = document.getElementById('timer-container');
+    const resendContainer = document.getElementById('resend-container');
+    const otpForm         = document.getElementById('otpForm');
+
+    function updateTimer() {
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            timerContainer.style.display  = 'none';
+            resendContainer.style.display = 'block';
+            otpForm.onsubmit = function (e) {
+                e.preventDefault();
+                alert('Code has expired. Please request a new one.');
+            };
+            return;
+        }
+        const m = Math.floor(timeLeft / 60);
+        const s = timeLeft % 60;
+        timerEl.textContent = m + ':' + String(s).padStart(2, '0');
+        timeLeft--;
+    }
+
+    const timerInterval = setInterval(updateTimer, 1000);
+    updateTimer();
+
+    const otpInput = document.getElementById('otpInput');
+    if (otpInput) {
+        otpInput.addEventListener('input', function () {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+        otpInput.focus();
+    }
+
+    {% endif %}
+});
+</script>
+
+{% endblock %}
