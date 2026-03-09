@@ -1,0 +1,60 @@
+{# ─────────────────────────────────────────────────────────── #}
+{# REPLACE {% include 'includes/alert.html' %} in each        #}
+{# dashboard template with the correct version below.         #}
+{# Change PAGE_TAG to match the view's extra_tags value.      #}
+{# ─────────────────────────────────────────────────────────── #}
+
+
+{# ── edit_profile.html ── #}
+{% for message in messages %}
+    {% if 'edit_profile' in message.tags %}
+    <div class="alert alert-{{ message.level_tag }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endif %}
+{% endfor %}
+
+
+{# ── change_password.html ── #}
+{% for message in messages %}
+    {% if 'change_password' in message.tags %}
+    <div class="alert alert-{{ message.level_tag }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endif %}
+{% endfor %}
+
+
+{# ── change_email.html ── #}
+{% for message in messages %}
+    {% if 'change_email' in message.tags %}
+    <div class="alert alert-{{ message.level_tag }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endif %}
+{% endfor %}
+
+
+{# ── delete_account.html and verify_delete_account.html ── #}
+{% for message in messages %}
+    {% if 'delete_account' in message.tags %}
+    <div class="alert alert-{{ message.level_tag }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endif %}
+{% endfor %}
+
+
+{# ── profile.html (general success like after save redirect) ── #}
+{% for message in messages %}
+    {% if 'profile' in message.tags %}
+    <div class="alert alert-{{ message.level_tag }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endif %}
+{% endfor %}

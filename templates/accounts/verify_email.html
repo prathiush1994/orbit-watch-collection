@@ -14,7 +14,7 @@
             <strong>{{ user.email }}</strong>
         </p>
 
-        {% include 'includes/alert.html' %}
+
 
         {% if not expired %}
         <form method="POST" id="otpForm">
@@ -35,19 +35,22 @@
             </button>
         </form>
 
-        <!-- Timer -->
-        <div id="timer-container" class="text-muted mb-3">
-            Code expires in: <strong id="timer" style="color:#FF6B00;"></strong>
-        </div>
 
         <!-- Resend (hidden until timer ends) -->
-        <div id="resend-container" style="display:none;">
+        <div id="resend-container" >
             <p class="text-muted">Didn't receive the code?</p>
             <a href="{% url 'resend_otp' user.id %}"
                class="btn btn-outline-secondary">
                 Resend Code
             </a>
         </div>
+
+        <!-- Timer -->
+        <div id="timer-container" class="text-muted mb-3">
+            Code expires in: <strong id="timer" style="color:#FF6B00;"></strong>
+        </div>
+
+
 
         {% else %}
         <!-- Expired state -->

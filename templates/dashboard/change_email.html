@@ -1,0 +1,110 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block nav_profile %}active{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-center">
+<div class="card" style="max-width:500px;width:100%;">
+    <div class="card-header">
+        <strong><i class="fa fa-envelope mr-2"></i>Change Email</strong>
+    </div>
+    <div class="card-body">
+
+        {% include 'includes/alert.html' %}
+
+        {# ── STEP 1: Enter new email ── #}
+        {% if step == 'enter_email' %}
+        <p class="text-muted mb-4">
+            Current email: <strong>{{ request.user.email }}</strong><br>
+            Enter your new email address below.
+        </p>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="send_otp">
+            <div class="form-group">
+                <label>New Email Address</label>
+                <input type="email" name="new_email" class="form-control form-control-lg"
+                       placeholder="Enter new email" required autofocus>
+            </div>
+            <button type="submit" class="btn btn-block btn-lg mt-2"
+                    style="background:#FF6B00;color:#fff;font-weight:600;">
+                <i class="fa fa-paper-plane mr-1"></i> Send Verification Code
+            </button>
+        </form>
+        <a href="{% url 'dashboard_profile' %}" class="btn btn-light btn-block mt-2">
+            Cancel
+        </a>
+
+        {# ── STEP 2: Verify OTP sent to NEW email ── #}
+        {% elif step == 'verify_otp' %}
+        <div class="text-center mb-3">
+            <i class="fa fa-envelope-open fa-3x mb-3" style="color:#FF6B00;"></i>
+            <p class="text-muted">
+                A 6-digit verification code was sent to<br>
+                <strong>{{ pending_email }}</strong><br>
+                <small>Check your inbox and spam folder.</small>
+            </p>
+        </div>
+
+        <!-- OTP form -->
+        <div id="otp-form-container">
+            <form method="POST" id="otpForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="verify_otp">
+                <div class="form-group mb-4">
+                    <input type="text" name="otp"
+                           class="form-control form-control-lg text-center"
+                           id="otpInput" placeholder="0 0 0 0 0 0"
+                           maxlength="6" pattern="[0-9]{6}"
+                           inputmode="numeric" required autofocus
+                           style="font-size:28px;letter-spacing:12px;font-weight:700;
+                                  border:2px solid #FF6B00;">
+                </div>
+                <button type="submit" class="btn btn-block btn-lg"
+                        style="background:#FF6B00;color:#fff;font-weight:600;">
+                    Verify &amp; Update Email
+                </button>
+            </form>
+        </div>
+
+        <!-- Expired message -->
+        <div id="otp-expired-msg" style="display:none;" class="text-center py-3">
+            <i class="fa fa-clock fa-2x text-muted mb-2"></i>
+            <p class="text-muted">Your OTP has expired.</p>
+        </div>
+
+        <!-- Timer + Resend always visible -->
+        <div class="text-center mt-3">
+            <div id="timer-container" class="text-muted mb-2">
+                Expires in: <strong id="timer" style="color:#FF6B00;"></strong>
+            </div>
+            <div id="resend-container">
+                <small class="text-muted d-block mb-1" id="resend-label">
+                    Didn't receive the code?
+                </small>
+                <a href="{% url 'dashboard_resend_change_email_otp' %}"
+                   id="resend-btn" class="btn btn-sm btn-outline-secondary">
+                    Resend Code
+                </a>
+            </div>
+        </div>
+
+        <a href="{% url 'dashboard_change_email' %}" class="btn btn-light btn-block mt-3">
+            <i class="fa fa-arrow-left mr-1"></i> Use a different email
+        </a>
+
+        <!-- Data for JS -->
+        <div id="otp-data"
+             data-remaining="{{ remaining_time }}"
+             data-mode="timer">
+        </div>
+
+        {% endif %}
+
+    </div>
+</div>
+</div>
+
+<script src="{% static 'js/change_email.js' %}"></script>
+{% endblock %}

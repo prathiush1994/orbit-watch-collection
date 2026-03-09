@@ -4,35 +4,101 @@
 {% block nav_profile %}active{% endblock %}
 
 {% block dashboard_content %}
+
+<!-- Cropper Modal -->
+<div class="modal fade" id="cropperModal" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa fa-crop mr-2"></i>Crop Profile Photo</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body text-center" style="background:#1a1a1a;min-height:300px;">
+                <img id="crop-image" style="max-width:100%;display:block;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                <button type="button" id="crop-btn" class="btn"
+                        style="background:#FF6B00;color:#fff;font-weight:600;">
+                    <i class="fa fa-check mr-1"></i> Use This Photo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">
         <strong>Edit Profile</strong>
     </div>
     <div class="card-body">
-        <form method="POST" enctype="multipart/form-data">
+
+        {% include 'includes/alert.html' %}
+
+        <form method="POST" enctype="multipart/form-data" id="profileForm">
             {% csrf_token %}
+            <input type="hidden" name="cropped_photo" id="cropped_photo">
+            <input type="hidden" name="delete_photo" id="delete_photo" value="0">
 
             <!-- Profile Photo -->
             <div class="form-group text-center mb-4">
-                {% if request.user.profile_photo %}
-                    <img src="{{ request.user.profile_photo.url }}" id="photo-preview"
-                         class="rounded-circle mb-3"
-                         style="width:100px;height:100px;object-fit:cover;border:3px solid #FF6B00;">
-                {% else %}
+
+                <!-- Photo wrapper — shows one of: saved photo / new crop preview / default icon -->
+                <div class="mb-2" style="position:relative;display:inline-block;">
+
+                    {% if request.user.profile_photo %}
+                    <!-- User has a saved photo -->
+                    <img id="photo-preview"
+                         src="{{ request.user.profile_photo.url }}"
+                         class="rounded-circle"
+                         style="width:110px;height:110px;object-fit:cover;
+                                border:3px solid #FF6B00;">
+                    <!-- Default icon hidden — shown if photo is deleted -->
                     <div id="photo-placeholder"
-                         class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
-                         style="width:100px;height:100px;background:#FF6B00;font-size:40px;color:#fff;">
-                        {{ request.user.first_name|first|upper }}
+                         style="display:none;width:110px;height:110px;
+                                background:#e9ecef;border-radius:50%;
+                                border:3px solid #dee2e6;
+                                align-items:center;justify-content:center;">
+                        <i class="fa fa-user" style="font-size:48px;color:#adb5bd;"></i>
                     </div>
-                    <img id="photo-preview" style="display:none;width:100px;height:100px;
-                         object-fit:cover;border-radius:50%;border:3px solid #FF6B00;" class="mb-3">
-                {% endif %}
+
+                    {% else %}
+                    <!-- No saved photo — show default icon -->
+                    <div id="photo-placeholder"
+                         style="display:flex;width:110px;height:110px;
+                                background:#e9ecef;border-radius:50%;
+                                border:3px solid #dee2e6;
+                                align-items:center;justify-content:center;">
+                        <i class="fa fa-user" style="font-size:48px;color:#adb5bd;"></i>
+                    </div>
+                    <!-- Preview hidden until cropped -->
+                    <img id="photo-preview" src="" alt=""
+                         class="rounded-circle"
+                         style="display:none;width:110px;height:110px;
+                                object-fit:cover;border:3px solid #FF6B00;">
+                    {% endif %}
+
+                </div>
                 <br>
-                <label for="profile_photo" class="btn btn-sm btn-outline-secondary">
+
+                <!-- Change Photo button -->
+                <label for="profile_photo_input"
+                       class="btn btn-sm btn-outline-secondary mr-1 mb-1">
                     <i class="fa fa-camera mr-1"></i> Change Photo
                 </label>
-                <input type="file" name="profile_photo" id="profile_photo"
-                       accept="image/*" style="display:none;">
+                <input type="file" id="profile_photo_input"
+                       accept=".jpg,.jpeg,.png" style="display:none;">
+
+                <!-- Delete Photo button — only show if user has a photo OR a new one was picked -->
+                <button type="button" id="delete-photo-btn"
+                        class="btn btn-sm btn-outline-danger mb-1"
+                        {% if not request.user.profile_photo %}style="display:none;"{% endif %}>
+                    <i class="fa fa-trash mr-1"></i> Remove Photo
+                </button>
+                <br>
+                <small class="text-muted" id="photo-hint">JPG or PNG only · Max 5MB</small>
+                <small class="text-danger d-none" id="photo-error"></small>
+
             </div>
 
             <div class="form-row">
@@ -52,7 +118,10 @@
                 <label>Email Address</label>
                 <input type="email" class="form-control"
                        value="{{ request.user.email }}" disabled>
-                <small class="text-muted">Email cannot be changed.</small>
+                <small class="text-muted">
+                    To change email visit
+                    <a href="{% url 'dashboard_change_email' %}">Change Email</a>.
+                </small>
             </div>
 
             <div class="form-group">
@@ -75,20 +144,8 @@
     </div>
 </div>
 
-<script>
-// Photo preview
-document.getElementById('profile_photo').addEventListener('change', function() {
-    const file = this.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const preview = document.getElementById('photo-preview');
-        const placeholder = document.getElementById('photo-placeholder');
-        preview.src = e.target.result;
-        preview.style.display = 'inline-block';
-        if (placeholder) placeholder.style.display = 'none';
-    };
-    reader.readAsDataURL(file);
-});
-</script>
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<script src="{% static 'js/edit_profile.js' %}"></script>
 {% endblock %}

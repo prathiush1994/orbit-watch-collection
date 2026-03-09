@@ -1,0 +1,88 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block nav_delete %}active{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-center">
+<div class="card border-danger" style="max-width:500px;width:100%;">
+    <div class="card-header bg-danger text-white">
+        <strong><i class="fa fa-trash mr-1"></i> Confirm Account Deletion</strong>
+    </div>
+    <div class="card-body text-center">
+
+        {% include 'includes/alert.html' %}
+
+        {% if not expired %}
+        <i class="fa fa-envelope-open fa-3x mb-3 text-danger"></i>
+        <p class="text-muted mb-4">
+            Enter the 6-digit code sent to<br>
+            <strong>{{ request.user.email }}</strong>
+        </p>
+
+        <!-- OTP Form -->
+        <div id="otp-form-container">
+            <form method="POST" id="otpForm">
+                {% csrf_token %}
+                <div class="form-group mb-4">
+                    <input type="text" name="otp"
+                           class="form-control form-control-lg text-center"
+                           id="otpInput" placeholder="0 0 0 0 0 0"
+                           maxlength="6" pattern="[0-9]{6}"
+                           inputmode="numeric" required autofocus
+                           style="font-size:28px;letter-spacing:12px;font-weight:700;
+                                  border:2px solid #dc3545;">
+                </div>
+                <button type="submit" class="btn btn-danger btn-block btn-lg">
+                    Confirm Delete Account
+                </button>
+            </form>
+        </div>
+
+        <!-- Expired message shown when countdown ends -->
+        <div id="otp-expired-msg" style="display:none;" class="py-3">
+            <i class="fa fa-clock fa-2x text-muted mb-2"></i>
+            <p class="text-muted">Your OTP has expired.</p>
+        </div>
+
+        <!-- Timer + Resend always visible -->
+        <div class="text-center mt-3">
+            <div id="timer-container" class="text-muted mb-2">
+                Code expires in: <strong id="timer" class="text-danger"></strong>
+            </div>
+            <div id="resend-container">
+                <small class="text-muted d-block mb-1" id="resend-label">
+                    Didn't receive the code?
+                </small>
+                <a href="{% url 'dashboard_resend_delete_account_otp' %}"
+                   id="resend-btn"
+                   class="btn btn-sm btn-outline-danger mt-2">
+                    Resend Code
+                </a>
+            </div>
+        </div>
+
+        <!-- Data for JS -->
+        <div id="otp-data"
+             data-remaining="{{ remaining_time }}"
+             data-mode="timer">
+        </div>
+
+        {% else %}
+        <!-- Already expired on page load -->
+        <div class="alert alert-warning">
+            <i class="fa fa-exclamation-triangle"></i> Code has expired.
+        </div>
+        <a href="{% url 'dashboard_resend_delete_account_otp' %}"
+           class="btn btn-danger btn-lg">Get New Code</a>
+        {% endif %}
+
+        <a href="{% url 'dashboard_profile' %}" class="btn btn-light btn-block mt-3">
+            Cancel
+        </a>
+    </div>
+</div>
+</div>
+
+<script src="{% static 'js/verify_delete_account.js' %}"></script>
+{% endblock %}

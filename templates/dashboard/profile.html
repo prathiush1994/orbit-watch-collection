@@ -23,9 +23,9 @@
                                 border:3px solid #FF6B00;">
                 {% else %}
                     <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center"
-                         style="width:120px;height:120px;background:#FF6B00;
-                                font-size:48px;color:#fff;">
-                        {{ request.user.first_name|first|upper }}
+                         style="width:120px;height:120px;background:#e9ecef;
+                                border:3px solid #dee2e6;">
+                        <i class="fa fa-user" style="font-size:52px;color:#adb5bd;"></i>
                     </div>
                 {% endif %}
             </div>
@@ -59,27 +59,20 @@
     </div>
 </div>
 
-<!-- Quick actions -->
+<!-- Quick actions — Change Password + Change Email -->
 <div class="row mt-3">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <a href="{% url 'dashboard_change_password' %}" class="card text-center p-3 text-decoration-none"
            style="border:1px solid #FF6B00;border-radius:8px;display:block;">
             <i class="fa fa-lock fa-2x mb-2" style="color:#FF6B00;"></i>
             <div style="color:#333;font-weight:600;">Change Password</div>
         </a>
     </div>
-    <div class="col-md-4">
-        <a href="{% url 'dashboard_orders' %}" class="card text-center p-3 text-decoration-none"
-           style="border:1px solid #eee;border-radius:8px;display:block;">
-            <i class="fa fa-shopping-bag fa-2x mb-2 text-muted"></i>
-            <div style="color:#333;font-weight:600;">My Orders</div>
-        </a>
-    </div>
-    <div class="col-md-4">
-        <a href="{% url 'dashboard_delete_account' %}" class="card text-center p-3 text-decoration-none"
-           style="border:1px solid #dc3545;border-radius:8px;display:block;">
-            <i class="fa fa-trash fa-2x mb-2 text-danger"></i>
-            <div style="color:#dc3545;font-weight:600;">Delete Account</div>
+    <div class="col-md-6">
+        <a href="{% url 'dashboard_change_email' %}" class="card text-center p-3 text-decoration-none"
+           style="border:1px solid #FF6B00;border-radius:8px;display:block;">
+            <i class="fa fa-envelope fa-2x mb-2" style="color:#FF6B00;"></i>
+            <div style="color:#333;font-weight:600;">Change Email</div>
         </a>
     </div>
 </div>

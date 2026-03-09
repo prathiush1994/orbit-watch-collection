@@ -16,8 +16,8 @@
                      style="width:80px;height:80px;object-fit:cover;">
             {% else %}
                 <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center"
-                     style="width:80px;height:80px;background:#FF6B00;font-size:28px;color:#fff;">
-                    {{ request.user.first_name|first|upper }}
+                     style="width:80px;height:80px;background:#e9ecef;border:2px solid #dee2e6;">
+                    <i class="fa fa-user" style="font-size:32px;color:#adb5bd;"></i>
                 </div>
             {% endif %}
             <strong>{{ request.user.get_full_name }}</strong>
@@ -42,6 +42,18 @@
                href="{% url 'dashboard_returns' %}">
                 <i class="fa fa-undo mr-2"></i> Returns &amp; Refunds
             </a>
+            <a class="list-group-item {% block nav_address %}{% endblock %}"
+               href="{% url 'dashboard_address' %}">
+                <i class="fa fa-map-marker-alt mr-2"></i> My Addresses
+            </a>
+            <a class="list-group-item {% block nav_wallet %}{% endblock %}"
+               href="{% url 'dashboard_wallet' %}">
+                <i class="fa fa-wallet mr-2"></i> Wallet
+            </a>
+            <a class="list-group-item {% block nav_coupons %}{% endblock %}"
+               href="{% url 'dashboard_coupons' %}">
+                <i class="fa fa-tag mr-2"></i> Coupons
+            </a>
             <a class="list-group-item {% block nav_password %}{% endblock %}"
                href="{% url 'dashboard_change_password' %}">
                 <i class="fa fa-lock mr-2"></i> Change Password
@@ -57,14 +69,11 @@
             <i class="fa fa-power-off mr-1"></i> Log Out
         </a>
     </aside>
-    <!-- ── SIDEBAR END ───────────────────────────── -->
 
     <!-- ── MAIN CONTENT ──────────────────────────── -->
     <main class="col-md-9">
-        {% include 'includes/alert.html' %}
         {% block dashboard_content %}{% endblock %}
     </main>
-    <!-- ── MAIN CONTENT END ──────────────────────── -->
 
 </div>
 </div>
