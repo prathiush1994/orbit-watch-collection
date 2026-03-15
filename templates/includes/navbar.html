@@ -1,70 +1,205 @@
-{% load static%}
+{% load static %}
+
 <header class="section-header">
 <section class="header-main border-bottom">
-	<div class="container">
-		<div class="row align-items-center">
-			<div class="col-lg-2 col-md-3 col-6">
-				<a href="{% url 'home' %}" class="brand-wrap">
-					<img class="logo" src="{% static 'images/orbitlogo01.png' %}">
-				</a> <!-- brand-wrap.// -->
-			</div>
-			<div class="col-lg col-sm col-md col-6 flex-grow-0">
-				<div class="category-wrap dropdown d-inline-block float-right">
-					<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"> 
-						<i class="fa fa-bars"></i> All category 
-					</button>
-					<div class="dropdown-menu">
-						<a class="dropdown-item" href="{% url 'store' %}"> All Product </a>
-						{% for category in links %}
-							<a class="dropdown-item" href="{{ category.get_url }}">{{ category.category_name }} </a>
-						{% endfor %}
-					</div>
-				</div>  <!-- category-wrap.// -->
-			</div> <!-- col.// -->
-			<a href="{% url 'store' %}" class="btn btn-outline-primary">Store</a>
-			<div class="col-lg  col-md-6 col-sm-12 col">
-				<form action="#" class="search">
-					<div class="input-group w-100">
-						<input type="text" class="form-control" style="width:60%;" placeholder="Search">
-						
-						<div class="input-group-append">
-						<button class="btn btn-primary" type="submit">
-							<i class="fa fa-search"></i>
-						</button>
-						</div>
-					</div>
-				</form> <!-- search-wrap .end// -->
-			</div> <!-- col.// -->
-			<div class="col-lg-3 col-sm-6 col-8 order-2 order-lg-3">
-						<div class="d-flex justify-content-end mb-3 mb-lg-0">
-							{% if user.id is None %}
-							<div class="widget-header">
-								<small class="title text-muted">Welcome guest!</small>
-								<div> 
-									<a href="{% url 'login' %}">Login</a> <span class="dark-transp"> | </span>
-									<a href="{% url 'register' %}"> Register</a>
-								</div>
-							</div>
-							{% else %}
-							<div class="widget-header">
-								<small class="title text-muted">Welcome {{user.first_name}}</small>
-								<div> 
-									<a href="{% url 'dashboard_profile' %}">Dashboard</a> <span class="dark-transp"> | </span>
-									<a href="{% url 'logout' %}">Log Out</a>
-								</div>
-							</div>
-							{% endif %}
-							<a href="./cart.html" class="widget-header pl-3 ml-3">
-								<div class="icon icon-sm rounded-circle border"><i class="fa fa-shopping-cart"></i></div>
-								<span class="badge badge-pill badge-danger notify">0</span>
-							</a>
-						</div> <!-- widgets-wrap.// -->
-					</div> <!-- col.// -->
-		</div> <!-- row.// -->
-	</div> <!-- container.// -->
-</section> <!-- header-main .// -->
+    <div class="container">
+        <div class="row align-items-center">
+
+            <!-- Logo -->
+            <div class="col-lg-2 col-md-3 col-6">
+                <a href="{% url 'home' %}" class="brand-wrap">
+                    <img class="logo" src="{% static 'images/orbitlogo01.png' %}">
+                </a>
+            </div>
+
+            <!-- All Category dropdown -->
+            <div class="col-lg col-sm col-md col-6 flex-grow-0">
+                <div class="category-wrap dropdown d-inline-block float-right">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                        <i class="fa fa-bars"></i> All category
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{% url 'store' %}">All Products</a>
+                        {% for category in links %}
+                            <a class="dropdown-item" href="{{ category.get_url }}">{{ category.category_name }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Store button -->
+            <a href="{% url 'store' %}" class="btn btn-outline-primary">Store</a>
+
+            <!-- Search bar -->
+            <div class="col-lg col-md-6 col-sm-12 col" style="position: relative;">
+                <form action="{% url 'store' %}" method="GET" class="search" id="searchForm" autocomplete="off">
+                    <div class="input-group w-100">
+
+                        <input
+                            type="text"
+                            id="searchInput"
+                            name="q"
+                            class="form-control"
+                            placeholder="Search by product, brand, or category..."
+                            value="{{ request.GET.q|default:'' }}"
+                            style="width: 60%;">
+
+                        <!-- Clear button — only visible when input has text -->
+                        <div class="input-group-append">
+                            <button type="button" id="clearSearch"
+                                    class="btn btn-light border"
+                                    style="display: none;"
+                                    title="Clear search">
+                                <i class="fa fa-times"></i>
+                            </button>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        </div>
+
+                    </div><!-- /input-group -->
+
+                    <!-- Live suggestions dropdown -->
+                    <ul id="searchSuggestions"
+                        style="display:none; position:absolute; top:100%; left:0; right:0;
+                               background:#fff; border:1px solid #ddd; border-radius:0 0 6px 6px;
+                               list-style:none; margin:0; padding:0; z-index:9999;
+                               box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                    </ul>
+
+                </form>
+            </div>
+
+            <!-- User + Cart -->
+            <div class="col-lg-3 col-sm-6 col-8 order-2 order-lg-3">
+                <div class="d-flex justify-content-end mb-3 mb-lg-0">
+
+                    <!-- User greeting -->
+                    {% if user.id is None %}
+                    <div class="widget-header">
+                        <small class="title text-muted">Welcome guest!</small>
+                        <div>
+                            <a href="{% url 'login' %}">Login</a>
+                            <span class="dark-transp"> | </span>
+                            <a href="{% url 'register' %}">Register</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="widget-header">
+                        <small class="title text-muted">Welcome {{ user.first_name }}</small>
+                        <div>
+                            <a href="{% url 'dashboard_profile' %}">Dashboard</a>
+                            <span class="dark-transp"> | </span>
+                            <a href="{% url 'logout' %}">Log Out</a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Cart icon with dynamic badge -->
+                    <a href="{% url 'cart' %}" class="widget-header pl-3 ml-3">
+                        <div class="icon icon-sm rounded-circle border">
+                            <i class="fa fa-shopping-cart"></i>
+                        </div>
+                        {# cart_count comes from carts/context_processor.py #}
+                        {% if cart_count > 0 %}
+                            <span class="badge badge-pill badge-danger notify">{{ cart_count }}</span>
+                        {% endif %}
+                    </a>
+
+                </div>
+            </div>
+
+        </div><!-- /row -->
+    </div><!-- /container -->
+</section>
+</header>
 
 
+<script>
+(function () {
+    var input       = document.getElementById('searchInput');
+    var clearBtn    = document.getElementById('clearSearch');
+    var suggestions = document.getElementById('searchSuggestions');
+    var debounce;
+
+    if (!input) return;
+
+    // ── Show/hide clear button based on input value ────────────────────
+    function updateClearBtn() {
+        clearBtn.style.display = input.value.length > 0 ? 'block' : 'none';
+    }
+
+    // Show clear button if input already has text on load
+    updateClearBtn();
+
+    // Clear button click — empties input, hides suggestions
+    clearBtn.addEventListener('click', function () {
+        input.value = '';
+        updateClearBtn();
+        hideSuggestions();
+        input.focus();
+    });
 
 
-</header> <!-- section-header.// -->
+    // ── Live suggestions ───────────────────────────────────────────────
+    input.addEventListener('input', function () {
+        updateClearBtn();
+        clearTimeout(debounce);
+        var q = input.value.trim();
+
+        if (q.length < 2) {
+            hideSuggestions();
+            return;
+        }
+
+        // Debounce — wait 250ms after user stops typing before fetching
+        debounce = setTimeout(function () {
+            fetch('/store/search-suggestions/?q=' + encodeURIComponent(q))
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    showSuggestions(data.suggestions);
+                });
+        }, 250);
+    });
+
+    function showSuggestions(items) {
+        suggestions.innerHTML = '';
+        if (items.length === 0) {
+            hideSuggestions();
+            return;
+        }
+        items.forEach(function (item) {
+            var li = document.createElement('li');
+            li.textContent = item;
+            li.style.cssText = 'padding: 10px 16px; cursor: pointer; font-size: 0.9rem;';
+            li.addEventListener('mouseenter', function () {
+                li.style.background = '#f4f6f8';
+            });
+            li.addEventListener('mouseleave', function () {
+                li.style.background = '';
+            });
+            // Clicking a suggestion fills the input and submits the form
+            li.addEventListener('click', function () {
+                input.value = item;
+                hideSuggestions();
+                document.getElementById('searchForm').submit();
+            });
+            suggestions.appendChild(li);
+        });
+        suggestions.style.display = 'block';
+    }
+
+    function hideSuggestions() {
+        suggestions.style.display = 'none';
+        suggestions.innerHTML = '';
+    }
+
+    // Hide suggestions when clicking outside the search area
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('#searchForm')) {
+            hideSuggestions();
+        }
+    });
+
+})();
+</script>

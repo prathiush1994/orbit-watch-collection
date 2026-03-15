@@ -1,52 +1,124 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% load static%}
 {% block content %}
 
-
-
-<!-- ========================= SECTION MAIN ========================= -->
+<!-- ========================= BANNER ========================= -->
 <section class="section-intro padding-y-sm">
 <div class="container">
-
-<div class="intro-banner-wrap">
-	<img src="{% static 'images/banners/banner.png' %}" class="img-fluid rounded">
+    <div class="intro-banner-wrap">
+        <img src="{% static 'images/banners/banner.png' %}" class="img-fluid rounded">
+    </div>
 </div>
-
-</div> <!-- container //  -->
 </section>
-<!-- ========================= SECTION MAIN END// ========================= -->
 
-<!-- ========================= SECTION  ========================= -->
-<section class="section-name padding-y-sm">
-<div class="container">
+<!-- ========================= PRODUCT SECTIONS ========================= -->
+<section class="section-name padding-y">
+<div class="container">   {# ← same container as banner — keeps equal left/right padding #}
 
-<header class="section-heading">
-	<a href="./store.html" class="btn btn-outline-primary float-right">See all</a>
-	<h3 class="section-title">Popular products</h3>
-</header><!-- sect-heading -->
-
-
-<div class="row">
-	{% for product in products %}
-		<div class="col-md-3">
-			<div class="card card-product-grid">
-				<a href="{{ product.get_url }}" class="img-wrap"> <img src="{{ product.images.url }}"> </a>
+    <!-- Men Watches -->
+    <header class="section-heading">
+        <a href="/store/men/" class="btn btn-outline-primary float-right">Show more</a>
+        <h3 class="section-title">Men Watches</h3>
+    </header>
+    <div class="row">
+        {% for variant in men_products %}
+        <div class="col-md-3">
+            <div class="card card-product-grid">
+                <a href="{{ variant.get_url }}" class="img-wrap">
+                    {% if variant.primary_image %}
+                        <img src="{{ variant.primary_image.url }}" alt="{{ variant }}">
+                    {% endif %}
+                </a>
                 <figcaption class="info-wrap">
                     <div class="fix-height">
                         <div class="price-wrap mt-2">
-                            <span class="price">₹ {{ product.price }}</span>
-                        </div> <!-- price-wrap.// -->
-                        <a href="{{ product.get_url }}" class="title">{{ product.product_name }}</a>
+                            <span class="price">₹ {{ variant.price }}</span>
+                        </div>
+                        <a href="{{ variant.get_url }}" class="title">
+                            {{ variant.product.product_name }}
+                            <small class="text-muted d-block">{{ variant.color_name }}</small>
+                        </a>
                     </div>
                 </figcaption>
-			</div>
-		</div> <!-- col.// -->
-	{% endfor %}
-</div> <!-- row.// -->
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p class="text-muted">No men watches available yet.</p>
+        </div>
+        {% endfor %}
+    </div>
 
-</div><!-- container // -->
+    <!-- Women Watches -->
+    <header class="section-heading mt-5">
+        <a href="/store/women/" class="btn btn-outline-primary float-right">Show more</a>
+        <h3 class="section-title">Women Watches</h3>
+    </header>
+    <div class="row">
+        {% for variant in women_products %}
+        <div class="col-md-3">
+            <div class="card card-product-grid">
+                <a href="{{ variant.get_url }}" class="img-wrap">
+                    {% if variant.primary_image %}
+                        <img src="{{ variant.primary_image.url }}" alt="{{ variant }}">
+                    {% endif %}
+                </a>
+                <figcaption class="info-wrap">
+                    <div class="fix-height">
+                        <div class="price-wrap mt-2">
+                            <span class="price">₹ {{ variant.price }}</span>
+                        </div>
+                        <a href="{{ variant.get_url }}" class="title">
+                            {{ variant.product.product_name }}
+                            <small class="text-muted d-block">{{ variant.color_name }}</small>
+                        </a>
+                    </div>
+                </figcaption>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p class="text-muted">No women watches available yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Kids Watches -->
+    <header class="section-heading mt-5">
+        <a href="/store/kids/" class="btn btn-outline-primary float-right">Show more</a>
+        <h3 class="section-title">Kids Watches</h3>
+    </header>
+    <div class="row">
+        {% for variant in kids_products %}
+        <div class="col-md-3">
+            <div class="card card-product-grid">
+                <a href="{{ variant.get_url }}" class="img-wrap">
+                    {% if variant.primary_image %}
+                        <img src="{{ variant.primary_image.url }}" alt="{{ variant }}">
+                    {% endif %}
+                </a>
+                <figcaption class="info-wrap">
+                    <div class="fix-height">
+                        <div class="price-wrap mt-2">
+                            <span class="price">₹ {{ variant.price }}</span>
+                        </div>
+                        <a href="{{ variant.get_url }}" class="title">
+                            {{ variant.product.product_name }}
+                            <small class="text-muted d-block">{{ variant.color_name }}</small>
+                        </a>
+                    </div>
+                </figcaption>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p class="text-muted">No kids watches available yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>{# /container #}
 </section>
-<!-- ========================= SECTION  END// ========================= -->
 
 {% endblock %}

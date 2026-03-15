@@ -2,11 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages, auth
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
 from accounts.models import Account
-from store.models import Product
+from store.models import Product, ProductVariant
 from category.models import Category
 from brands.models import Brand
 
@@ -23,8 +22,7 @@ def admin_login(request):
     if request.method == 'POST':
         email    = request.POST.get('email', '').strip()
         password = request.POST.get('password', '')
-
-        user = auth.authenticate(email=email, password=password)
+        user     = auth.authenticate(email=email, password=password)
 
         if user is None:
             messages.error(request, 'Invalid email or password.')
@@ -50,28 +48,30 @@ def admin_logout(request):
 
 @admin_required
 def dashboard(request):
-    total_users    = Account.objects.filter(is_admin=False, is_superadmin=False).count()
-    active_users   = Account.objects.filter(is_admin=False, is_superadmin=False, is_active=True).count()
-    blocked_users  = Account.objects.filter(is_admin=False, is_superadmin=False, is_active=False).count()
-    total_products = Product.objects.count()
-    active_products = Product.objects.filter(is_available=True).count()
-    total_categories = Category.objects.count()
-    total_brands   = Brand.objects.count()
+    total_users      = Account.objects.filter(is_admin=False, is_superadmin=False).count()
+    active_users     = Account.objects.filter(is_admin=False, is_superadmin=False, is_active=True).count()
+    blocked_users    = Account.objects.filter(is_admin=False, is_superadmin=False, is_active=False).count()
 
-    # Recent users (latest 5)
+    # Product counts use ProductVariant (is_available lives here now)
+    total_products   = ProductVariant.objects.count()
+    active_products  = ProductVariant.objects.filter(is_available=True).count()
+
+    total_categories = Category.objects.count()
+    total_brands     = Brand.objects.count()
+
     recent_users = Account.objects.filter(
         is_admin=False, is_superadmin=False
     ).order_by('-date_joined')[:5]
 
     context = {
-        'total_users':      total_users,
-        'active_users':     active_users,
-        'blocked_users':    blocked_users,
-        'total_products':   total_products,
-        'active_products':  active_products,
-        'total_categories': total_categories,
-        'total_brands':     total_brands,
-        'recent_users':     recent_users,
+        'total_users'      : total_users,
+        'active_users'     : active_users,
+        'blocked_users'    : blocked_users,
+        'total_products'   : total_products,
+        'active_products'  : active_products,
+        'total_categories' : total_categories,
+        'total_brands'     : total_brands,
+        'recent_users'     : recent_users,
     }
     return render(request, 'adminpanel/dashboard.html', context)
 
@@ -84,7 +84,7 @@ def user_list(request):
 
     users = Account.objects.filter(
         is_admin=False, is_superadmin=False
-    ).order_by('-date_joined')   # latest first
+    ).order_by('-date_joined')
 
     if search_query:
         users = users.filter(
@@ -93,14 +93,13 @@ def user_list(request):
             Q(email__icontains=search_query)
         )
 
-    # Pagination — 10 per page
     paginator = Paginator(users, 10)
     page      = request.GET.get('page', 1)
     users     = paginator.get_page(page)
 
     context = {
-        'users':        users,
-        'search_query': search_query,
+        'users'        : users,
+        'search_query' : search_query,
     }
     return render(request, 'adminpanel/users.html', context)
 
@@ -108,10 +107,8 @@ def user_list(request):
 @admin_required
 @require_POST
 def toggle_user_status(request, user_id):
-    """Block or unblock a user."""
     user = get_object_or_404(Account, id=user_id)
 
-    # Safety — cannot block another admin/superadmin
     if user.is_admin or user.is_superadmin:
         messages.error(request, 'Cannot block admin users.')
         return redirect('admin_user_list')
@@ -128,13 +125,11 @@ def toggle_user_status(request, user_id):
 
 @admin_required
 def settings(request):
-    """Admin settings — change own password."""
     if request.method == 'POST':
         current_password = request.POST.get('current_password', '')
         new_password     = request.POST.get('new_password', '')
         confirm_password = request.POST.get('confirm_password', '')
-
-        user = request.user
+        user             = request.user
 
         if not user.check_password(current_password):
             messages.error(request, 'Current password is incorrect.')

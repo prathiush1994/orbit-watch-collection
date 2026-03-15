@@ -1,18 +1,26 @@
-from django.urls import path
+from django.contrib import admin
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+import nested_admin
 from . import views
 
 urlpatterns = [
-    # Auth
-    path('login/',   views.admin_login,  name='admin_login'),
-    path('logout/',  views.admin_logout, name='admin_logout'),
+    # Django built-in admin
+    path('admin/', admin.site.urls),
 
-    # Dashboard
-    path('',         views.dashboard,    name='admin_dashboard'),
+    # nested_admin URLs (required for nested inline images in admin)
+    path('nested_admin/', include('nested_admin.urls')),
 
-    # Users
-    path('users/',                        views.user_list,          name='admin_user_list'),
-    path('users/toggle/<int:user_id>/',   views.toggle_user_status, name='admin_toggle_user'),
+    # Custom admin panel
+    path('adminpanel/', include('adminpanel.urls')),
 
-    # Settings
-    path('settings/', views.settings,    name='admin_settings'),
-]
+    # Main site
+    path('', views.home, name='home'),
+    path('store/', include('store.urls')),
+    path('carts/', include('carts.urls')),
+    path('accounts/', include('accounts.urls')),
+    path('accounts/', include('allauth.urls')),
+    path('dashboard/', include('dashboard.urls')),
+
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
