@@ -1,0 +1,403 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Category Management{% endblock %}
+{% block page_title %}Category Management{% endblock %}
+{% block nav_category %}active{% endblock %}
+
+{% block content %}
+
+<!-- ── Toolbar ──────────────────────────────────────────────────────────── -->
+<div class="a-card" style="margin-bottom:16px;">
+  <div style="padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+
+    <form method="GET" action="{% url 'admin_category_list' %}" id="searchForm"
+          autocomplete="off" style="display:flex;align-items:center;gap:8px;position:relative;">
+
+      <div class="search-wrap">
+        <svg class="s-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" name="q" id="searchInput" class="search-input"
+               value="{{ search_query }}" placeholder="Search category…" autocomplete="off">
+        <button type="button" class="search-clear" id="clearBtn"
+                style="display:{% if search_query %}flex{% else %}none{% endif %};"
+                onclick="clearSearch()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- AJAX suggestions dropdown -->
+      <ul id="searchSuggestions"
+          style="display:none;position:absolute;top:100%;left:0;min-width:260px;
+                 background:#fff;border:1px solid var(--border);
+                 border-radius:0 0 6px 6px;list-style:none;margin:0;padding:0;
+                 z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></ul>
+
+      <button type="submit" class="btn-admin" style="padding:7px 14px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        Search
+      </button>
+    </form>
+
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="font-size:13px;color:var(--text-muted);">
+        {% if search_query %}
+          Results for <strong style="color:var(--text-2);">"{{ search_query }}"</strong> —
+        {% endif %}
+        <strong style="color:var(--text);">{{ categories.paginator.count }}</strong>
+        categor{{ categories.paginator.count|pluralize:"y,ies" }}
+      </div>
+      <button class="btn-admin" onclick="openAddModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Category
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Table ────────────────────────────────────────────────────────────── -->
+<div class="a-card">
+  <div class="a-card-header">
+    <div class="a-card-title">All Categories</div>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="a-table" style="table-layout:fixed;width:100%;">
+      <thead>
+        <tr>
+          <th style="width:6%;">#</th>
+          <th style="width:10%;">Category Name</th>
+          <th style="width:20%;text-align:center;">Total Products</th>
+          <th style="width:20%;">Status</th>
+          <th style="width:20%;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cat in categories %}
+        <tr>
+          <td style="color:var(--text-muted);font-size:12px;">
+            {{ forloop.counter|add:categories.start_index|add:"-1" }}
+          </td>
+
+          <!-- Name -->
+            <td style="font-weight:600;color:var(--text);">
+                {{ cat.category_name }}
+            </td>
+
+
+          <!-- Product count -->
+          <td style="text-align:center;">
+            <span style="display:inline-flex;align-items:center;gap:5px;
+                         font-weight:600;color:var(--text);font-size:14px;">
+              {{ cat.product_count }}
+            </span>
+          </td>
+
+          <!-- Status -->
+          <td>
+            {% if cat.status == 'active' %}
+              <span class="abadge ab-active">Active</span>
+            {% else %}
+              <span class="abadge ab-blocked">Inactive</span>
+            {% endif %}
+          </td>
+
+          <!-- Actions -->
+          <td>
+            <div style="display:flex;align-items:center;gap:6px;">
+
+              <button class="btn-action"
+                      style="background:var(--blue-light);color:var(--blue);border:1px solid #c7d2fe;"
+                      onclick="openEditModal({{ cat.id }}, '{{ cat.category_name|escapejs }}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+              </button>
+
+              {% if cat.status == 'active' %}
+                <button type="button" class="btn-action btn-block-u"
+                        onclick="confirmToggle({{ cat.id }}, '{{ cat.category_name|escapejs }}', true)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                  </svg>
+                  Deactivate
+                </button>
+              {% else %}
+                <button type="button" class="btn-action btn-unblock-u"
+                        onclick="confirmToggle({{ cat.id }}, '{{ cat.category_name|escapejs }}', false)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  Activate
+                </button>
+              {% endif %}
+
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="text-align:center;padding:48px;color:var(--text-muted);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                 width="36" height="36" style="display:block;margin:0 auto 12px;opacity:0.3;">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+              <line x1="9" y1="21" x2="9" y2="9"/>
+            </svg>
+            No categories found{% if search_query %} for "<strong>{{ search_query }}</strong>"{% endif %}.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if categories.has_other_pages %}
+  <div style="padding:12px 20px;border-top:1px solid var(--border);">
+    <div class="a-pages">
+      {% if categories.has_previous %}
+        <a class="a-page" href="?page={{ categories.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+      {% else %}
+        <span class="a-page dis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg></span>
+      {% endif %}
+
+      {% for num in categories.paginator.page_range %}
+        {% if categories.number == num %}
+          <span class="a-page cur">{{ num }}</span>
+        {% elif num > categories.number|add:'-3' and num < categories.number|add:'3' %}
+          <a class="a-page" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if categories.has_next %}
+        <a class="a-page" href="?page={{ categories.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      {% else %}
+        <span class="a-page dis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg></span>
+      {% endif %}
+    </div>
+    <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:8px;">
+      Page {{ categories.number }} of {{ categories.paginator.num_pages }}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+
+<!-- ══ ADD CATEGORY MODAL ════════════════════════════════════════════════ -->
+<div class="confirm-overlay" id="addModal">
+  <div class="confirm-box" style="width:400px;max-width:96vw;">
+    <div class="confirm-ico" style="background:var(--blue-light);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           width="26" height="26" style="color:var(--blue);">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </div>
+    <div class="confirm-title">Add New Category</div>
+
+    <form method="POST" action="{% url 'admin_category_add' %}"
+          style="width:100%;margin-top:14px;text-align:left;">
+      {% csrf_token %}
+      <div class="a-form-group">
+        <label class="a-label">Category Name <span style="color:var(--red);">*</span></label>
+        <input type="text" name="category_name" id="addCatName"
+               class="a-input" placeholder="e.g. Men, Women, Kids…" required>
+      </div>
+      <div class="confirm-btns" style="margin-top:8px;">
+        <button type="button" class="btn-cancel-c" onclick="closeModals()">Cancel</button>
+        <button type="submit" class="btn-admin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add Category
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ══ EDIT CATEGORY MODAL ═══════════════════════════════════════════════ -->
+<div class="confirm-overlay" id="editModal">
+  <div class="confirm-box" style="width:400px;max-width:96vw;">
+    <div class="confirm-ico" style="background:var(--blue-light);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           width="26" height="26" style="color:var(--blue);">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+    </div>
+    <div class="confirm-title">Edit Category</div>
+
+    <form method="POST" id="editForm"
+          style="width:100%;margin-top:14px;text-align:left;">
+      {% csrf_token %}
+      <div class="a-form-group">
+        <label class="a-label">Category Name <span style="color:var(--red);">*</span></label>
+        <input type="text" name="category_name" id="editCatName"
+               class="a-input" placeholder="Category name" required>
+      </div>
+      <div class="confirm-btns" style="margin-top:8px;">
+        <button type="button" class="btn-cancel-c" onclick="closeModals()">Cancel</button>
+        <button type="submit" class="btn-admin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ══ TOGGLE CONFIRM MODAL ══════════════════════════════════════════════ -->
+<div class="confirm-overlay" id="toggleModal">
+  <div class="confirm-box">
+    <div class="confirm-ico" id="toggleIcon"></div>
+    <div class="confirm-title" id="toggleTitle"></div>
+    <div class="confirm-msg"  id="toggleMsg"></div>
+    <div class="confirm-btns">
+      <button type="button" class="btn-cancel-c" onclick="closeToggleModal()">Cancel</button>
+      <form method="POST" id="toggleForm" style="margin:0;display:inline;">
+        {% csrf_token %}
+        <button type="submit" id="toggleConfirmBtn"></button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+/* ── Search AJAX ── */
+const searchInput   = document.getElementById('searchInput');
+const clearBtn      = document.getElementById('clearBtn');
+const suggestionBox = document.getElementById('searchSuggestions');
+let   debounceTimer = null;
+
+searchInput.addEventListener('input', function () {
+  const val = this.value.trim();
+  clearBtn.style.display = this.value.length ? 'flex' : 'none';
+  clearTimeout(debounceTimer);
+  if (val.length < 2) { hideSuggestions(); return; }
+  debounceTimer = setTimeout(function () {
+    fetch('{% url "admin_category_suggestions" %}?q=' + encodeURIComponent(val))
+      .then(r => r.json())
+      .then(data => {
+        suggestionBox.innerHTML = '';
+        if (!data.suggestions || !data.suggestions.length) { hideSuggestions(); return; }
+        data.suggestions.forEach(function (name) {
+          const li = document.createElement('li');
+          li.textContent = name;
+          li.style.cssText = 'padding:9px 14px;cursor:pointer;font-size:13.5px;' +
+                             'color:var(--text-2);border-bottom:1px solid var(--border);';
+          li.addEventListener('mouseenter', function () { this.style.background='var(--blue-light)'; this.style.color='var(--blue)'; });
+          li.addEventListener('mouseleave', function () { this.style.background=''; this.style.color='var(--text-2)'; });
+          li.addEventListener('mousedown', function () {
+            searchInput.value = name;
+            hideSuggestions();
+            document.getElementById('searchForm').submit();
+          });
+          suggestionBox.appendChild(li);
+        });
+        suggestionBox.style.display = 'block';
+      })
+      .catch(function () { hideSuggestions(); });
+  }, 250);
+});
+
+function hideSuggestions() {
+  suggestionBox.style.display = 'none';
+  suggestionBox.innerHTML = '';
+}
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('#searchForm')) hideSuggestions();
+});
+searchInput.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') hideSuggestions();
+});
+function clearSearch() {
+  searchInput.value = '';
+  clearBtn.style.display = 'none';
+  hideSuggestions();
+  searchInput.focus();
+  document.getElementById('searchForm').submit();
+}
+
+/* ── Add modal ── */
+function openAddModal() {
+  document.getElementById('addCatName').value = '';
+  document.getElementById('addModal').classList.add('show');
+  setTimeout(() => document.getElementById('addCatName').focus(), 120);
+}
+
+/* ── Edit modal ── */
+function openEditModal(catId, catName) {
+  document.getElementById('editCatName').value = catName;
+  document.getElementById('editForm').action   = '/adminpanel/categories/edit/' + catId + '/';
+  document.getElementById('editModal').classList.add('show');
+  setTimeout(() => document.getElementById('editCatName').focus(), 120);
+}
+
+/* ── Toggle confirmation ── */
+function confirmToggle(catId, catName, isActive) {
+  const icon  = document.getElementById('toggleIcon');
+  const title = document.getElementById('toggleTitle');
+  const msg   = document.getElementById('toggleMsg');
+  const btn   = document.getElementById('toggleConfirmBtn');
+  document.getElementById('toggleForm').action = '/adminpanel/categories/toggle/' + catId + '/';
+
+  if (isActive) {
+    icon.className    = 'confirm-ico block';
+    icon.innerHTML    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>';
+    title.textContent = 'Deactivate Category?';
+    msg.textContent   = '"' + catName + '" will be hidden from the store, navbar, and filter sidebar.';
+    btn.className     = 'btn-do-block';
+    btn.textContent   = 'Yes, Deactivate';
+  } else {
+    icon.className    = 'confirm-ico unblock';
+    icon.innerHTML    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+    title.textContent = 'Activate Category?';
+    msg.textContent   = '"' + catName + '" will become visible in the store, navbar, and filter sidebar.';
+    btn.className     = 'btn-do-unblock';
+    btn.textContent   = 'Yes, Activate';
+  }
+  document.getElementById('toggleModal').classList.add('show');
+}
+
+function closeToggleModal() {
+  document.getElementById('toggleModal').classList.remove('show');
+}
+document.getElementById('toggleModal').addEventListener('click', function (e) {
+  if (e.target === this) closeToggleModal();
+});
+
+/* ── Close add/edit modals ── */
+function closeModals() {
+  document.getElementById('addModal').classList.remove('show');
+  document.getElementById('editModal').classList.remove('show');
+}
+['addModal', 'editModal'].forEach(function (id) {
+  document.getElementById(id).addEventListener('click', function (e) {
+    if (e.target === this) closeModals();
+  });
+});
+</script>
+{% endblock %}

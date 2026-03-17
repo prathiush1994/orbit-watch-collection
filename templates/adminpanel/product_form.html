@@ -1,0 +1,243 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}{% if is_edit %}Edit Product{% else %}Add Product{% endif %}{% endblock %}
+{% block page_title %}{% if is_edit %}Edit: {{ product.product_name }}{% else %}Add Product{% endif %}{% endblock %}
+{% block nav_products %}active{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;display:flex;align-items:center;gap:6px;">
+  <a href="{% url 'admin_product_list' %}" style="color:var(--blue);text-decoration:none;">Products</a>
+  <span>›</span>
+  <span>{% if is_edit %}{{ product.product_name }}{% else %}Add New Product{% endif %}</span>
+</div>
+
+<form method="POST" action="">
+{% csrf_token %}
+
+<div class="a-card" style="margin-bottom:20px;">
+<div class="a-card-header">
+<div class="a-card-title">Product Details</div>
+</div>
+
+<div class="a-card-body">
+
+<div class="a-form-group">
+<label class="a-label">Product Name *</label>
+<input type="text" name="product_name" class="a-input"
+placeholder="e.g. Titan Celestor"
+value="{% if is_edit %}{{ product.product_name }}{% endif %}" required>
+</div>
+
+<div class="a-form-group">
+<label class="a-label">Description</label>
+<textarea name="description" class="a-input" rows="3">{% if is_edit %}{{ product.description }}{% endif %}</textarea>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+<div class="a-form-group">
+<label class="a-label">Brand</label>
+<select name="brand" class="a-input">
+<option value="">— No brand —</option>
+{% for brand in brands %}
+<option value="{{ brand.id }}">
+{{ brand.brand_name }}
+</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="a-form-group">
+<label class="a-label">Category</label>
+<select name="category_single" class="a-input">
+<option value="">— Select category —</option>
+{% for cat in categories %}
+<option value="{{ cat.id }}">{{ cat.category_name }}</option>
+{% endfor %}
+</select>
+</div>
+
+</div>
+
+<div style="margin-top:16px;">
+<button type="submit" class="btn-admin">
+Save Product
+</button>
+</div>
+
+</div>
+</div>
+
+</form>
+
+
+  <!-- ── Variants Card ─────────────────────────────────────────────── -->
+  <div class="a-card" style="margin-bottom:20px;">
+    <div class="a-card-header">
+      <div class="a-card-title">
+        Variants
+        {% if is_edit %}
+          <span style="font-size:13px;font-weight:400;color:var(--text-muted);margin-left:6px;">
+            ({{ variants.count }} added)
+          </span>
+        {% endif %}
+      </div>
+        {% if is_edit %}
+        <a href="{% url 'admin_variant_add' product.id %}"
+        class="btn-admin"
+        style="font-size:12.5px;padding:6px 14px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Variant
+        </a>
+        {% else %}
+        <button class="btn-admin"
+                style="font-size:12.5px;padding:6px 14px;background:#e5e7eb;color:#9ca3af;cursor:not-allowed;"
+                disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Variant
+        </button>
+        {% endif %}
+    </div>
+
+    {% if is_edit and variants %}
+    <div style="overflow-x:auto;">
+      <table class="a-table" style="table-layout:fixed;width:100%;">
+        <thead>
+          <tr>
+            <th style="width:18%;">Color</th>
+            <th style="width:10%;">Price</th>
+            <th style="width:8%;">Stock</th>
+            <th style="width:10%;">Status</th>
+            <th style="width:16%;">Primary Image</th>
+            <th>Gallery Images</th>
+            <th style="width:8%;">Edit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for variant in variants %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);
+                             display:inline-block;flex-shrink:0;
+                             background:{% if variant.color_code %}{{ variant.color_code }}{% else %}#e2e8f0{% endif %};"></span>
+                <span style="font-weight:500;color:var(--text);">{{ variant.color_name }}</span>
+              </div>
+            </td>
+            <td style="font-weight:600;color:var(--text);">₹{{ variant.price }}</td>
+            <td>
+              {% if variant.stock == 0 %}
+                <span style="color:var(--red);font-weight:600;">0</span>
+              {% elif variant.stock <= 5 %}
+                <span style="color:var(--amber);font-weight:600;">{{ variant.stock }}</span>
+              {% else %}
+                <span style="color:var(--green);font-weight:600;">{{ variant.stock }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="abadge {% if variant.is_available %}ab-active{% else %}ab-blocked{% endif %}">
+                {% if variant.is_available %}Active{% else %}Hidden{% endif %}
+              </span>
+            </td>
+            <td>
+              {% if variant.primary_image %}
+                <img src="{{ variant.primary_image.url }}"
+                     style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">
+              {% else %}
+                <span style="font-size:12px;color:var(--text-muted);">No image</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                {% for img in variant.images.all %}
+                <div style="position:relative;display:inline-block;">
+                  <img src="{{ img.image.url }}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">
+                </div>
+                {% endfor %}
+              </div>
+            </td>
+            <td>
+              <a href="{% url 'admin_variant_edit' variant.id %}"
+                 class="btn-action"
+                 style="background:var(--blue-light);color:var(--blue);border:1px solid #c7d2fe;text-decoration:none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% else %}
+    <div style="padding:28px 20px;color:var(--text-muted);font-size:13px;">
+      {% if is_edit %}
+        No variants yet.
+        <a href="{% url 'admin_variant_add' product.id %}" style="color:var(--blue);">Add your first variant →</a>
+      {% else %}
+        Save the product first, then you can add variants here.
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Save / Cancel ─────────────────────────────────────────────── -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:32px;">
+    <button type="submit" class="btn-admin" style="padding:9px 28px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      {% if is_edit %}Save Changes{% else %}Save Product{% endif %}
+    </button>
+    <a href="{% url 'admin_product_list' %}"
+       style="display:inline-flex;align-items:center;padding:9px 20px;
+              border:1px solid var(--border);border-radius:0.25rem;
+              font-size:13.5px;color:var(--text-2);text-decoration:none;">
+      Cancel
+    </a>
+    {% if is_edit %}
+    <span style="font-size:12px;color:var(--text-muted);margin-left:8px;">
+      Created {{ product.created_at|date:"d M Y" }} · Updated {{ product.updated_at|date:"d M Y, H:i" }}
+    </span>
+    {% endif %}
+  </div>
+
+
+
+{% include 'includes/image_crop_modal.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* Sync single-select dropdown → hidden checkbox for M2M POST */
+const catSelect = document.getElementById('categorySelect');
+if (catSelect) {
+  catSelect.addEventListener('change', function () {
+    // Uncheck all
+    document.querySelectorAll('#categoryCheckboxes input[type="checkbox"]').forEach(function(cb) {
+      cb.checked = false;
+    });
+    // Check selected
+    const selected = this.value;
+    if (selected) {
+      const cb = document.getElementById('catcb-' + selected);
+      if (cb) cb.checked = true;
+    }
+  });
+  // On load, sync dropdown to match any pre-checked box (edit mode)
+  const checkedCb = document.querySelector('#categoryCheckboxes input:checked');
+  if (checkedCb) catSelect.value = checkedCb.value;
+}
+</script>
+{% endblock %}

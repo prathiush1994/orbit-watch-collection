@@ -1,0 +1,577 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Brand Management{% endblock %}
+{% block page_title %}Brand Management{% endblock %}
+{% block nav_brands %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  .logo-upload-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 14px; border: 1px dashed var(--border);
+    border-radius: 0.25rem; font-size: 13px; font-weight: 500;
+    color: var(--text-2); background: #f8f9fa; cursor: pointer;
+    transition: 0.15s; margin-top: 2px;
+  }
+  .logo-upload-btn:hover {
+    border-color: var(--blue); color: var(--blue); background: var(--blue-light);
+  }
+  .logo-preview-wrap {
+    width: 80px; height: 80px; border: 1px solid var(--border);
+    border-radius: 8px; background: #f8f9fa; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 8px;
+  }
+  .logo-preview-wrap img {
+    width: 100%; height: 100%; object-fit: contain; padding: 4px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Toolbar ──────────────────────────────────────────────────────────── -->
+<div class="a-card" style="margin-bottom:16px;">
+  <div style="padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+
+    <form method="GET" action="{% url 'admin_brand_list' %}" id="searchForm"
+          autocomplete="off"
+          style="display:flex;align-items:center;gap:8px;position:relative;">
+
+      <div class="search-wrap">
+        <svg class="s-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text"
+               name="q"
+               id="searchInput"
+               class="search-input"
+               value="{{ search_query }}"
+               placeholder="Search brand name…"
+               autocomplete="off">
+        <button type="button" class="search-clear" id="clearBtn"
+                style="display:{% if search_query %}flex{% else %}none{% endif %};"
+                onclick="clearSearch()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- AJAX live suggestions dropdown -->
+      <ul id="searchSuggestions"
+          style="display:none; position:absolute; top:100%; left:0; min-width:260px;
+                 background:#fff; border:1px solid var(--border);
+                 border-radius:0 0 6px 6px; list-style:none; margin:0; padding:0;
+                 z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></ul>
+
+      <button type="submit" class="btn-admin" style="padding:7px 14px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        Search
+      </button>
+    </form>
+
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="font-size:13px;color:var(--text-muted);">
+        {% if search_query %}
+          Results for <strong style="color:var(--text-2);">"{{ search_query }}"</strong> —
+        {% endif %}
+        <strong style="color:var(--text);">{{ brands.paginator.count }}</strong>
+        brand{{ brands.paginator.count|pluralize }}
+      </div>
+      <button class="btn-admin" onclick="openAddModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Brand
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Table ────────────────────────────────────────────────────────────── -->
+<div class="a-card">
+  <div class="a-card-header">
+    <div class="a-card-title">All Brands</div>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="a-table">
+      <thead>
+        <tr>
+          <th style="width:3%;">#</th>
+          <th style="width:10%;">Logo</th>
+          <th style="width:10%;">Brand Name</th>
+          <th style="width:10%;">Status</th>
+          <th style="width:10%;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for brand in brands %}
+        <tr>
+          <td style="color:var(--text-muted);font-size:12px;">
+            {{ forloop.counter|add:brands.start_index|add:"-1" }}
+          </td>
+
+          <!-- Logo cell -->
+          <td>
+            {% if brand.logo_image %}
+              <img src="{{ brand.logo_image.url }}"
+                   alt="{{ brand.brand_name }}"
+                   style="width:42px;height:42px;object-fit:contain;border-radius:8px;
+                          border:1px solid var(--border);background:#f8f9fa;padding:3px;">
+            {% else %}
+              <div style="width:42px;height:42px;background:var(--blue-light);
+                          border:1px solid #c7d2fe;border-radius:8px;
+                          display:flex;align-items:center;justify-content:center;
+                          font-size:16px;font-weight:700;color:var(--blue);">
+                {{ brand.brand_name|first|upper }}
+              </div>
+            {% endif %}
+          </td>
+
+          <!-- Name -->
+          <td><span style="font-weight:600;color:var(--text);">{{ brand.brand_name }}</span></td>
+
+          <!-- Status -->
+          <td>
+            {% if brand.status == 'active' %}
+              <span class="abadge ab-active">Active</span>
+            {% else %}
+              <span class="abadge ab-blocked">Inactive</span>
+            {% endif %}
+          </td>
+
+          <!-- Actions -->
+          <td>
+            <div style="display:flex;align-items:center;gap:6px;">
+
+              <button class="btn-action"
+                      style="background:var(--blue-light);color:var(--blue);border:1px solid #c7d2fe;"
+                      onclick="openEditModal(
+                        {{ brand.id }},
+                        '{{ brand.brand_name|escapejs }}',
+                        '{% if brand.logo_image %}{{ brand.logo_image.url }}{% endif %}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit
+              </button>
+
+              {% if brand.status == 'active' %}
+                <button type="button" class="btn-action btn-block-u"
+                        onclick="confirmToggle({{ brand.id }}, '{{ brand.brand_name|escapejs }}', true)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                  </svg>
+                  Deactivate
+                </button>
+              {% else %}
+                <button type="button" class="btn-action btn-unblock-u"
+                        onclick="confirmToggle({{ brand.id }}, '{{ brand.brand_name|escapejs }}', false)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  Activate
+                </button>
+              {% endif %}
+
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="text-align:center;padding:48px;color:var(--text-muted);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                 width="36" height="36" style="display:block;margin:0 auto 12px;opacity:0.3;">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+            No brands found{% if search_query %} for "<strong>{{ search_query }}</strong>"{% endif %}.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if brands.has_other_pages %}
+  <div style="padding:12px 20px;border-top:1px solid var(--border);">
+    <div class="a-pages">
+      {% if brands.has_previous %}
+        <a class="a-page" href="?page={{ brands.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+      {% else %}
+        <span class="a-page dis">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+        </span>
+      {% endif %}
+
+      {% for num in brands.paginator.page_range %}
+        {% if brands.number == num %}
+          <span class="a-page cur">{{ num }}</span>
+        {% elif num > brands.number|add:'-3' and num < brands.number|add:'3' %}
+          <a class="a-page" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if brands.has_next %}
+        <a class="a-page" href="?page={{ brands.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      {% else %}
+        <span class="a-page dis">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
+        </span>
+      {% endif %}
+    </div>
+    <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:8px;">
+      Page {{ brands.number }} of {{ brands.paginator.num_pages }}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     ADD BRAND MODAL
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="confirm-overlay" id="addModal">
+  <div class="confirm-box" style="width:420px;max-width:96vw;">
+
+    <div class="confirm-ico" style="background:var(--blue-light);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           width="26" height="26" style="color:var(--blue);">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </div>
+    <div class="confirm-title">Add New Brand</div>
+
+    <form method="POST" action="{% url 'admin_brand_add' %}"
+          style="width:100%;margin-top:14px;text-align:left;">
+      {% csrf_token %}
+
+      <!-- base64 cropped image goes here -->
+      <input type="hidden" name="logo_image" id="addCroppedInput">
+
+      <!-- Brand name -->
+      <div class="a-form-group">
+        <label class="a-label">Brand Name <span style="color:var(--red);">*</span></label>
+        <input type="text" name="brand_name" id="addBrandName"
+               class="a-input" placeholder="e.g. Titan, Omega, Casio…" required>
+      </div>
+
+      <!-- Logo upload -->
+      <div class="a-form-group">
+        <label class="a-label">
+          Brand Logo
+          <span style="color:var(--text-muted);font-weight:400;font-size:12px;"> — optional</span>
+        </label>
+
+        <!-- Preview box (hidden until image chosen) -->
+        <div id="addPreviewBox" style="display:none;">
+          <div class="logo-preview-wrap">
+            <img id="addPreviewImg" src="" alt="Preview">
+          </div>
+          <button type="button"
+                  onclick="document.getElementById('addCroppedInput').value='';
+                           document.getElementById('addPreviewBox').style.display='none';"
+                  style="font-size:11.5px;color:var(--red);background:none;border:none;
+                         cursor:pointer;padding:0;margin-bottom:6px;">
+            ✕ Remove image
+          </button>
+        </div>
+
+        <!-- Upload trigger -->
+        <label class="logo-upload-btn" for="addLogoFile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Choose Image to Crop
+        </label>
+        <input type="file" id="addLogoFile" accept="image/*" style="display:none;"
+               onchange="openCropModal(event, 'addCroppedInput', 'addPreviewImg', 1);
+                         document.getElementById('addPreviewBox').style.display='block';">
+      </div>
+
+      <div class="confirm-btns" style="margin-top:6px;">
+        <button type="button" class="btn-cancel-c" onclick="closeModals()">Cancel</button>
+        <button type="submit" class="btn-admin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add Brand
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     EDIT BRAND MODAL
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="confirm-overlay" id="editModal">
+  <div class="confirm-box" style="width:420px;max-width:96vw;">
+
+    <div class="confirm-ico" style="background:var(--blue-light);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           width="26" height="26" style="color:var(--blue);">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+    </div>
+    <div class="confirm-title">Edit Brand</div>
+
+    <form method="POST" id="editForm"
+          style="width:100%;margin-top:14px;text-align:left;">
+      {% csrf_token %}
+
+      <!-- base64 cropped image goes here; empty = keep existing logo -->
+      <input type="hidden" name="logo_image" id="editCroppedInput">
+
+      <!-- Brand name -->
+      <div class="a-form-group">
+        <label class="a-label">Brand Name <span style="color:var(--red);">*</span></label>
+        <input type="text" name="brand_name" id="editBrandName"
+               class="a-input" placeholder="Brand name" required>
+      </div>
+
+      <!-- Logo upload -->
+      <div class="a-form-group">
+        <label class="a-label">
+          Brand Logo
+          <span style="color:var(--text-muted);font-weight:400;font-size:12px;"> — leave empty to keep current</span>
+        </label>
+
+        <!-- Shows current logo OR newly cropped preview -->
+        <div id="editPreviewBox">
+          <div class="logo-preview-wrap" id="editPreviewWrap" style="display:none;">
+            <img id="editPreviewImg" src="" alt="Current logo">
+          </div>
+        </div>
+
+        <label class="logo-upload-btn" for="editLogoFile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Change Logo
+        </label>
+        <input type="file" id="editLogoFile" accept="image/*" style="display:none;"
+               onchange="openCropModal(event, 'editCroppedInput', 'editPreviewImg', 1);
+                         document.getElementById('editPreviewWrap').style.display='flex';">
+      </div>
+
+      <div class="confirm-btns" style="margin-top:6px;">
+        <button type="button" class="btn-cancel-c" onclick="closeModals()">Cancel</button>
+        <button type="submit" class="btn-admin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Save Changes
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+
+<!-- ── Toggle Confirmation Modal ───────────────────────────────────────── -->
+<div class="confirm-overlay" id="toggleModal">
+  <div class="confirm-box">
+    <div class="confirm-ico" id="toggleIcon"></div>
+    <div class="confirm-title" id="toggleTitle"></div>
+    <div class="confirm-msg"  id="toggleMsg"></div>
+    <div class="confirm-btns">
+      <button type="button" class="btn-cancel-c" onclick="closeToggleModal()">Cancel</button>
+      <form method="POST" id="toggleForm" style="margin:0;display:inline;">
+        {% csrf_token %}
+        <button type="submit" id="toggleConfirmBtn"></button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Reusable crop modal (Cropper.js) -->
+{% include 'includes/image_crop_modal.html' %}
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+/* ── Brand toggle confirmation ── */
+function confirmToggle(brandId, brandName, isActive) {
+  const icon  = document.getElementById('toggleIcon');
+  const title = document.getElementById('toggleTitle');
+  const msg   = document.getElementById('toggleMsg');
+  const btn   = document.getElementById('toggleConfirmBtn');
+  const form  = document.getElementById('toggleForm');
+
+  form.action = '/adminpanel/brands/toggle/' + brandId + '/';
+
+  if (isActive) {
+    icon.className    = 'confirm-ico block';
+    icon.innerHTML    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>';
+    title.textContent = 'Deactivate Brand?';
+    msg.textContent   = '"' + brandName + '" will be hidden from the store, product pages, and cart.';
+    btn.className     = 'btn-do-block';
+    btn.textContent   = 'Yes, Deactivate';
+  } else {
+    icon.className    = 'confirm-ico unblock';
+    icon.innerHTML    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+    title.textContent = 'Activate Brand?';
+    msg.textContent   = '"' + brandName + '" will become visible in the store and product pages.';
+    btn.className     = 'btn-do-unblock';
+    btn.textContent   = 'Yes, Activate';
+  }
+
+  document.getElementById('toggleModal').classList.add('show');
+}
+
+function closeToggleModal() {
+  document.getElementById('toggleModal').classList.remove('show');
+}
+
+document.getElementById('toggleModal').addEventListener('click', function(e) {
+  if (e.target === this) closeToggleModal();
+});
+
+/* ── Search ── */
+const searchInput   = document.getElementById('searchInput');
+const clearBtn      = document.getElementById('clearBtn');
+const suggestionBox = document.getElementById('searchSuggestions');
+let   debounceTimer = null;
+
+// Show/hide × clear button as user types
+searchInput.addEventListener('input', function () {
+  const val = this.value.trim();
+  clearBtn.style.display = this.value.length ? 'flex' : 'none';
+
+  // AJAX suggestions — same pattern as store search
+  clearTimeout(debounceTimer);
+  if (val.length < 2) { hideSuggestions(); return; }
+
+  debounceTimer = setTimeout(function () {
+    fetch('{% url "admin_brand_suggestions" %}?q=' + encodeURIComponent(val))
+      .then(r => r.json())
+      .then(data => {
+        suggestionBox.innerHTML = '';
+        if (!data.suggestions || data.suggestions.length === 0) {
+          hideSuggestions(); return;
+        }
+        data.suggestions.forEach(function (name) {
+          const li = document.createElement('li');
+          li.textContent = name;
+          li.style.cssText = 'padding:9px 14px;cursor:pointer;font-size:13.5px;' +
+                             'color:var(--text-2);border-bottom:1px solid var(--border);';
+          li.addEventListener('mouseenter', function () {
+            this.style.background = 'var(--blue-light)';
+            this.style.color      = 'var(--blue)';
+          });
+          li.addEventListener('mouseleave', function () {
+            this.style.background = '';
+            this.style.color      = 'var(--text-2)';
+          });
+          li.addEventListener('mousedown', function () {
+            searchInput.value = name;
+            hideSuggestions();
+            document.getElementById('searchForm').submit();
+          });
+          suggestionBox.appendChild(li);
+        });
+        suggestionBox.style.display = 'block';
+      })
+      .catch(function () { hideSuggestions(); });
+  }, 250);
+});
+
+function hideSuggestions() {
+  suggestionBox.style.display = 'none';
+  suggestionBox.innerHTML     = '';
+}
+
+// Hide suggestions when clicking outside
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('#searchForm')) hideSuggestions();
+});
+
+// Hide on Escape
+searchInput.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') hideSuggestions();
+});
+
+function clearSearch() {
+  searchInput.value      = '';
+  clearBtn.style.display = 'none';
+  hideSuggestions();
+  searchInput.focus();
+  document.getElementById('searchForm').submit();
+}
+
+/* ── Add modal ── */
+function openAddModal() {
+  // Reset everything
+  document.getElementById('addBrandName').value    = '';
+  document.getElementById('addCroppedInput').value = '';
+  document.getElementById('addPreviewBox').style.display = 'none';
+  document.getElementById('addLogoFile').value     = '';
+
+  document.getElementById('addModal').classList.add('show');
+  setTimeout(() => document.getElementById('addBrandName').focus(), 120);
+}
+
+/* ── Edit modal ── */
+function openEditModal(brandId, brandName, logoUrl) {
+  document.getElementById('editBrandName').value    = brandName;
+  document.getElementById('editCroppedInput').value = '';
+  document.getElementById('editLogoFile').value     = '';
+  document.getElementById('editForm').action        = '/adminpanel/brands/edit/' + brandId + '/';
+
+  // Show current logo if it exists
+  const wrap = document.getElementById('editPreviewWrap');
+  const img  = document.getElementById('editPreviewImg');
+  if (logoUrl) {
+    img.src              = logoUrl;
+    wrap.style.display   = 'flex';
+  } else {
+    img.src              = '';
+    wrap.style.display   = 'none';
+  }
+
+  document.getElementById('editModal').classList.add('show');
+  setTimeout(() => document.getElementById('editBrandName').focus(), 120);
+}
+
+/* ── Close all modals ── */
+function closeModals() {
+  document.getElementById('addModal').classList.remove('show');
+  document.getElementById('editModal').classList.remove('show');
+}
+
+// Clicking the dark backdrop also closes
+['addModal', 'editModal'].forEach(function (id) {
+  document.getElementById(id).addEventListener('click', function (e) {
+    if (e.target === this) closeModals();
+  });
+});
+</script>
+{% endblock %}

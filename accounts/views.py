@@ -140,6 +140,17 @@ def login(request):
         email    = request.POST.get('email', '').strip()
         password = request.POST.get('password', '')
 
+        try:
+            account = Account.objects.get(email=email)
+        except Account.DoesNotExist:
+            messages.error(request, 'Invalid email or password.')
+            return render(request, 'accounts/login.html')
+
+        # Check if user is blocked
+        if not account.is_active and account.email_verified:
+            messages.error(request, 'Your account has been temporarily restricted. Please contact support.')
+            return render(request, 'accounts/login.html')
+
         user = auth.authenticate(email=email, password=password)
 
         if user is None:

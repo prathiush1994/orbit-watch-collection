@@ -14,6 +14,22 @@
     </div>
 
 {% else %}
+
+    {% if has_unavailable %}
+    <!-- ── Brand deactivated warning banner ── -->
+    <div class="alert alert-warning d-flex align-items-start mb-3" role="alert"
+         style="border-left:4px solid #f97316;border-radius:6px;">
+        <i class="fa fa-exclamation-triangle mr-3 mt-1" style="color:#f97316;font-size:18px;"></i>
+        <div>
+            <strong>Some items are no longer available.</strong><br>
+            <span class="text-muted" style="font-size:13.5px;">
+                One or more brands in your cart have been temporarily deactivated.
+                Please remove these items to proceed to checkout.
+            </span>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="row">
 
         <!-- ── Cart Items Table ── -->
@@ -30,7 +46,8 @@
             </thead>
             <tbody>
             {% for cart_item in cart_items %}
-            <tr>
+            <tr {% if cart_item.brand_unavailable %}style="opacity:0.55;background:#fff8f0;"{% endif %}>
+
                 <!-- Product image + name -->
                 <td>
                     <figure class="itemside align-items-center">
@@ -38,55 +55,85 @@
                             {% if cart_item.variant.primary_image %}
                                 <img src="{{ cart_item.variant.primary_image.url }}"
                                      class="img-sm"
-                                     alt="{{ cart_item.variant }}">
+                                     alt="{{ cart_item.variant }}"
+                                     {% if cart_item.brand_unavailable %}style="filter:grayscale(60%);"{% endif %}>
                             {% endif %}
                         </div>
                         <figcaption class="info">
-                            <a href="{{ cart_item.variant.get_url }}" class="title">
-                                {{ cart_item.variant.product.product_name }}
-                            </a>
-                            <p class="text-muted small">
-                                Color: {{ cart_item.variant.color_name }}<br>
-                                {% if cart_item.variant.product.brand %}
-                                    Brand: {{ cart_item.variant.product.brand }}
-                                {% endif %}
-                            </p>
+                            {% if cart_item.brand_unavailable %}
+                                <span class="title text-muted">
+                                    {{ cart_item.variant.product.product_name }}
+                                </span>
+                                <p class="text-muted small">
+                                    Color: {{ cart_item.variant.color_name }}<br>
+                                    {% if cart_item.variant.product.brand %}
+                                        Brand: {{ cart_item.variant.product.brand }}
+                                    {% endif %}
+                                </p>
+                                <!-- Unavailable badge -->
+                                <span class="badge badge-warning"
+                                      style="font-size:11.5px;padding:4px 8px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:4px;">
+                                    <i class="fa fa-ban mr-1"></i> Brand unavailable
+                                </span>
+                            {% else %}
+                                <a href="{{ cart_item.variant.get_url }}" class="title">
+                                    {{ cart_item.variant.product.product_name }}
+                                </a>
+                                <p class="text-muted small">
+                                    Color: {{ cart_item.variant.color_name }}<br>
+                                    {% if cart_item.variant.product.brand %}
+                                        Brand: {{ cart_item.variant.product.brand }}
+                                    {% endif %}
+                                </p>
+                            {% endif %}
                         </figcaption>
                     </figure>
                 </td>
 
-                <!-- Quantity controls -->
+                <!-- Quantity controls — disabled for unavailable items -->
                 <td>
-                    <div class="input-group input-spinner">
-                        <div class="input-group-prepend">
-                            <a href="{% url 'remove_cart' cart_item.variant.id %}"
-                               class="btn btn-light" type="button">
-                                <i class="fa fa-minus"></i>
-                            </a>
+                    {% if cart_item.brand_unavailable %}
+                        <span class="text-muted" style="font-size:14px;">{{ cart_item.quantity }}</span>
+                    {% else %}
+                        <div class="input-group input-spinner">
+                            <div class="input-group-prepend">
+                                <a href="{% url 'remove_cart' cart_item.variant.id %}"
+                                   class="btn btn-light" type="button">
+                                    <i class="fa fa-minus"></i>
+                                </a>
+                            </div>
+                            <input type="text" class="form-control"
+                                   value="{{ cart_item.quantity }}" readonly>
+                            <div class="input-group-append">
+                                <a href="{% url 'add_cart' cart_item.variant.id %}"
+                                   class="btn btn-light" type="button">
+                                    <i class="fa fa-plus"></i>
+                                </a>
+                            </div>
                         </div>
-                        <input type="text" class="form-control"
-                               value="{{ cart_item.quantity }}" readonly>
-                        <div class="input-group-append">
-                            <a href="{% url 'add_cart' cart_item.variant.id %}"
-                               class="btn btn-light" type="button">
-                                <i class="fa fa-plus"></i>
-                            </a>
-                        </div>
-                    </div>
+                    {% endif %}
                 </td>
 
-                <!-- Price -->
+                <!-- Price — greyed out for unavailable -->
                 <td>
-                    <div class="price-wrap">
-                        <var class="price">₹{{ cart_item.sub_total }}.00</var>
-                        <small class="text-muted">₹{{ cart_item.variant.price }}.00 each</small>
-                    </div>
+                    {% if cart_item.brand_unavailable %}
+                        <span class="text-muted" style="text-decoration:line-through;">
+                            ₹{{ cart_item.sub_total }}.00
+                        </span>
+                    {% else %}
+                        <div class="price-wrap">
+                            <var class="price">₹{{ cart_item.sub_total }}.00</var>
+                            <small class="text-muted">₹{{ cart_item.variant.price }}.00 each</small>
+                        </div>
+                    {% endif %}
                 </td>
 
-                <!-- Remove button -->
+                <!-- Remove button — always available -->
                 <td class="text-right">
                     <a href="{% url 'remove_cartitem' cart_item.variant.id %}"
-                       class="btn btn-danger">Remove</a>
+                       class="btn btn-{% if cart_item.brand_unavailable %}warning{% else %}danger{% endif %}">
+                        Remove
+                    </a>
                 </td>
             </tr>
             {% endfor %}
@@ -112,20 +159,24 @@
                     <dd class="text-right text-dark b"><strong>₹{{ grand_total }}</strong></dd>
                 </dl>
                 <hr>
-                {% if user.is_authenticated %}
 
-					<a href="#" class="btn btn-primary btn-block">
-						Checkout
-					</a>
+                {% if has_unavailable %}
+                    <!-- Checkout blocked — unavailable items present -->
+                    <button class="btn btn-secondary btn-block" disabled
+                            title="Remove unavailable items to checkout">
+                        <i class="fa fa-lock mr-1"></i> Checkout unavailable
+                    </button>
+                    <small class="text-muted d-block text-center mt-1" style="font-size:12px;">
+                        Remove items marked "Brand unavailable" to continue.
+                    </small>
+                {% elif user.is_authenticated %}
+                    <a href="#" class="btn btn-primary btn-block">Checkout</a>
+                {% else %}
+                    <a href="{% url 'login' %}?next=checkout"
+                       class="btn btn-primary btn-block">Login to Checkout</a>
+                {% endif %}
 
-				{% else %}
-
-					<a href="{% url 'login' %}?next=checkout" class="btn btn-primary btn-block">
-						Login to Checkout
-					</a>
-
-				{% endif %}
-                <a href="{% url 'store' %}" class="btn btn-light btn-block">
+                <a href="{% url 'store' %}" class="btn btn-light btn-block mt-2">
                     Continue Shopping
                 </a>
             </div>

@@ -233,13 +233,12 @@
     </div>
 
     <!-- ── Pagination — preserves all active filters ── -->
-    {% if products.has_other_pages %}
     <nav class="mt-4">
         <ul class="pagination">
             {% if products.has_previous %}
             <li class="page-item">
                 <a class="page-link"
-                   href="?{% if keyword %}q={{ keyword }}&{% endif %}{% for c in active_categories %}category={{ c }}&{% endfor %}{% for b in active_brands %}brand={{ b }}&{% endfor %}{% if active_min_price %}min_price={{ active_min_price }}&{% endif %}{% if active_max_price %}max_price={{ active_max_price }}&{% endif %}{% if active_sort %}sort={{ active_sort }}&{% endif %}page={{ products.previous_page_number }}">
+                   href="?{% if keyword %}q={{ keyword }}&{% for c in active_categories %}category={{ c }}&{% endfor %}{% for b in active_brands %}brand={{ b }}&{% endfor %}{% if active_min_price %}min_price={{ active_min_price }}&{% endif %}{% if active_max_price %}max_price={{ active_max_price }}&{% endif %}{% if active_sort %}sort={{ active_sort }}&{% endif %}page={{ products.previous_page_number }}">
                     Previous
                 </a>
             </li>

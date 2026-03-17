@@ -1,0 +1,121 @@
+{% extends 'adminpanel/base_admin.html' %}
+
+{% block title %}Variants{% endblock %}
+{% block page_title %}Variants{% endblock %}
+{% block nav_products %}active{% endblock %}
+
+{% block content %}
+
+<div class="a-card">
+<div class="a-card-header">
+<div class="a-card-title">
+Variants — <span style="color:var(--blue);">{{ product.product_name }}</span>
+</div>
+</div>
+
+<div class="a-card-body">
+
+<table class="variant-table" style="width:100%;">
+<thead>
+<tr>
+<th style="width:16%;">Color</th>
+<th style="width:10%;">Price</th>
+<th style="width:10%;">Stock</th>
+<th style="width:10%;">Status</th>
+<th style="width:16%;">Primary Image</th>
+<th>Gallery Images</th>
+<th style="width:10%;">Edit</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for variant in variants %}
+<tr>
+
+<td>
+<div style="display:flex;align-items:center;gap:8px;">
+<span class="swatch-dot"
+style="background:{% if variant.color_code %}{{ variant.color_code }}{% else %}#e2e8f0{% endif %};">
+</span>
+<span style="font-weight:500;">{{ variant.color_name }}</span>
+</div>
+</td>
+
+<td style="font-weight:600;">₹{{ variant.price }}</td>
+
+<td>
+{% if variant.stock == 0 %}
+<span style="color:var(--red);font-weight:600;">0</span>
+{% elif variant.stock <= 5 %}
+<span style="color:var(--amber);font-weight:600;">{{ variant.stock }}</span>
+{% else %}
+<span style="color:var(--green);font-weight:600;">{{ variant.stock }}</span>
+{% endif %}
+</td>
+
+<td>
+<span class="abadge {% if variant.is_available %}b-avail{% else %}b-unavail{% endif %}">
+{% if variant.is_available %}Active{% else %}Hidden{% endif %}
+</span>
+</td>
+
+<td>
+{% if variant.primary_image %}
+<img src="{{ variant.primary_image.url }}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;">
+{% else %}
+<span style="font-size:12px;color:var(--text-muted);">None</span>
+{% endif %}
+</td>
+
+<td>
+<div style="display:flex;flex-wrap:wrap;gap:6px;">
+{% for img in variant.images.all %}
+<img src="{{ img.image.url }}" style="width:44px;height:44px;border-radius:6px;object-fit:cover;">
+{% empty %}
+<span style="font-size:12px;color:var(--text-muted);">No images</span>
+{% endfor %}
+</div>
+</td>
+
+<td>
+<a href="{% url 'admin_variant_edit' variant.id %}" class="btn-action"
+style="background:var(--blue-light);color:var(--blue);border:1px solid #c7d2fe;text-decoration:none;">
+Edit
+</a>
+</td>
+
+</tr>
+{% endfor %}
+
+</tbody>
+</table>
+
+</div>
+</div>
+
+
+<!-- Pagination -->
+
+{% if variants.has_other_pages %}
+
+<div style="margin-top:16px;display:flex;gap:6px;align-items:center;">
+
+{% if variants.has_previous %}
+<a class="btn-admin" href="?page={{ variants.previous_page_number }}">Previous</a>
+{% endif %}
+
+{% for i in variants.paginator.page_range %}
+<a class="btn-admin {% if variants.number == i %}active{% endif %}"
+href="?page={{ i }}">{{ i }}</a>
+{% endfor %}
+
+{% if variants.has_next %}
+<a class="btn-admin" href="?page={{ variants.next_page_number }}">Next</a>
+{% endif %}
+
+</div>
+
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,316 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}{% if is_edit %}Edit Variant{% else %}Add Variant{% endif %}{% endblock %}
+{% block page_title %}{% if is_edit %}Edit Variant{% else %}Add Variant{% endif %}{% endblock %}
+{% block nav_products %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  .upload-btn {
+    display:inline-flex;align-items:center;gap:7px;
+    padding:8px 14px;border:1px dashed var(--border);
+    border-radius:0.25rem;font-size:13px;font-weight:500;
+    color:var(--text-2);background:#f8f9fa;cursor:pointer;transition:0.15s;
+  }
+  .upload-btn:hover { border-color:var(--blue);color:var(--blue);background:var(--blue-light); }
+  .color-preview {
+    width:36px;height:36px;border-radius:50%;
+    border:2px solid var(--border);flex-shrink:0;transition:background 0.2s;
+  }
+  .gal-thumb {
+    width:70px;height:70px;object-fit:cover;
+    border-radius:6px;border:1px solid var(--border);display:block;
+  }
+  .gal-wrap { position:relative;display:inline-block; }
+  .gal-del {
+    position:absolute;top:-5px;right:-5px;
+    width:18px;height:18px;border-radius:50%;
+    background:var(--red);color:#fff;border:none;
+    font-size:10px;cursor:pointer;display:flex;
+    align-items:center;justify-content:center;padding:0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;display:flex;align-items:center;gap:6px;">
+  <a href="{% url 'admin_product_list' %}" style="color:var(--blue);text-decoration:none;">Products</a>
+  <span>›</span>
+  <a href="{% url 'admin_product_edit' product.id %}" style="color:var(--blue);text-decoration:none;">{{ product.product_name }}</a>
+  <span>›</span>
+  <span>{% if is_edit %}Edit: {{ variant.color_name }}{% else %}Add Variant{% endif %}</span>
+</div>
+
+<div class="row">
+
+  <div class="col-md-8">
+    <div class="a-card">
+      <div class="a-card-header">
+        <div class="a-card-title">
+          {% if is_edit %}Edit Variant — {{ variant.color_name }}{% else %}New Variant for {{ product.product_name }}{% endif %}
+        </div>
+      </div>
+      <div class="a-card-body">
+
+        <!-- IMPORTANT: NO enctype="multipart/form-data"
+             All images are sent as base64 via hidden inputs filled by the crop modal -->
+        <form method="POST" action="">
+          {% csrf_token %}
+          <input type="hidden" name="primary_image" id="primaryImageData">
+
+          <!-- Color name -->
+          <div class="a-form-group">
+            <label class="a-label">Color Name <span style="color:var(--red);">*</span></label>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="color-preview" id="colorPreview"
+                    style="background:{% if is_edit and variant.color_code %}{{ variant.color_code }}{% else %}#e2e8f0{% endif %};"></span>
+              <input type="text" name="color_name" class="a-input"
+                     placeholder="e.g. Midnight Blue, Rose Gold"
+                     value="{% if is_edit %}{{ variant.color_name }}{% endif %}"
+                     required style="flex:1;">
+            </div>
+          </div>
+
+          <!-- Color code -->
+          <div class="a-form-group">
+            <label class="a-label">Color Code <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— hex, optional</span></label>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <input type="color" name="color_code" id="colorPicker"
+                     value="{% if is_edit and variant.color_code %}{{ variant.color_code }}{% else %}#e2e8f0{% endif %}"
+                     style="width:42px;height:36px;padding:2px;border:1px solid var(--border);border-radius:6px;cursor:pointer;">
+              <input type="text" id="colorCodeText" class="a-input"
+                     placeholder="#e2e8f0"
+                     value="{% if is_edit %}{{ variant.color_code }}{% endif %}"
+                     style="flex:1;font-family:monospace;">
+            </div>
+          </div>
+
+          <!-- Price + Stock -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="a-form-group">
+              <label class="a-label">Price (₹) <span style="color:var(--red);">*</span></label>
+              <input type="number" name="price" class="a-input" min="0"
+                     value="{% if is_edit %}{{ variant.price }}{% endif %}" required>
+            </div>
+            <div class="a-form-group">
+              <label class="a-label">Stock</label>
+              <input type="number" name="stock" class="a-input" min="0"
+                     value="{% if is_edit %}{{ variant.stock }}{% else %}0{% endif %}">
+            </div>
+          </div>
+
+          <!-- Primary image with crop -->
+          <div class="a-form-group">
+            <label class="a-label">Primary Image <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— main product photo</span></label>
+            <div id="primaryPreviewBox"
+                 style="{% if not is_edit or not variant.primary_image %}display:none;{% endif %}margin-bottom:8px;">
+              <img id="primaryPreviewImg"
+                   src="{% if is_edit and variant.primary_image %}{{ variant.primary_image.url }}{% endif %}"
+                   style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
+            </div>
+            <label class="upload-btn" for="primaryFileInput">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              {% if is_edit and variant.primary_image %}Change Primary Image{% else %}Choose & Crop Primary Image{% endif %}
+            </label>
+            <input type="file" id="primaryFileInput" accept="image/*" style="display:none;"
+                   onchange="openCropModal(event,'primaryImageData','primaryPreviewImg',1);
+                             document.getElementById('primaryPreviewBox').style.display='block';">
+          </div>
+
+          <!-- Gallery images -->
+          <div class="a-form-group">
+            <label class="a-label">Gallery Images <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— additional photos</span></label>
+
+            <!-- Existing images (edit mode) — delete uses standalone form OUTSIDE main form -->
+            {% if is_edit %}
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+              {% for img in variant.images.all %}
+              <div class="gal-wrap">
+                <img src="{{ img.image.url }}" class="gal-thumb">
+                <button type="button" class="gal-del"
+                        onclick="deleteGalleryImage('{% url 'admin_variant_image_delete' img.id %}')"
+                        title="Remove">✕</button>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- New gallery images selected in this session -->
+            <div id="newGalleryWrap" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"></div>
+
+            <!-- Hidden inputs for new gallery base64 data (gallery_image_0, gallery_image_1 ...) -->
+            <div id="galleryHiddenInputs"></div>
+
+            <label class="upload-btn" for="galleryFileInput">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add Gallery Image
+            </label>
+            <input type="file" id="galleryFileInput" accept="image/*" style="display:none;"
+                   onchange="addGalleryImage(this)">
+          </div>
+
+          <!-- Description override -->
+          <div class="a-form-group">
+            <label class="a-label">Description Override <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— leave empty to use product description</span></label>
+            <textarea name="description_override" class="a-input" rows="3"
+                      style="resize:vertical;">{% if is_edit %}{{ variant.description_override }}{% endif %}</textarea>
+          </div>
+
+          <!-- Available -->
+          <div class="a-form-group">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text-2);">
+              <input type="checkbox" name="is_available"
+                     {% if not is_edit or variant.is_available %}checked{% endif %}
+                     style="accent-color:var(--blue);width:16px;height:16px;">
+              Visible in store
+            </label>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:8px;">
+            <button type="submit" class="btn-admin" style="padding:9px 24px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              {% if is_edit %}Save Changes{% else %}Add Variant{% endif %}
+            </button>
+            <a href="{% url 'admin_product_edit' product.id %}"
+               style="display:inline-flex;align-items:center;padding:9px 18px;
+                      border:1px solid var(--border);border-radius:0.25rem;
+                      font-size:13.5px;color:var(--text-2);text-decoration:none;">
+              Cancel
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Product info -->
+  <div class="col-md-4">
+    <div class="a-card">
+      <div class="a-card-header"><div class="a-card-title">Product Info</div></div>
+      <div class="a-card-body" style="font-size:13px;">
+        <div style="font-weight:600;color:var(--text);font-size:14px;margin-bottom:4px;">{{ product.product_name }}</div>
+        {% if product.brand %}
+        <div style="color:var(--text-muted);margin-bottom:8px;">{{ product.brand.brand_name }}</div>
+        {% endif %}
+        {% for cat in product.category.all %}
+          <span class="abadge ab-staff" style="margin:1px 2px;">{{ cat.category_name }}</span>
+        {% endfor %}
+        {% if product.variants.count > 0 %}
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+          <div style="color:var(--text-muted);margin-bottom:8px;font-size:12px;">
+            {{ product.variants.count }} variant{{ product.variants.count|pluralize }} added
+          </div>
+          {% for v in product.variants.all %}
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:12.5px;">
+            <span style="width:12px;height:12px;border-radius:50%;flex-shrink:0;
+                         background:{% if v.color_code %}{{ v.color_code }}{% else %}#e2e8f0{% endif %};
+                         border:1px solid var(--border);display:inline-block;"></span>
+            {{ v.color_name }} — ₹{{ v.price }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Standalone delete form — OUTSIDE main form, no nesting -->
+<form method="POST" id="deleteGalleryForm" action="" style="display:none;">
+  {% csrf_token %}
+</form>
+
+{% include 'includes/image_crop_modal.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Color picker sync ── */
+const picker  = document.getElementById('colorPicker');
+const textBox = document.getElementById('colorCodeText');
+const preview = document.getElementById('colorPreview');
+
+function syncColor(hex) {
+  preview.style.background = hex;
+  picker.value  = hex;
+  textBox.value = hex;
+}
+picker.addEventListener('input',  function() { syncColor(this.value); });
+textBox.addEventListener('input', function() {
+  const val = this.value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+    syncColor(val);
+  } else {
+    preview.style.background = '#e2e8f0';
+    picker.value = val;
+  }
+});
+
+/* ── Gallery images ── */
+let galIdx = 0;
+
+function addGalleryImage(fileInput) {
+  const file = fileInput.files[0];
+  if (!file) return;
+  fileInput.value = ''; // reset so same file can be picked again
+
+  const myIdx    = galIdx++;
+  const hiddenId = 'gallery_image_' + myIdx;
+  const prevId   = 'galPrev_' + myIdx;
+
+  // Create hidden input
+  const hidden   = document.createElement('input');
+  hidden.type    = 'hidden';
+  hidden.name    = hiddenId;
+  hidden.id      = hiddenId;
+  document.getElementById('galleryHiddenInputs').appendChild(hidden);
+
+  // Create preview thumb (hidden until crop confirms)
+  const wrap = document.createElement('div');
+  wrap.className = 'gal-wrap';
+  wrap.id = 'galwrap_' + myIdx;
+  wrap.style.display = 'none';
+  wrap.innerHTML = `
+    <img id="${prevId}" src="" class="gal-thumb">
+    <button type="button" class="gal-del" onclick="removeGallery(${myIdx})" title="Remove">✕</button>
+  `;
+  document.getElementById('newGalleryWrap').appendChild(wrap);
+
+  // Open crop modal for this image
+  // We simulate the event object that openCropModal expects
+  const fakeEvent = { target: { files: [file], value: '' } };
+  openCropModal(fakeEvent, hiddenId, prevId, 1);
+
+  // Show the thumb wrapper after crop confirms (poll for hidden input value)
+  const poll = setInterval(function() {
+    if (document.getElementById(hiddenId) && document.getElementById(hiddenId).value) {
+      document.getElementById('galwrap_' + myIdx).style.display = 'inline-block';
+      clearInterval(poll);
+    }
+  }, 200);
+}
+
+function deleteGalleryImage(url) {
+  var form = document.getElementById('deleteGalleryForm');
+  form.action = url;
+  form.style.display = 'block';
+  form.submit();
+}
+
+function removeGallery(idx) {
+  const wrap = document.getElementById('galwrap_' + idx);
+  if (wrap) wrap.remove();
+  const inp = document.getElementById('gallery_image_' + idx);
+  if (inp) inp.value = ''; // clear the data so view ignores it
+}
+</script>
+{% endblock %}

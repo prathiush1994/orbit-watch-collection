@@ -13,6 +13,9 @@ urlpatterns = [
     # nested_admin URLs — MUST be in this file, not in store/urls.py
     path('nested_admin/', include('nested_admin.urls')),
 
+    # Custom admin panel
+    path('adminpanel/', include('adminpanel.urls')),
+
     # Your app URLs
     path('', views.home, name='home'),
     path('store/', include('store.urls')),
@@ -21,6 +24,6 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls')),
 
     # allauth
-    path('accounts/', include('allauth.urls')),
+    path('auth/', include('allauth.urls')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

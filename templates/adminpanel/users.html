@@ -72,12 +72,6 @@
           </td>
           <td>
             <div style="display:flex;align-items:center;gap:9px;">
-              {% if user.profile_photo %}
-                <img src="{{ user.profile_photo.url }}"
-                     style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid #E2E8F0;">
-              {% else %}
-                <div class="ua">{{ user.first_name|first|upper }}</div>
-              {% endif %}
               <span style="font-weight:500;color:#0F172A;">{{ user.get_full_name }}</span>
             </div>
           </td>

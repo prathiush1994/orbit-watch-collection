@@ -239,7 +239,7 @@
     <a href="{% url 'admin_dashboard' %}" class="s-link {% block nav_dashboard %}{% endblock %}">
       <i class="fas fa-th-large"></i> Dashboard
     </a>
-    <a href="#" class="s-link {% block nav_products %}{% endblock %}">
+    <a href="{% url 'admin_product_list' %}" class="s-link {% block nav_products %}{% endblock %}">
       <i class="fas fa-box"></i> Products
     </a>
     <a href="#" class="s-link {% block nav_orders %}{% endblock %}">
@@ -251,13 +251,13 @@
     <a href="#" class="s-link {% block nav_sales %}{% endblock %}">
       <i class="fas fa-chart-bar"></i> Sales Report
     </a>
-    <a href="#" class="s-link {% block nav_category %}{% endblock %}">
+    <a href="{% url 'admin_category_list' %}" class="s-link {% block nav_category %}{% endblock %}">
       <i class="fas fa-list"></i> Category
     </a>
     <a href="#" class="s-link {% block nav_coupons %}{% endblock %}">
       <i class="fas fa-tag"></i> Coupons
     </a>
-    <a href="#" class="s-link {% block nav_brands %}{% endblock %}">
+    <a href="{% url 'admin_brand_list' %}" class="s-link {% block nav_brands %}{% endblock %}">
       <i class="fas fa-award"></i> Brand
     </a>
     <a href="#" class="s-link {% block nav_offers %}{% endblock %}">
