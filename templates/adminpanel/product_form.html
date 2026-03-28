@@ -50,12 +50,20 @@ value="{% if is_edit %}{{ product.product_name }}{% endif %}" required>
 
 <div class="a-form-group">
 <label class="a-label">Category</label>
-<select name="category_single" class="a-input">
-<option value="">— Select category —</option>
+<div id="categoryCheckboxes" style="display:flex;flex-wrap:wrap;gap:10px;">
 {% for cat in categories %}
-<option value="{{ cat.id }}">{{ cat.category_name }}</option>
+<label style="display:flex;align-items:center;gap:6px;font-size:13px;">
+<input type="checkbox"
+       id="catcb-{{ cat.id }}"
+       name="category"
+       value="{{ cat.id }}"
+       {% if is_edit and cat in product.category.all %}checked{% endif %}>
+{{ cat.category_name }}
+</label>
 {% endfor %}
-</select>
+</div>
+
+
 </div>
 
 </div>
@@ -158,7 +166,7 @@ Save Product
               <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
                 {% for img in variant.images.all %}
                 <div style="position:relative;display:inline-block;">
-                  <img src="{{ img.image.url }}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">
+                  <img src="{{ img.image.url }}"style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">
                 </div>
                 {% endfor %}
               </div>
@@ -221,7 +229,6 @@ Save Product
 {% block extra_js %}
 <script>
 /* Sync single-select dropdown → hidden checkbox for M2M POST */
-const catSelect = document.getElementById('categorySelect');
 if (catSelect) {
   catSelect.addEventListener('change', function () {
     // Uncheck all

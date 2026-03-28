@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     'brands',
     'carts',
     'dashboard',
+
+   # ── Core Auth Settings ─────────────────── 
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -134,23 +136,36 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# ── Session Timeout ───────────────────────────────
+SESSION_COOKIE_AGE = 2400  # 40 minutes
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# ── Email Configuration ───────────────────────────────
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'prathiush1994@gmail.com'
 EMAIL_HOST_PASSWORD = 'wrrvgdgnkorffvrh'
-DEFAULT_FROM_EMAIL = 'noreply@orbitwatch.com'
+
+DEFAULT_FROM_EMAIL = 'Orbit Watch <prathiush1994@gmail.com>'
 
 
+# ── Django Messages ───────────────────────────────────
+from django.contrib.messages import constants as message_constants
 
-from django.contrib.messages import constants as messages
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 MESSAGE_TAGS = {
-    messages.ERROR: "danger",
+    message_constants.DEBUG:   'secondary',
+    message_constants.INFO:    'info',
+    message_constants.SUCCESS: 'success',
+    message_constants.WARNING: 'warning',
+    message_constants.ERROR:   'danger',
 }
 
 
+# ── Core Auth Settings ────────────────────────────────
 SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
@@ -162,23 +177,26 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-# ── Allauth account settings ──────────────────────────
-# ACCOUNT_ADAPTER                  = 'accounts.social_adapter.MyAccountAdapter'
-ACCOUNT_LOGIN_METHODS            = {'email'}
-ACCOUNT_SIGNUP_FIELDS            = ['email*', 'password1*', 'password2*']
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-ACCOUNT_USERNAME_REQUIRED        = False
-ACCOUNT_EMAIL_REQUIRED           = True
-ACCOUNT_EMAIL_VERIFICATION       = 'none'
 
-# ── Social account settings ───────────────────────────
-#SOCIALACCOUNT_ADAPTER            = 'accounts.social_adapter.MySocialAccountAdapter'
-SOCIALACCOUNT_AUTO_SIGNUP        = True
-SOCIALACCOUNT_EMAIL_REQUIRED     = True
-SOCIALACCOUNT_QUERY_EMAIL        = True
+# ── Allauth Account Settings ──────────────────────────
+ACCOUNT_ADAPTER = 'accounts.social_adapter.MyAccountAdapter'
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+
+
+# ── Social Account Settings ───────────────────────────
+SOCIALACCOUNT_ADAPTER = 'accounts.social_adapter.MySocialAccountAdapter'
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
 
-# ── Google provider ───────────────────────────────────
+
+# ── Google Provider ───────────────────────────────────
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': ['profile', 'email'],
@@ -188,19 +206,4 @@ SOCIALACCOUNT_PROVIDERS = {
         },
         'VERIFIED_EMAIL': True,
     }
-}
-
-DEFAULT_FROM_EMAIL = 'Orbit Watch <prathiush1994@gmail.com>'
-
-
-
-MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
-
-from django.contrib.messages import constants as message_constants
-MESSAGE_TAGS = {
-    message_constants.DEBUG:   'secondary',
-    message_constants.INFO:    'info',
-    message_constants.SUCCESS: 'success',
-    message_constants.WARNING: 'warning',
-    message_constants.ERROR:   'danger',
 }

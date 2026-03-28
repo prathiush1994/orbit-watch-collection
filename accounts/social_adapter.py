@@ -7,7 +7,13 @@ class MyAccountAdapter(DefaultAccountAdapter):
     def populate_username(self, request, user):
         # We don't use username — skip this
         pass
-
+    def save_user(self, request, user, form, commit=True):
+        user = super().save_user(request, user, form, commit=False)
+        # Keep user inactive until OTP verification
+        user.is_active = False
+        if commit:
+            user.save()
+        return user
 
 class MySocialAccountAdapter(DefaultSocialAccountAdapter):
 

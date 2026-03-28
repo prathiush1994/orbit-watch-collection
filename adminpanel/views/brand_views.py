@@ -6,7 +6,7 @@ from django.views.decorators.http import require_POST
 from django.utils.text import slugify
 
 from brands.models import Brand
-from adminpanel.utils import save_cropped_image
+
 
 from .decorators import admin_required
 
@@ -34,7 +34,7 @@ def brand_list(request):
     if search_query:
         brands = brands.filter(brand_name__icontains=search_query)
 
-    paginator = Paginator(brands, 15)
+    paginator = Paginator(brands, 2)
     page      = request.GET.get('page', 1)
     brands    = paginator.get_page(page)
 
@@ -53,7 +53,7 @@ def brand_list(request):
 def brand_add(request):
     if request.method == 'POST':
         brand_name  = request.POST.get('brand_name', '').strip()
-        image_data  = request.POST.get('logo_image', '')   # base64 from crop modal
+        logo_file   = request.FILES.get('logo_image')
 
         if not brand_name:
             messages.error(request, 'Brand name is required.')
@@ -69,9 +69,8 @@ def brand_add(request):
             status     = 'active',
         )
 
-        cropped = save_cropped_image(image_data, 'photos/brands', 'brand')
-        if cropped:
-            brand.logo_image = cropped
+        if logo_file:
+            brand.logo_image = logo_file
 
         brand.save()
         messages.success(request, f'Brand "{brand_name}" added successfully.')
@@ -85,7 +84,7 @@ def brand_edit(request, brand_id):
 
     if request.method == 'POST':
         brand_name = request.POST.get('brand_name', '').strip()
-        image_data = request.POST.get('logo_image', '')
+        logo_file  = request.FILES.get('logo_image')
 
         if not brand_name:
             messages.error(request, 'Brand name is required.')
@@ -101,9 +100,8 @@ def brand_edit(request, brand_id):
         if new_slug != brand.slug:
             brand.slug = _unique_slug(brand_name, exclude_id=brand_id)
 
-        cropped = save_cropped_image(image_data, 'photos/brands', 'brand')
-        if cropped:
-            brand.logo_image = cropped
+        if logo_file:
+            brand.logo_image = logo_file
 
         brand.save()
         messages.success(request, f'Brand updated to "{brand_name}" successfully.')

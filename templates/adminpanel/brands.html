@@ -105,7 +105,7 @@
     <table class="a-table">
       <thead>
         <tr>
-          <th style="width:3%;">#</th>
+          <th style="width:2%;">#</th>
           <th style="width:10%;">Logo</th>
           <th style="width:10%;">Brand Name</th>
           <th style="width:10%;">Status</th>
@@ -147,7 +147,7 @@
               <span class="abadge ab-blocked">Inactive</span>
             {% endif %}
           </td>
-
+          
           <!-- Actions -->
           <td>
             <div style="display:flex;align-items:center;gap:6px;">
@@ -258,12 +258,11 @@
     </div>
     <div class="confirm-title">Add New Brand</div>
 
-    <form method="POST" action="{% url 'admin_brand_add' %}"
+    <form method="POST" action="{% url 'admin_brand_add' %}" enctype="multipart/form-data"
           style="width:100%;margin-top:14px;text-align:left;">
       {% csrf_token %}
 
-      <!-- base64 cropped image goes here -->
-      <input type="hidden" name="logo_image" id="addCroppedInput">
+
 
       <!-- Brand name -->
       <div class="a-form-group">
@@ -285,8 +284,9 @@
             <img id="addPreviewImg" src="" alt="Preview">
           </div>
           <button type="button"
-                  onclick="document.getElementById('addCroppedInput').value='';
-                           document.getElementById('addPreviewBox').style.display='none';"
+                  onclick="document.getElementById('addLogoFile').value='';
+                           document.getElementById('addPreviewBox').style.display='none';
+                           document.getElementById('addPreviewImg').src='';"
                   style="font-size:11.5px;color:var(--red);background:none;border:none;
                          cursor:pointer;padding:0;margin-bottom:6px;">
             ✕ Remove image
@@ -300,11 +300,10 @@
             <polyline points="17 8 12 3 7 8"/>
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
-          Choose Image to Crop
+          Choose Image
         </label>
-        <input type="file" id="addLogoFile" accept="image/*" style="display:none;"
-               onchange="openCropModal(event, 'addCroppedInput', 'addPreviewImg', 1);
-                         document.getElementById('addPreviewBox').style.display='block';">
+        <input type="file" id="addLogoFile" name="logo_image" accept="image/*" style="display:none;"
+               onchange="previewImage(event, 'addPreviewImg', 'addPreviewBox')">
       </div>
 
       <div class="confirm-btns" style="margin-top:6px;">
@@ -338,12 +337,11 @@
     </div>
     <div class="confirm-title">Edit Brand</div>
 
-    <form method="POST" id="editForm"
+    <form method="POST" id="editForm" enctype="multipart/form-data"
           style="width:100%;margin-top:14px;text-align:left;">
       {% csrf_token %}
 
-      <!-- base64 cropped image goes here; empty = keep existing logo -->
-      <input type="hidden" name="logo_image" id="editCroppedInput">
+
 
       <!-- Brand name -->
       <div class="a-form-group">
@@ -374,8 +372,8 @@
           </svg>
           Change Logo
         </label>
-        <input type="file" id="editLogoFile" accept="image/*" style="display:none;"
-               onchange="openCropModal(event, 'editCroppedInput', 'editPreviewImg', 1);
+        <input type="file" id="editLogoFile" name="logo_image" accept="image/*" style="display:none;"
+               onchange="previewImage(event, 'editPreviewImg', null);
                          document.getElementById('editPreviewWrap').style.display='flex';">
       </div>
 
@@ -410,14 +408,25 @@
   </div>
 </div>
 
-<!-- Reusable crop modal (Cropper.js) -->
-{% include 'includes/image_crop_modal.html' %}
+
 
 {% endblock %}
 
 
 {% block extra_js %}
 <script>
+/* ── Simple image preview (no crop) ── */
+function previewImage(event, imgId, boxId) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById(imgId).src = e.target.result;
+    if (boxId) document.getElementById(boxId).style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
 /* ── Brand toggle confirmation ── */
 function confirmToggle(brandId, brandName, isActive) {
   const icon  = document.getElementById('toggleIcon');
@@ -529,11 +538,10 @@ function clearSearch() {
 
 /* ── Add modal ── */
 function openAddModal() {
-  // Reset everything
-  document.getElementById('addBrandName').value    = '';
-  document.getElementById('addCroppedInput').value = '';
+  document.getElementById('addBrandName').value = '';
+  document.getElementById('addLogoFile').value  = '';
+  document.getElementById('addPreviewImg').src  = '';
   document.getElementById('addPreviewBox').style.display = 'none';
-  document.getElementById('addLogoFile').value     = '';
 
   document.getElementById('addModal').classList.add('show');
   setTimeout(() => document.getElementById('addBrandName').focus(), 120);
@@ -541,20 +549,18 @@ function openAddModal() {
 
 /* ── Edit modal ── */
 function openEditModal(brandId, brandName, logoUrl) {
-  document.getElementById('editBrandName').value    = brandName;
-  document.getElementById('editCroppedInput').value = '';
-  document.getElementById('editLogoFile').value     = '';
-  document.getElementById('editForm').action        = '/adminpanel/brands/edit/' + brandId + '/';
+  document.getElementById('editBrandName').value = brandName;
+  document.getElementById('editLogoFile').value  = '';
+  document.getElementById('editForm').action     = '/adminpanel/brands/edit/' + brandId + '/';
 
-  // Show current logo if it exists
   const wrap = document.getElementById('editPreviewWrap');
   const img  = document.getElementById('editPreviewImg');
   if (logoUrl) {
-    img.src              = logoUrl;
-    wrap.style.display   = 'flex';
+    img.src            = logoUrl;
+    wrap.style.display = 'flex';
   } else {
-    img.src              = '';
-    wrap.style.display   = 'none';
+    img.src            = '';
+    wrap.style.display = 'none';
   }
 
   document.getElementById('editModal').classList.add('show');

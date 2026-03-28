@@ -1,12 +1,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
 from django.db.models import Q, Min, Max
-from store.models import ProductVariant, Product
+from django.core.paginator import Paginator
+from store.models import ProductVariant
 from category.models import Category
 from brands.models import Brand
-from carts.models import CartItem
-from carts.views import _cart_id
-from django.core.paginator import Paginator
 
 
 def store(request, category_slug=None):
@@ -86,7 +83,6 @@ def store(request, category_slug=None):
     context = {
         'products'          : paged_variants,
         'product_count'     : variants.count(),
-        'links'             : Category.objects.all(),   # navbar — show all
         'all_categories'    : all_categories,
         'all_brands'        : all_brands,
         'price_min_bound'   : price_bounds['min'] or 0,
@@ -100,60 +96,3 @@ def store(request, category_slug=None):
     }
     return render(request, 'store/store.html', context)
 
-
-def search_suggestions(request):
-    q       = request.GET.get('q', '').strip()
-    results = []
-    if len(q) >= 2:
-        products   = Product.objects.filter(
-            product_name__icontains=q
-        ).values_list('product_name', flat=True).distinct()[:5]
-
-        categories = Category.objects.filter(
-            category_name__icontains=q,
-            status='active'
-        ).values_list('category_name', flat=True).distinct()[:3]
-
-        brands     = Brand.objects.filter(
-            brand_name__icontains=q,
-            status='active'
-        ).values_list('brand_name', flat=True).distinct()[:3]
-
-        results = list(products) + list(categories) + list(brands)
-        results = list(dict.fromkeys(results))[:8]
-
-    return JsonResponse({'suggestions': results})
-
-
-def product_detail(request, category_slug, variant_slug):
-    try:
-        variant = ProductVariant.objects.select_related(
-            'product', 'product__brand'
-        ).get(slug=variant_slug, is_available=True)
-    except ProductVariant.DoesNotExist:
-        return redirect('store')
-
-    # Redirect if brand or category is inactive
-    if variant.product.brand and variant.product.brand.status != 'active':
-        return redirect('store')
-
-    active_cats = variant.product.category.filter(status='active')
-    if not active_cats.exists():
-        return redirect('store')
-
-    gallery_images = variant.images.all()
-    all_variants   = variant.get_all_variants()
-
-    in_cart = CartItem.objects.filter(
-        cart__cart_id=_cart_id(request),
-        variant=variant
-    ).exists()
-
-    context = {
-        'variant'        : variant,
-        'product'        : variant.product,
-        'gallery_images' : gallery_images,
-        'all_variants'   : all_variants,
-        'in_cart'        : in_cart,
-    }
-    return render(request, 'store/product_detail.html', context)

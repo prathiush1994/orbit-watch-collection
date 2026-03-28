@@ -18,18 +18,11 @@
 <aside class="col-md-3">
 <div class="card">
 
-    <!--
-        All filters use a single <form> with method="GET".
-        Every checkbox, input, and radio submits together when the
-        user clicks Apply or when JS auto-submits on change.
-        The keyword ?q= is preserved as a hidden input so searching
-        and filtering work together without losing the search term.
-    -->
     <form method="GET" action="{% url 'store' %}" id="filterForm">
 
         <!-- Preserve search keyword across filter changes -->
         {% if keyword %}
-        <input type="hidden" name="q" value="{{ keyword }}">
+          <input type="hidden" name="q" value="{{ keyword }}">
         {% endif %}
 
         <!-- ── Categories ── -->
@@ -162,16 +155,13 @@
                 Reset Filters
             </a>
         </div>
-
     </form>
-
-</div>
+  </div>
 </aside>
 <!-- ========================= LEFT SIDEBAR END ========================= -->
 
 <!-- ========================= MAIN CONTENT ========================= -->
 <main class="col-md-9">
-
     <header class="border-bottom mb-4 pb-3">
         <div class="form-inline">
             <span class="mr-md-auto">
@@ -200,7 +190,6 @@
                         {% endif %}
                     </a>
                 </div>
-
                 <figcaption class="info-wrap">
                     <div class="fix-height">
                         <div class="price-wrap mt-2">
@@ -211,7 +200,6 @@
                             <small class="text-muted d-block">{{ variant.color_name }}</small>
                         </a>
                     </div>
-
                     {% if variant.is_in_stock %}
                         <a href="{{ variant.get_url }}" class="btn btn-block btn-primary">
                             View detail
@@ -231,7 +219,6 @@
         </div>
         {% endfor %}
     </div>
-
     <!-- ── Pagination — preserves all active filters ── -->
     <nav class="mt-4">
         <ul class="pagination">

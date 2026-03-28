@@ -20,7 +20,7 @@ def send_otp_email(email, otp, purpose='register'):
     message = (
         f"Hello,\n\n"
         f"Your OTP code is: {otp}\n\n"
-        f"This code will expire in 5 minutes.\n\n"
+        f"This code will expire in 2 minutes.\n\n"
         f"If you didn't request this, please ignore this email.\n\n"
         f"Orbit Watch Collection Team"
     )
@@ -33,7 +33,7 @@ def send_otp_email(email, otp, purpose='register'):
         <p>Hello,</p>
         <p>Your OTP code is:</p>
         <h1 style="color:#FF6B00;letter-spacing:8px;font-size:40px;">{otp}</h1>
-        <p style="color:#666;">This code will expire in <strong>5 minutes</strong>.</p>
+        <p style="color:#666;">This code will expire in <strong>2 minutes</strong>.</p>
         <p style="color:#999;font-size:12px;">If you didn't request this, ignore this email.</p>
         <hr style="border:1px solid #eee;">
         <p style="color:#999;font-size:12px;">Orbit Watch Collection Team</p>
