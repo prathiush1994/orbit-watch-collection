@@ -168,16 +168,18 @@
 
                 {# Wishlist toggle — same structure as store.html wl-btn #}
                 {% if user.is_authenticated %}
-                    <button id="wishlist-btn"
-                            class="btn-wishlist {% if in_wishlist %}in-wishlist{% endif %}"
-                            data-url="{% url 'toggle_wishlist' variant.id %}"
-                            data-in-wishlist="{{ in_wishlist|yesno:'true,false' }}">
-                        {# FA5 classes: fas = solid, far = outline #}
-                        <i class="{% if in_wishlist %}fas fa-heart{% else %}far fa-heart{% endif %}"></i>
-                        <span id="wishlist-btn-text">
-                            {% if in_wishlist %}In Wishlist{% else %}Add to Wishlist{% endif %}
+                    <a href="{% url 'toggle_wishlist' variant.id %}"
+                    class="btn-wishlist {% if in_wishlist %}in-wishlist{% endif %}">
+
+                        <span>
+                            {% if in_wishlist %}
+                                In Wishlist
+                            {% else %}
+                                Add to Wishlist
+                            {% endif %}
                         </span>
-                    </button>
+
+                    </a>
                 {% else %}
                     <a href="{% url 'login' %}?next={{ request.path }}" class="btn-wishlist">
                         <i class="far fa-heart"></i>
@@ -234,60 +236,5 @@ window.GALLERY_IMAGES = [
 
 <script src="{% static 'js/product-detail.js' %}"></script>
 
-<script>
-function getCookie(name) {
-    const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
-    return v ? v[2] : null;
-}
 
-// ── Wishlist toggle — identical logic to store.html ───────────────────────────
-const wishlistBtn = document.getElementById('wishlist-btn');
-if (wishlistBtn) {
-    wishlistBtn.addEventListener('click', function() {
-        const url        = this.dataset.url;
-        const icon       = this.querySelector('i');
-        const label      = this.querySelector('span');
-        const inWishlist = this.dataset.inWishlist === 'true';
-        const self       = this;
-
-        self.disabled = true;
-
-        fetch(url, {
-            method : 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken'     : getCookie('csrftoken'),
-            },
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.status === 'ok') {
-                if (data.action === 'added') {
-                    icon.className  = 'fas fa-heart';        // FA5 solid
-                    label.textContent = 'In Wishlist';
-                    self.classList.add('in-wishlist');
-                    self.dataset.inWishlist = 'true';
-                    updateWishlistBadge(1);
-                } else {
-                    icon.className  = 'far fa-heart';        // FA5 outline
-                    label.textContent = 'Add to Wishlist';
-                    self.classList.remove('in-wishlist');
-                    self.dataset.inWishlist = 'false';
-                    updateWishlistBadge(-1);
-                }
-            }
-        })
-        .finally(() => { self.disabled = false; });
-    });
-}
-
-function updateWishlistBadge(delta) {
-    const badge = document.querySelector('a[href*="wishlist"] .badge');
-    if (badge) {
-        const next = Math.max(0, (parseInt(badge.textContent) || 0) + delta);
-        badge.textContent   = next;
-        badge.style.display = next > 0 ? '' : 'none';
-    }
-}
-</script>
 {% endblock %}

@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect
 from store.models import ProductVariant
 from carts.models import CartItem
-from carts.views import _cart_id
+from carts.views import _cart_id, _get_or_create_cart
+from wishlist.models import Wishlist
 
 
 def product_detail(request, category_slug, variant_slug):
@@ -12,7 +13,6 @@ def product_detail(request, category_slug, variant_slug):
     except ProductVariant.DoesNotExist:
         return redirect('store')
 
-    # Redirect if brand or category is inactive
     if variant.product.brand and variant.product.brand.status != 'active':
         return redirect('store')
 
@@ -23,10 +23,22 @@ def product_detail(request, category_slug, variant_slug):
     gallery_images = variant.images.all()
     all_variants   = variant.get_all_variants()
 
+    # ✅ cart
+    cart = _get_or_create_cart(request)
+
     in_cart = CartItem.objects.filter(
-        cart__cart_id=_cart_id(request),
-        variant=variant
+        cart=cart,
+        variant=variant,
+        is_active=True
     ).exists()
+
+    # ✅ wishlist
+    in_wishlist = False
+    if request.user.is_authenticated:
+        in_wishlist = Wishlist.objects.filter(
+            user=request.user,
+            variant=variant
+        ).exists()
 
     context = {
         'variant'        : variant,
@@ -34,5 +46,7 @@ def product_detail(request, category_slug, variant_slug):
         'gallery_images' : gallery_images,
         'all_variants'   : all_variants,
         'in_cart'        : in_cart,
+        'in_wishlist'    : in_wishlist,
     }
+
     return render(request, 'store/product_detail.html', context)

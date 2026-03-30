@@ -449,6 +449,11 @@ p:last-child {
   display: inline-block;
   vertical-align: middle;
   position: relative;
+  margin-left: 8px !important;
+}
+.widget-header div {
+    white-space: nowrap;
+    font-size: 13px;
 }
 
 .widget-header a {
@@ -1427,3 +1432,4 @@ a[class*=card]:hover .title {
 .icon i {
     color: gray;
 }
+

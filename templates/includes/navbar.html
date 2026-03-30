@@ -72,11 +72,11 @@
 
             <!-- User + Cart -->
             <div class="col-lg-3 col-sm-6 col-8 order-2 order-lg-3">
-                <div class="d-flex justify-content-end mb-3 mb-lg-0">
+                <div class="d-flex justify-content-end align-items-center mb-3 mb-lg-0" style="gap: 10px;">
 
                     <!-- User greeting -->
                     {% if user.id is None %}
-                    <div class="widget-header">
+                    <div class="widget-header" style="white-space: nowrap;">
                         <small class="title text-muted">Welcome guest!</small>
                         <div>
                             <a href="{% url 'login' %}">Login</a>
@@ -85,7 +85,7 @@
                         </div>
                     </div>
                     {% else %}
-                    <div class="widget-header">
+                    <div class="widget-header" style="white-space: nowrap;">
                         <small class="title text-muted">Welcome {{ user.first_name }}</small>
                         <div>
                             <a href="{% url 'dashboard_profile' %}">Dashboard</a>
@@ -96,8 +96,8 @@
                     {% endif %}
 
                     <!-- Cart icon with dynamic badge -->
-                    <a href="{% url 'cart' %}" class="widget-header pl-3 ml-3">
-                        <div class="icon icon-sm rounded-circle border">
+                    <a href="{% url 'cart' %}" class="widget-header" style="flex-shrink: 0;">
+                        <div class="icon icon-xs rounded-circle border d-flex align-items-center justify-content-center">
                             <i class="fa fa-shopping-cart"></i>
                         </div>
                         {# cart_count comes from carts/context_processor.py #}
@@ -107,8 +107,8 @@
                     </a>
                     
                     <!-- Wishlist icon with dynamic badge -->
-                    <a href="{% url 'wishlist' %}" class="widget-header pl-3 ml-3">
-                        <div class="icon icon-sm rounded-circle border d-flex align-items-center justify-content-center">
+                    <a href="{% url 'wishlist' %}" class="widget-header" style="flex-shrink: 0;">
+                        <div class="icon icon-xs rounded-circle border d-flex align-items-center justify-content-center">
                             <i class="fa fa-heart"></i>
                         </div>
 

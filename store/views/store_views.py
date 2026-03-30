@@ -4,6 +4,9 @@ from django.core.paginator import Paginator
 from store.models import ProductVariant
 from category.models import Category
 from brands.models import Brand
+from wishlist.models import Wishlist
+from carts.models import CartItem
+from carts.views import _get_or_create_cart
 
 
 def store(request, category_slug=None):
@@ -33,6 +36,19 @@ def store(request, category_slug=None):
             stock__gt=0
         ).select_related('product', 'product__brand').distinct()
 
+    cart = _get_or_create_cart(request)
+
+    cart_ids = set(
+        CartItem.objects.filter(cart=cart, is_active=True)
+        .values_list('variant_id', flat=True)
+    )
+
+    wishlist_ids = set()
+    if request.user.is_authenticated:
+        wishlist_ids = set(
+            Wishlist.objects.filter(user=request.user)
+            .values_list('variant_id', flat=True)
+        )
     if category_slugs:
         variants = variants.filter(
             product__category__slug__in=category_slugs,
@@ -81,18 +97,22 @@ def store(request, category_slug=None):
     ).aggregate(min=Min('price'), max=Max('price'))
 
     context = {
-        'products'          : paged_variants,
-        'product_count'     : variants.count(),
-        'all_categories'    : all_categories,
-        'all_brands'        : all_brands,
-        'price_min_bound'   : price_bounds['min'] or 0,
-        'price_max_bound'   : price_bounds['max'] or 100000,
-        'active_categories' : category_slugs,
-        'active_brands'     : brand_slugs,
-        'active_min_price'  : min_price,
-        'active_max_price'  : max_price,
-        'active_sort'       : sort,
-        'keyword'           : keyword,
+        'products': paged_variants,
+        'product_count': variants.count(),
+        'all_categories': all_categories,
+        'all_brands': all_brands,
+        'price_min_bound': price_bounds['min'] or 0,
+        'price_max_bound': price_bounds['max'] or 100000,
+        'active_categories': category_slugs,
+        'active_brands': brand_slugs,
+        'active_min_price': min_price,
+        'active_max_price': max_price,
+        'active_sort': sort,
+        'keyword': keyword,
+
+        # ✅ ADD THIS
+        'cart_ids': cart_ids,
+        'wishlist_ids': wishlist_ids,
     }
     return render(request, 'store/store.html', context)
 
