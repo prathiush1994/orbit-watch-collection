@@ -1420,10 +1420,10 @@ a[class*=card]:hover .title {
 /*# sourceMappingURL=ui.css.map */
 
 
-
-
-
-
-
-
-
+.icon {
+    width: 40px;
+    height: 40px;
+}
+.icon i {
+    color: gray;
+}

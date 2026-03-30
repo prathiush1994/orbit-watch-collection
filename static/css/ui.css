@@ -1412,4 +1412,9 @@ a[class*=card]:hover .title {
   display: block;
 }
 
-/*# sourceMappingURL=ui.css.map */
+
+
+/* anchor relative to image only */
+.img-wrap {
+    position: relative;
+}

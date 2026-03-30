@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'brands',
     'carts',
     'dashboard',
+    'wishlist',
 
    # ── Core Auth Settings ─────────────────── 
     'allauth',
@@ -72,6 +73,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'category.context_processor.menu_links',
                 'carts.context_processors.cart_counter',
+                'wishlist.context_processors.wishlist_counter',
             ],
         },
     },

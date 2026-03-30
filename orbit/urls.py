@@ -21,6 +21,7 @@ urlpatterns = [
     path('store/', include('store.urls')),
     path('accounts/', include('accounts.urls')),
     path('carts/', include('carts.urls')),
+    path('wishlist/', include('wishlist.urls')),
     path('dashboard/', include('dashboard.urls')),
 
     # allauth

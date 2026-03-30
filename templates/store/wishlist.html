@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="section-content padding-y bg">
+<div class="container">
+
+    <h3 class="mb-4">My Wishlist
+        <span class="badge badge-secondary ml-2" style="font-size:14px;">
+            {{ wishlist_items|length }}
+        </span>
+    </h3>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if not wishlist_items %}
+        <!-- Empty state -->
+        <div class="text-center py-5">
+            <i class="fa fa-heart-o" style="font-size:60px;color:#ccc;"></i>
+            <h4 class="mt-3 text-muted">Your wishlist is empty</h4>
+            <p class="text-muted">Save items you love and come back to them anytime.</p>
+            <a href="{% url 'store' %}" class="btn btn-primary mt-2">Browse Products</a>
+        </div>
+
+    {% else %}
+<div class="card">
+
+    {% for item in wishlist_items %}
+    <div class="row align-items-center p-3 border-bottom"
+         id="wishlist-card-{{ item.variant.id }}">
+
+        <!-- IMAGE -->
+        <div class="col-md-2">
+            {% if item.variant.primary_image %}
+                <img src="{{ item.variant.primary_image.url }}"
+                     class="img-fluid"
+                     style="max-height:100px;">
+            {% else %}
+                <img src="{% static 'images/no-image.png' %}"
+                     class="img-fluid"
+                     style="max-height:100px;">
+            {% endif %}
+        </div>
+
+        <!-- DETAILS -->
+        <div class="col-md-6">
+            <h6 class="mb-1">
+                {{ item.variant.product.product_name }}
+            </h6>
+            <p class="mb-1 text-muted">
+                ₹ {{ item.variant.price }}
+            </p>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="col-md-4 text-right">
+
+            {% if item.unavailable %}
+                <button class="btn btn-secondary mb-2 w-75" disabled>
+                    Unavailable
+                </button>
+
+            {% elif item.out_of_stock %}
+                <button class="btn btn-warning mb-2 w-75" disabled>
+                    Out of Stock
+                </button>
+
+            {% else %}
+                {% if item.in_cart %}
+                    <a href="{% url 'cart' %}" class="btn btn-success mb-2 w-75">
+                        View Cart
+                    </a>
+                {% else %}
+                    <button class="btn btn-primary mb-2 w-75 move-to-cart-btn"
+                            data-url="{% url 'wishlist_add_to_cart' item.variant.id %}"
+                            data-card-id="wishlist-card-{{ item.variant.id }}">
+                        Add to Cart
+                    </button>
+                {% endif %}
+            {% endif %}
+
+            <!-- REMOVE -->
+            <button class="btn btn-dark w-75 remove-wishlist-btn"
+                    data-url="{% url 'remove_wishlist' item.variant.id %}"
+                    data-card-id="wishlist-card-{{ item.variant.id }}">
+                Remove
+            </button>
+
+        </div>
+
+    </div>
+    {% endfor %}
+
+</div>
+
+    <div class="text-center mt-3">
+        <a href="{% url 'store' %}" class="btn btn-outline-primary">
+            <i class="fa fa-arrow-left mr-1"></i> Continue Shopping
+        </a>
+    </div>
+
+    {% endif %}
+
+</div>
+</section>
+
+
+{# ─── CSRF token for AJAX ───────────────────────────────────────────────── #}
+{% block extra_js %}
+<script>
+// ── CSRF helper ──────────────────────────────────────────────────────────────
+function getCookie(name) {
+    const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+    return v ? v[2] : null;
+}
+
+// ── Show a toast-style alert ─────────────────────────────────────────────────
+function showToast(message, type) {
+    // type: 'success' | 'danger' | 'warning'
+    const div = document.createElement('div');
+    div.className = `alert alert-${type} alert-dismissible fade show`;
+    div.style.cssText = 'position:fixed;top:16px;right:16px;z-index:9999;min-width:280px;';
+    div.innerHTML = `${message}
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>`;
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 3500);
+}
+
+// ── Remove from wishlist ─────────────────────────────────────────────────────
+document.querySelectorAll('.remove-wishlist-btn, .wishlist-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const url    = this.dataset.url;
+        const cardId = this.dataset.cardId;
+
+        fetch(url, {
+            method : 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken'     : getCookie('csrftoken'),
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                // Fade out and remove the card
+                const card = document.getElementById(cardId);
+                if (card) {
+                    card.style.transition = 'opacity 0.4s';
+                    card.style.opacity    = '0';
+                    setTimeout(() => {
+                        card.remove();
+                        // If no cards left, reload to show empty state
+                        if (!document.querySelector('[id^="wishlist-card-"]')) {
+                            location.reload();
+                        }
+                    }, 400);
+                }
+            }
+        })
+        .catch(() => showToast('Something went wrong. Please try again.', 'danger'));
+    });
+});
+
+// ── Move to cart ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.move-to-cart-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const url    = this.dataset.url;
+        const cardId = this.dataset.cardId;
+        const self   = this;
+
+        // Disable button to prevent double-click
+        self.disabled = true;
+        self.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> Adding...';
+
+        fetch(url, {
+            method : 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken'     : getCookie('csrftoken'),
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                showToast(data.message, 'success');
+                // Remove the card from wishlist page (it was moved)
+                const card = document.getElementById(cardId);
+                if (card) {
+                    card.style.transition = 'opacity 0.4s';
+                    card.style.opacity    = '0';
+                    setTimeout(() => {
+                        card.remove();
+                        if (!document.querySelector('[id^="wishlist-card-"]')) {
+                            location.reload();
+                        }
+                    }, 400);
+                }
+                // Update cart counter in navbar if you have one
+                const cartCounter = document.getElementById('cart-count');
+                if (cartCounter) {
+                    cartCounter.textContent = parseInt(cartCounter.textContent || '0') + 1;
+                }
+            } else {
+                showToast(data.message, 'danger');
+                self.disabled = false;
+                self.innerHTML = '<i class="fa fa-shopping-cart mr-1"></i> Move to Cart';
+            }
+        })
+        .catch(() => {
+            showToast('Something went wrong. Please try again.', 'danger');
+            self.disabled = false;
+            self.innerHTML = '<i class="fa fa-shopping-cart mr-1"></i> Move to Cart';
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

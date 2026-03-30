@@ -179,9 +179,10 @@
     <div class="row">
         {% for variant in products %}
         <div class="col-md-4">
-            <figure class="card card-product-grid">
+            <figure class="card card-product-grid position-relative">
 
-                <div class="img-wrap">
+                <div class="img-wrap position-relative">
+
                     <a href="{{ variant.get_url }}">
                         {% if variant.primary_image %}
                             <img src="{{ variant.primary_image.url }}" alt="{{ variant }}">
@@ -189,7 +190,9 @@
                             <img src="{% static 'images/no-image.png' %}" alt="No image">
                         {% endif %}
                     </a>
+
                 </div>
+
                 <figcaption class="info-wrap">
                     <div class="fix-height">
                         <div class="price-wrap mt-2">
@@ -200,14 +203,35 @@
                             <small class="text-muted d-block">{{ variant.color_name }}</small>
                         </a>
                     </div>
+
                     {% if variant.is_in_stock %}
-                        <a href="{{ variant.get_url }}" class="btn btn-block btn-primary">
-                            View detail
-                        </a>
+
+                        <div class="d-flex">
+
+                            <!-- VIEW DETAIL -->
+                            <a href="{{ variant.get_url }}" class="btn btn-primary w-50 mr-1">
+                                View
+                            </a>
+
+                            <!-- WISHLIST -->
+                            {% if variant.id in wishlist_ids %}
+                                <button class="btn btn-secondary w-50 ml-1" disabled>
+                                    In Wishlist
+                                </button>
+                            {% else %}
+                                <a href="{% url 'toggle_wishlist' variant.id %}" class="btn btn-outline-primary w-50 ml-1">
+                                    Wishlist
+                                </a>
+                            {% endif %}
+
+                        </div>
+
                     {% else %}
+
                         <button class="btn btn-block btn-secondary" disabled>
                             Out of Stock
                         </button>
+
                     {% endif %}
                 </figcaption>
 
