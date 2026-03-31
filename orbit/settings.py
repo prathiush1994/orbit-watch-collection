@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'carts',
     'dashboard',
     'wishlist',
+    'orders',
 
    # ── Core Auth Settings ─────────────────── 
     'allauth',

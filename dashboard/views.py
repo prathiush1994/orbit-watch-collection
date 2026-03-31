@@ -6,6 +6,7 @@ from datetime import timedelta
 from accounts.models import Account
 from accounts.email_utils import generate_otp, send_otp_email
 from .models import Order, Transaction
+from accounts.models import UserAddress
 
 import base64
 import uuid
@@ -343,9 +344,11 @@ def resend_delete_account_otp(request):
 
 # ── Address (Demo) ────────────────────────────────────────────────────────────
 
+   
 @login_required(login_url='login')
 def address(request):
-    return render(request, 'dashboard/address.html')
+    addresses = UserAddress.objects.filter(user=request.user)
+    return render(request, 'dashboard/address.html', {'addresses': addresses})
 
 
 # ── Wallet (Demo) ─────────────────────────────────────────────────────────────

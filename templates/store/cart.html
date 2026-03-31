@@ -163,7 +163,7 @@
                         Checkout unavailable
                     </button>
                 {% elif user.is_authenticated %}
-                    <a href="#" class="btn btn-primary btn-block">
+                    <a href="{% url 'checkout' %}" class="btn btn-primary btn-block">
                         Checkout
                     </a>
                 {% else %}

@@ -79,3 +79,92 @@ class Account(AbstractBaseUser):
     class Meta:
         verbose_name        = 'Account'
         verbose_name_plural = 'Accounts'
+
+
+
+class UserAddress(models.Model):
+    ADDRESS_TYPE_CHOICES = (
+        ('Home',  'Home'),
+        ('Work',  'Work'),
+        ('Other', 'Other'),
+    )
+
+    user         = models.ForeignKey(
+                       'accounts.Account',
+                       on_delete=models.CASCADE,
+                       related_name='addresses'
+                   )
+    full_name    = models.CharField(max_length=100)
+    phone        = models.CharField(max_length=20)
+    address_line = models.TextField(max_length=300)
+    city         = models.CharField(max_length=100)
+    state        = models.CharField(max_length=100)
+    pincode      = models.CharField(max_length=10)
+    address_type = models.CharField(
+                       max_length=10,
+                       choices=ADDRESS_TYPE_CHOICES,
+                       default='Home'
+                   )
+    is_default   = models.BooleanField(default=False)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name        = 'User Address'
+        verbose_name_plural = 'User Addresses'
+        ordering            = ['-is_default', '-created_at']
+
+    def __str__(self):
+        return f"{self.full_name} — {self.city} ({self.address_type})"
+
+    def save(self, *args, **kwargs):
+        # If this address is being set as default,
+        # remove default from all other addresses of this user
+        if self.is_default:
+            UserAddress.objects.filter(
+                user=self.user, is_default=True
+            ).exclude(pk=self.pk).update(is_default=False)
+        super().save(*args, **kwargs)
+
+
+class UserAddress(models.Model):
+    ADDRESS_TYPE_CHOICES = (
+        ('Home',  'Home'),
+        ('Work',  'Work'),
+        ('Other', 'Other'),
+    )
+
+    user         = models.ForeignKey(
+                       'accounts.Account',
+                       on_delete=models.CASCADE,
+                       related_name='addresses'
+                   )
+    full_name    = models.CharField(max_length=100)
+    phone        = models.CharField(max_length=20)
+    address_line = models.TextField(max_length=300)
+    city         = models.CharField(max_length=100)
+    state        = models.CharField(max_length=100)
+    pincode      = models.CharField(max_length=10)
+    address_type = models.CharField(
+                       max_length=10,
+                       choices=ADDRESS_TYPE_CHOICES,
+                       default='Home'
+                   )
+    is_default   = models.BooleanField(default=False)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name        = 'User Address'
+        verbose_name_plural = 'User Addresses'
+        ordering            = ['-is_default', '-created_at']
+
+    def __str__(self):
+        return f"{self.full_name} — {self.city} ({self.address_type})"
+
+    def save(self, *args, **kwargs):
+        # If this address is being set as default,
+        # remove default from all other addresses of this user
+        if self.is_default:
+            UserAddress.objects.filter(
+                user=self.user, is_default=True
+            ).exclude(pk=self.pk).update(is_default=False)
+        super().save(*args, **kwargs)

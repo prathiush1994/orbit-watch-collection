@@ -23,7 +23,8 @@ urlpatterns = [
     path('carts/', include('carts.urls')),
     path('wishlist/', include('wishlist.urls')),
     path('dashboard/', include('dashboard.urls')),
-
+    path('orders/', include('orders.urls')),
+    
     # allauth
     path('auth/', include('allauth.urls')),
 

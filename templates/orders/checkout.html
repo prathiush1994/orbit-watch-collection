@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="section-content padding-y bg">
+<div class="container">
+
+    <h3 class="mb-4 font-weight-bold">Billing Details</h3>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST" action="{% url 'place_order' %}" id="checkoutForm">
+        {% csrf_token %}
+
+        <div class="row">
+
+            <!-- ═══════════════════════════════════════════════
+                 LEFT COLUMN
+            ════════════════════════════════════════════════ -->
+            <div class="col-lg-6">
+
+                <!-- ── DELIVERY ADDRESS ─────────────────────── -->
+                <h5 class="font-weight-bold mb-3">Delivery Address</h5>
+
+                {% if addresses %}
+                    {% for address in addresses %}
+                    <div class="border rounded p-3 mb-3"
+                         style="{% if address.is_default %}border-color:#3167eb !important;{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-start">
+                                <input type="radio"
+                                       name="address_id"
+                                       value="{{ address.id }}"
+                                       class="mt-1 mr-3"
+                                       {% if address.is_default %}checked{% endif %}
+                                       required>
+                                <div>
+                                    <strong>{{ address.full_name }}</strong>
+                                    {% if address.is_default %}
+                                        <span class="badge badge-primary ml-2"
+                                              style="font-size:10px;">Default</span>
+                                    {% endif %}
+                                    <p class="mb-0 text-muted" style="font-size:14px; line-height:1.6;">
+                                        {{ address.address_line }}<br>
+                                        {{ address.city }}, {{ address.state }} — {{ address.pincode }}<br>
+                                        Contact : +91 {{ address.phone }}
+                                    </p>
+                                </div>
+                            </div>
+                            <a href="{% url 'edit_address' address.id %}?next=checkout"
+                               class="btn btn-sm btn-outline-secondary ml-2 flex-shrink-0">
+                                <i class="fa fa-edit"></i> Edit
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-warning">
+                        No saved addresses. Please add one to continue.
+                    </div>
+                {% endif %}
+
+                <!-- Add New Address -->
+                <div class="text-right mb-5">
+                    <a href="{% url 'add_address' %}?next=checkout"
+                       class="btn btn-primary px-4">
+                        Add New Address
+                    </a>
+                </div>
+
+                <!-- ── PAYMENT METHODS ───────────────────────── -->
+                <h5 class="font-weight-bold mb-2">Payment Methods</h5>
+                <hr>
+                <p class="text-muted mb-3">Select any payment methods</p>
+
+                <!-- Razorpay — disabled -->
+                <div class="d-flex align-items-center mb-3" style="opacity:0.45; cursor:not-allowed;">
+                    <input type="radio" name="payment_method" value="RAZORPAY"
+                           disabled class="mr-3">
+                    <label class="mb-0">
+                        Razor Pay &nbsp;
+                        <span class="badge badge-secondary" style="font-size:10px;">Coming Soon</span>
+                    </label>
+                </div>
+
+                <!-- Cash on Delivery — active -->
+                <div class="d-flex align-items-center mb-3">
+                    <input type="radio" name="payment_method" value="COD"
+                           checked class="mr-3">
+                    <label class="mb-0 font-weight-bold">Cash on delivery</label>
+                </div>
+
+            </div>
+            <!-- END LEFT COLUMN -->
+
+
+            <!-- ═══════════════════════════════════════════════
+                 RIGHT COLUMN — ORDER SUMMARY
+            ════════════════════════════════════════════════ -->
+            <div class="col-lg-6">
+
+                <!-- Cart items -->
+                {% for item in cart_items %}
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                    <div class="d-flex align-items-center">
+                        {% if item.variant.primary_image %}
+                            <img src="{{ item.variant.primary_image.url }}"
+                                 alt="{{ item.variant.product.product_name }}"
+                                 style="width:60px; height:60px; object-fit:cover;
+                                        border-radius:6px; border:1px solid #dee2e6;"
+                                 class="mr-3">
+                        {% endif %}
+                        <div>
+                            <div class="font-weight-bold">
+                                {{ item.variant.product.product_name }}
+                            </div>
+                            <small class="text-muted">
+                                {{ item.variant.color_name }} &nbsp;|&nbsp; Qty: {{ item.quantity }}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="font-weight-bold">₹{{ item.sub_total }}</div>
+                </div>
+                {% endfor %}
+
+                <hr>
+
+                <!-- Subtotal -->
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Subtotal:</span>
+                    <span>₹{{ total }}</span>
+                </div>
+
+                <!-- Delivery -->
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Delivery fee</span>
+                    <span class="text-success">Free</span>
+                </div>
+
+                <!-- Tax -->
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">GST - 18% &nbsp; Tax</span>
+                    <span>₹{{ tax }}</span>
+                </div>
+
+                <hr>
+
+                <!-- Grand Total -->
+                <div class="d-flex justify-content-between mb-4">
+                    <span class="font-weight-bold" style="font-size:1rem;">Total Payment</span>
+                    <span class="font-weight-bold" style="font-size:1.15rem;">₹{{ grand_total }}</span>
+                </div>
+
+                <!-- Coupon — disabled -->
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control"
+                           placeholder="Coupon Code" disabled>
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="button" disabled>
+                            Apply Coupon
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Wallet — disabled -->
+                <div class="input-group mb-4">
+                    <input type="text" class="form-control"
+                           placeholder="Enter the amount to redeem" disabled>
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="button" disabled>
+                            Pay Using Wallet
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Place Order -->
+                <button type="submit"
+                        class="btn btn-primary btn-block py-3"
+                        style="font-size:1rem; font-weight:bold;"
+                        {% if not addresses %}disabled title="Add an address first"{% endif %}>
+                    Place Order
+                </button>
+
+                {% if not addresses %}
+                <p class="text-danger text-center small mt-2">
+                    Please add a delivery address to place your order.
+                </p>
+                {% endif %}
+
+            </div>
+            <!-- END RIGHT COLUMN -->
+
+        </div><!-- /row -->
+    </form>
+
+</div><!-- /container -->
+</section>
+{% endblock %}
