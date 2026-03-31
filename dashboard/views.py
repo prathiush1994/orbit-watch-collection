@@ -5,9 +5,8 @@ from django.utils import timezone
 from datetime import timedelta
 from accounts.models import Account
 from accounts.email_utils import generate_otp, send_otp_email
-from .models import Order, Transaction
 from accounts.models import UserAddress
-
+from orders.models import Order, OrderProduct, Payment
 import base64
 import uuid
 from django.core.files.base import ContentFile
@@ -166,24 +165,35 @@ def resend_change_email_otp(request):
 
 @login_required(login_url='login')
 def orders(request):
-    user_orders = Order.objects.filter(user=request.user).prefetch_related('items__product')
-    return render(request, 'dashboard/orders.html', {'orders': user_orders})
+    """Redirects to the orders app my_orders view."""
+    return redirect('my_orders')
 
 
 # ── Transactions ──────────────────────────────────────────────────────────────
 
 @login_required(login_url='login')
 def transactions(request):
-    user_transactions = Transaction.objects.filter(user=request.user)
-    return render(request, 'dashboard/transactions.html', {'transactions': user_transactions})
+    """Shows all payments made by this user."""
+    from orders.models import Payment
+    user_payments = Payment.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'dashboard/transactions.html', {
+        'payments': user_payments,
+    })
 
 
 # ── Returns ───────────────────────────────────────────────────────────────────
 
 @login_required(login_url='login')
 def returns(request):
-    returned_orders = Order.objects.filter(user=request.user, status__in=['returned', 'cancelled'])
-    return render(request, 'dashboard/returns.html', {'orders': returned_orders})
+    """Shows orders with return/cancelled status."""
+    from orders.models import Order
+    returned_orders = Order.objects.filter(
+        user=request.user,
+        status__in=['Return Requested', 'Returned', 'Cancelled']
+    )
+    return render(request, 'dashboard/returns.html', {
+        'orders': returned_orders,
+    })
 
 
 # ── Change Password ───────────────────────────────────────────────────────────

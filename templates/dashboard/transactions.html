@@ -7,87 +7,109 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <strong>Transactions</strong>
-        <span class="badge badge-secondary">4 Transactions</span>
+        <span class="badge badge-secondary">{{ payments.count }} Records</span>
     </div>
 
-    <!-- Summary Cards -->
+    {% if payments %}
+
+    <!-- Summary -->
     <div class="card-body border-bottom">
         <div class="row text-center">
             <div class="col-4">
                 <div style="background:#fff8f3;border-radius:8px;padding:15px;">
-                    <div style="font-size:22px;font-weight:700;color:#FF6B00;">₹66,194</div>
-                    <small class="text-muted">Total Spent</small>
+                    <div style="font-size:20px;font-weight:700;color:#FF6B00;">
+                        ₹{% for p in payments %}{% if forloop.first %}{{ p.amount_paid }}{% endif %}{% endfor %}
+                    </div>
+                    <small class="text-muted">Latest Payment</small>
                 </div>
             </div>
             <div class="col-4">
                 <div style="background:#f3fff5;border-radius:8px;padding:15px;">
-                    <div style="font-size:22px;font-weight:700;color:#00b517;">3</div>
-                    <small class="text-muted">Successful</small>
+                    <div style="font-size:20px;font-weight:700;color:#00b517;">
+                        {{ payments.count }}
+                    </div>
+                    <small class="text-muted">Total Orders</small>
                 </div>
             </div>
             <div class="col-4">
-                <div style="background:#fff3f3;border-radius:8px;padding:15px;">
-                    <div style="font-size:22px;font-weight:700;color:#fa3434;">1</div>
-                    <small class="text-muted">Refunded</small>
+                <div style="background:#f0f4ff;border-radius:8px;padding:15px;">
+                    <div style="font-size:20px;font-weight:700;color:#3167eb;">
+                        COD
+                    </div>
+                    <small class="text-muted">Payment Method</small>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Table -->
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead class="thead-light">
                     <tr>
-                        <th>Transaction ID</th>
-                        <th>Order</th>
+                        <th>Order ID</th>
                         <th>Method</th>
                         <th>Amount</th>
-                        <th>Type</th>
                         <th>Status</th>
                         <th>Date</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
+                    {% for payment in payments %}
                     <tr>
-                        <td><small class="text-muted">TXN-98712345</small></td>
-                        <td>#ORB-20240301</td>
-                        <td><i class="fa fa-university mr-1 text-muted"></i> UPI</td>
-                        <td>₹ 21,597</td>
-                        <td><span class="badge badge-info">Payment</span></td>
-                        <td><span class="badge badge-success">Success</span></td>
-                        <td>01 Mar 2024</td>
+                        <td>
+                            {% if payment.order_set.first %}
+                                <strong style="color:#3167eb;">
+                                    #{{ payment.order_set.first.order_number }}
+                                </strong>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <i class="fa fa-truck mr-1 text-muted"></i>
+                            {{ payment.payment_method }}
+                        </td>
+                        <td><strong>₹{{ payment.amount_paid }}</strong></td>
+                        <td>
+                            {% if payment.status == 'Completed' %}
+                                <span class="badge badge-success">Completed</span>
+                            {% elif payment.status == 'Pending' %}
+                                <span class="badge badge-warning text-dark">Pending</span>
+                            {% elif payment.status == 'Failed' %}
+                                <span class="badge badge-danger">Failed</span>
+                            {% elif payment.status == 'Refunded' %}
+                                <span class="badge badge-info">Refunded</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted" style="font-size:13px;">
+                            {{ payment.created_at|date:"d M Y" }}
+                        </td>
+                        <td>
+                            {% if payment.order_set.first %}
+                            <a href="{% url 'order_detail' payment.order_set.first.order_number %}"
+                               class="btn btn-xs btn-outline-primary"
+                               style="font-size:11px;padding:2px 8px;">
+                                View Order
+                            </a>
+                            {% endif %}
+                        </td>
                     </tr>
-                    <tr>
-                        <td><small class="text-muted">TXN-98706621</small></td>
-                        <td>#ORB-20240215</td>
-                        <td><i class="fa fa-credit-card mr-1 text-muted"></i> Card</td>
-                        <td>₹ 24,500</td>
-                        <td><span class="badge badge-info">Payment</span></td>
-                        <td><span class="badge badge-success">Success</span></td>
-                        <td>15 Feb 2024</td>
-                    </tr>
-                    <tr>
-                        <td><small class="text-muted">TXN-98693312</small></td>
-                        <td>#ORB-20240110</td>
-                        <td><i class="fa fa-university mr-1 text-muted"></i> Net Banking</td>
-                        <td>₹ 20,097</td>
-                        <td><span class="badge badge-warning">Refund</span></td>
-                        <td><span class="badge badge-success">Success</span></td>
-                        <td>12 Jan 2024</td>
-                    </tr>
-                    <tr>
-                        <td><small class="text-muted">TXN-98681004</small></td>
-                        <td>—</td>
-                        <td><i class="fa fa-wallet mr-1 text-muted"></i> Wallet</td>
-                        <td>₹ 500</td>
-                        <td><span class="badge badge-info">Payment</span></td>
-                        <td><span class="badge badge-danger">Failed</span></td>
-                        <td>05 Jan 2024</td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
+
+    {% else %}
+    <div class="card-body text-center py-5">
+        <i class="fa fa-credit-card" style="font-size:48px;color:#dee2e6;"></i>
+        <p class="text-muted mt-3">No transactions yet.</p>
+        <a href="{% url 'store' %}" class="btn btn-primary btn-sm">Start Shopping</a>
+    </div>
+    {% endif %}
+
 </div>
 {% endblock %}

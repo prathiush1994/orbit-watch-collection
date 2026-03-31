@@ -6,108 +6,91 @@
 {% block dashboard_content %}
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <strong>Returns &amp; Refunds</strong>
-        <span class="badge badge-secondary">2 Records</span>
+        <strong>Returns &amp; Cancellations</strong>
+        <span class="badge badge-secondary">{{ orders.count }} Records</span>
     </div>
+
     <div class="card-body p-0">
 
-        <!-- Return 1 -->
+        {% if orders %}
+        {% for order in orders %}
         <div class="border-bottom p-3">
+
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div>
-                    <strong>Order #ORB-20240110</strong>
-                    <span class="text-muted ml-2" style="font-size:13px;">10 Jan 2024</span>
+                    <strong style="color:#3167eb;">#{{ order.order_number }}</strong>
+                    <span class="text-muted ml-2" style="font-size:13px;">
+                        {{ order.created_at|date:"d M Y" }}
+                    </span>
                 </div>
-                <span class="badge badge-warning">Refunded</span>
+                {% if order.status == 'Cancelled' %}
+                    <span class="badge badge-danger">Cancelled</span>
+                {% elif order.status == 'Return Requested' %}
+                    <span class="badge badge-warning text-dark">Return Requested</span>
+                {% elif order.status == 'Returned' %}
+                    <span class="badge badge-secondary">Returned</span>
+                {% endif %}
             </div>
 
+            <!-- Items -->
             <div class="table-responsive">
                 <table class="table table-sm mb-2">
+                    {% for item in order.items.all %}
                     <tr>
                         <td width="60">
-                            <div style="width:50px;height:50px;background:#f0f0f0;border-radius:4px;
-                                        display:flex;align-items:center;justify-content:center;">
-                                <i class="fa fa-clock text-muted"></i>
-                            </div>
+                            {% if item.variant and item.variant.primary_image %}
+                                <img src="{{ item.variant.primary_image.url }}"
+                                     style="width:45px;height:45px;object-fit:cover;
+                                            border-radius:4px;border:1px solid #dee2e6;">
+                            {% else %}
+                                <div style="width:45px;height:45px;background:#f0f0f0;
+                                            border-radius:4px;display:flex;
+                                            align-items:center;justify-content:center;">
+                                    <i class="fa fa-clock text-muted"></i>
+                                </div>
+                            {% endif %}
                         </td>
                         <td>
-                            <p class="mb-0 font-weight-bold">Fossil Gen 6 Smartwatch</p>
-                            <small class="text-muted">Qty: 2</small>
+                            <p class="mb-0 font-weight-bold" style="font-size:14px;">
+                                {{ item.product_name }}
+                            </p>
+                            <small class="text-muted">
+                                {{ item.color_name }} | Qty: {{ item.quantity }}
+                            </small>
                         </td>
-                        <td class="text-right">₹ 19,998</td>
+                        <td class="text-right align-middle">
+                            ₹{{ item.sub_total }}
+                        </td>
                     </tr>
+                    {% endfor %}
                 </table>
             </div>
 
-            <div class="row">
-                <div class="col-md-6">
-                    <small class="text-muted"><strong>Reason:</strong> Changed mind / Found better price</small><br>
-                    <small class="text-muted"><strong>Requested:</strong> 11 Jan 2024</small>
-                </div>
-                <div class="col-md-6 text-right">
-                    <small class="text-muted">Refund Method: Original Payment (Net Banking)</small><br>
-                    <small class="text-success"><i class="fa fa-check-circle mr-1"></i> Refund credited on 14 Jan 2024</small><br>
-                    <strong style="color:#FF6B00;">Refund: ₹20,097</strong>
-                </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    <strong>Total:</strong> ₹{{ order.order_total }}
+                    &nbsp;|&nbsp;
+                    <strong>Payment:</strong>
+                    {{ order.payment.payment_method|default:"COD" }}
+                </small>
+                <a href="{% url 'order_detail' order.order_number %}"
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="fa fa-eye mr-1"></i> View Details
+                </a>
             </div>
+
         </div>
+        {% endfor %}
 
-        <!-- Return 2 - In Progress -->
-        <div class="p-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <div>
-                    <strong>Order #ORB-20231205</strong>
-                    <span class="text-muted ml-2" style="font-size:13px;">05 Dec 2023</span>
-                </div>
-                <span class="badge badge-secondary">Return Requested</span>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-sm mb-2">
-                    <tr>
-                        <td width="60">
-                            <div style="width:50px;height:50px;background:#f0f0f0;border-radius:4px;
-                                        display:flex;align-items:center;justify-content:center;">
-                                <i class="fa fa-clock text-muted"></i>
-                            </div>
-                        </td>
-                        <td>
-                            <p class="mb-0 font-weight-bold">Casio Edifice Chronograph</p>
-                            <small class="text-muted">Qty: 1</small>
-                        </td>
-                        <td class="text-right">₹ 6,500</td>
-                    </tr>
-                </table>
-            </div>
-
-            <!-- Return Progress -->
-            <div class="mb-2">
-                <div class="d-flex justify-content-between mb-1">
-                    <small class="text-muted">Return Progress</small>
-                    <small class="text-muted">Step 2 of 4</small>
-                </div>
-                <div style="background:#eee;border-radius:4px;height:6px;">
-                    <div style="background:#FF6B00;width:50%;height:6px;border-radius:4px;"></div>
-                </div>
-                <div class="d-flex justify-content-between mt-1">
-                    <small style="color:#FF6B00;">✓ Requested</small>
-                    <small style="color:#FF6B00;">✓ Approved</small>
-                    <small class="text-muted">Pickup</small>
-                    <small class="text-muted">Refunded</small>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <small class="text-muted"><strong>Reason:</strong> Product defective / Not as described</small><br>
-                    <small class="text-muted"><strong>Requested:</strong> 06 Dec 2023</small>
-                </div>
-                <div class="col-md-6 text-right">
-                    <small class="text-muted">Estimated Refund: ₹6,500</small><br>
-                    <small class="text-warning"><i class="fa fa-clock mr-1"></i> Pickup scheduled: 10 Dec 2023</small>
-                </div>
-            </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fa fa-undo" style="font-size:48px;color:#dee2e6;"></i>
+            <p class="text-muted mt-3">No returns or cancellations yet.</p>
+            <a href="{% url 'my_orders' %}" class="btn btn-outline-primary btn-sm mt-1">
+                View My Orders
+            </a>
         </div>
+        {% endif %}
 
     </div>
 </div>
