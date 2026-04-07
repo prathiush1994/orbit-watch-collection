@@ -242,8 +242,8 @@
     <a href="{% url 'admin_product_list' %}" class="s-link {% block nav_products %}{% endblock %}">
       <i class="fas fa-box"></i> Products
     </a>
-    <a href="#" class="s-link {% block nav_orders %}{% endblock %}">
-      <i class="fas fa-file-alt"></i> Order Lists
+    <a href="{% url 'admin_order_list' %}" class="s-link {% block nav_orders %}{% endblock %}">
+      <i class="fas fa-file-alt"></i> Order Management
     </a>
     <a href="{% url 'admin_user_list' %}" class="s-link {% block nav_users %}{% endblock %}">
       <i class="fas fa-users"></i> Users

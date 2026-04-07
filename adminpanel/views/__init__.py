@@ -8,3 +8,4 @@ from .product_views   import (
     product_list, product_add, product_edit, product_suggestions,
     variant_add, variant_edit, variant_image_add, variant_image_delete, product_variants
 )
+from .admin_order_views import *

@@ -1,0 +1,276 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% load static %}
+
+{% block title %}Order #{{ order.order_number }}{% endblock %}
+{% block page_title %}Order Detail{% endblock %}
+{% block nav_orders %}active{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════════════ -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h5 class="mb-0" style="font-weight:700;">
+      Order <span style="color:#3167eb;">#{{ order.order_number }}</span>
+    </h5>
+    <small class="text-muted">
+      Placed on {{ order.created_at|date:"d M Y, h:i A" }}
+      &nbsp;·&nbsp; {{ order.user.email|default:"—" }}
+    </small>
+  </div>
+  <a href="{% url 'admin_order_list' %}"
+     style="background:#f0f0f0; color:#545454; padding:7px 16px;
+            text-decoration:none; border-radius:0.25rem;
+            display:inline-flex; align-items:center; gap:6px; font-size:13.5px; font-weight:500;">
+    <i class="fas fa-arrow-left"></i> Back to Orders
+  </a>
+</div>
+
+
+<div class="row">
+
+  <!-- ════════════════════════════
+       LEFT  col-8
+  ════════════════════════════ -->
+  <div class="col-md-8">
+
+    <!-- Current Status (read-only) -->
+    <div class="a-card mb-3">
+      <div class="a-card-body py-3 d-flex align-items-center justify-content-between">
+        <span style="font-size:13.5px; color:#545454;">Current Status:</span>
+        {% if order.status == 'New' %}
+          <span class="abadge ab-staff" style="padding:6px 16px;">New</span>
+        {% elif order.status == 'Accepted' %}
+          <span class="abadge" style="background:#e8edff;color:#3167eb;padding:6px 16px;">Accepted</span>
+        {% elif order.status == 'Shipped' %}
+          <span class="abadge ab-processing" style="padding:6px 16px;">Shipped</span>
+        {% elif order.status == 'Delivered' %}
+          <span class="abadge ab-completed" style="padding:6px 16px;">Delivered</span>
+        {% elif order.status == 'Cancelled' %}
+          <span class="abadge ab-rejected" style="padding:6px 16px;">Cancelled</span>
+        {% elif order.status == 'Return Requested' %}
+          <span class="abadge ab-pending" style="padding:6px 16px;">Return Requested</span>
+        {% elif order.status == 'Returned' %}
+          <span class="abadge" style="background:#f0f0f0;color:#545454;padding:6px 16px;">Returned</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Update Status -->
+    <div class="a-card mb-3">
+      <div class="a-card-header">
+        <h6 class="a-card-title">
+          <i class="fas fa-exchange-alt mr-2" style="color:#969696;"></i>Update Order Status
+        </h6>
+      </div>
+      <div class="a-card-body">
+        <form method="POST" id="statusForm">
+          {% csrf_token %}
+          <div class="d-flex align-items-center" style="gap:10px;">
+            <select name="status" class="a-input" style="width:auto; min-width:210px;">
+              {% for s in status_choices %}
+                <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn-admin" onclick="confirmStatus()">
+              <i class="fas fa-check"></i> Update Status
+            </button>
+          </div>
+          <p style="font-size:12px; color:#969696; margin-top:10px; margin-bottom:0;">
+            <i class="fas fa-info-circle mr-1"></i>
+            Cancelling an order will automatically restore product stock.
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="a-card mb-3">
+      <div class="a-card-header">
+        <h6 class="a-card-title">
+          <i class="fas fa-shopping-bag mr-2" style="color:#969696;"></i>
+          Items &nbsp;<span style="font-weight:400; color:#969696;">({{ order.items.count }})</span>
+        </h6>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="a-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th style="text-align:center;">Price</th>
+              <th style="text-align:center;">Qty</th>
+              <th style="text-align:center;">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in order_items %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center" style="gap:10px;">
+                  {% if item.variant and item.variant.primary_image %}
+                    <img src="{{ item.variant.primary_image.url }}"
+                         style="width:48px; height:48px; object-fit:cover;
+                                border-radius:4px; border:1px solid #e4e4e4; flex-shrink:0;">
+                  {% else %}
+                    <div style="width:48px; height:48px; background:#f0f0f0; border-radius:4px;
+                                display:flex; align-items:center; justify-content:center;
+                                color:#ccc; flex-shrink:0;">
+                      <i class="fas fa-image"></i>
+                    </div>
+                  {% endif %}
+                  <div>
+                    <div style="font-weight:600; font-size:13.5px;">{{ item.product_name }}</div>
+                    <small style="color:#969696;">{{ item.color_name }}</small>
+                  </div>
+                </div>
+              </td>
+              <td style="text-align:center; font-size:13.5px;">₹{{ item.product_price }}</td>
+              <td style="text-align:center; font-size:13.5px;">{{ item.quantity }}</td>
+              <td style="text-align:center; font-weight:600; font-size:13.5px; color:#3167eb;">
+                ₹{{ item.sub_total }}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" style="text-align:center; padding:30px; color:#969696;">
+                No items found for this order.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /col-md-8 -->
+
+
+  <!-- ════════════════════════════
+       RIGHT  col-4
+  ════════════════════════════ -->
+  <div class="col-md-4">
+
+    <!-- Price Details -->
+    <div class="a-card mb-3">
+      <div class="a-card-header"><h6 class="a-card-title">Price Details</h6></div>
+      <div class="a-card-body">
+        <div class="d-flex justify-content-between mb-2">
+          <span style="font-size:13px; color:#969696;">Tax (18%):</span>
+          <span style="font-size:13px;">₹{{ order.tax }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span style="font-size:13px; color:#969696;">Shipping:</span>
+          <span style="font-size:13px; color:#00b517;">Free</span>
+        </div>
+        <hr style="margin:10px 0;">
+        <div class="d-flex justify-content-between">
+          <span style="font-weight:700; font-size:14px;">Grand Total:</span>
+          <span style="font-weight:700; font-size:15px; color:#3167eb;">₹{{ order.order_total }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment -->
+    <div class="a-card mb-3">
+      <div class="a-card-header"><h6 class="a-card-title">Payment</h6></div>
+      <div class="a-card-body">
+        <div class="d-flex justify-content-between mb-2">
+          <span style="font-size:13px; color:#969696;">Method:</span>
+          <strong style="font-size:13px;">
+            {{ order.payment.payment_method|default:"Cash on Delivery" }}
+          </strong>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span style="font-size:13px; color:#969696;">Status:</span>
+          {% with ps=order.payment.status|default:"Pending" %}
+            {% if ps == 'Completed' %}
+              <span class="abadge ab-completed">{{ ps }}</span>
+            {% else %}
+              <span class="abadge ab-pending">{{ ps }}</span>
+            {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer -->
+    <div class="a-card mb-3">
+      <div class="a-card-header"><h6 class="a-card-title">Customer</h6></div>
+      <div class="a-card-body">
+        <div class="d-flex align-items-center mb-2" style="gap:10px;">
+          <div class="ua" style="width:38px; height:38px; font-size:14px; flex-shrink:0;">
+            {{ order.full_name|first|upper }}
+          </div>
+          <div>
+            <div style="font-weight:600; font-size:13.5px;">{{ order.full_name }}</div>
+            <small style="color:#969696;">{{ order.user.email|default:"—" }}</small>
+          </div>
+        </div>
+        <div style="font-size:12.5px; color:#969696;">
+          <i class="fas fa-phone mr-1"></i>+91 {{ order.phone }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Delivery Address -->
+    <div class="a-card mb-3">
+      <div class="a-card-header"><h6 class="a-card-title">Delivery Address</h6></div>
+      <div class="a-card-body">
+        <p style="font-weight:600; font-size:13.5px; margin-bottom:6px;">{{ order.full_name }}</p>
+        <p style="font-size:13px; color:#969696; line-height:1.7; margin-bottom:6px;">
+          {{ order.address_line }}<br>
+          {{ order.city }}, {{ order.state }} — {{ order.pincode }}
+        </p>
+        <div style="font-size:12.5px; color:#969696; margin-bottom:8px;">
+          <i class="fas fa-phone mr-1"></i>+91 {{ order.phone }}
+        </div>
+        <span class="abadge ab-staff" style="font-size:11px;">{{ order.address_type }}</span>
+      </div>
+    </div>
+
+  </div><!-- /col-md-4 -->
+</div><!-- /row -->
+
+
+<!-- ══════════════════════════════════════════════════════
+     CONFIRM MODAL
+══════════════════════════════════════════════════════ -->
+<div class="confirm-overlay" id="statusModal">
+  <div class="confirm-box">
+    <div class="confirm-ico" style="background:#e8edff; color:#3167eb;">
+      <i class="fas fa-exchange-alt"></i>
+    </div>
+    <div class="confirm-title">Update Order Status?</div>
+    <div class="confirm-msg">
+      Change order <strong>#{{ order.order_number }}</strong> to
+      <strong id="newStatusLabel" style="color:#3167eb;"></strong>?
+    </div>
+    <div class="confirm-btns">
+      <button class="btn-cancel-c" onclick="closeModal()">Cancel</button>
+      <button class="btn-do-unblock" onclick="document.getElementById('statusForm').submit()">
+        Yes, Update
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+  function confirmStatus() {
+    const sel = document.querySelector('[name="status"]');
+    document.getElementById('newStatusLabel').textContent = sel.options[sel.selectedIndex].text;
+    document.getElementById('statusModal').classList.add('show');
+  }
+  function closeModal() {
+    document.getElementById('statusModal').classList.remove('show');
+  }
+  document.getElementById('statusModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+</script>
+{% endblock %}

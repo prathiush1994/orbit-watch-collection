@@ -21,11 +21,17 @@ def _cart_id(request):
 
 
 def _get_or_create_cart(request):
-    cart_id = _cart_id(request)
-    cart = Cart.objects.filter(cart_id=cart_id).first()
-    if not cart:
-        cart = Cart.objects.create(cart_id=cart_id)
-    return cart
+    if request.user.is_authenticated:
+        cart = Cart.objects.filter(user=request.user).first()
+        if not cart:
+            cart = Cart.objects.create(user=request.user)
+        return cart
+    else:
+        cart_id = _cart_id(request)
+        cart = Cart.objects.filter(cart_id=cart_id).first()
+        if not cart:
+            cart = Cart.objects.create(cart_id=cart_id)
+        return cart
 
 
 # ─────────────────────────────
@@ -182,3 +188,27 @@ def remove_cartitem(request, variant_id):
     cart = _get_or_create_cart(request)
     CartItem.objects.filter(cart=cart, variant_id=variant_id).delete()
     return redirect('cart')
+
+
+def merge_cart(request):
+    if request.user.is_authenticated:
+        session_cart_id = request.session.session_key
+        session_cart = Cart.objects.filter(cart_id=session_cart_id).first()
+
+        user_cart, _ = Cart.objects.get_or_create(user=request.user)
+
+        if session_cart:
+            for item in CartItem.objects.filter(cart=session_cart):
+                user_item, created = CartItem.objects.get_or_create(
+                    cart=user_cart,
+                    variant=item.variant
+                )
+
+                if not created:
+                    user_item.quantity += item.quantity
+                else:
+                    user_item.quantity = item.quantity
+
+                user_item.save()
+
+            session_cart.delete()

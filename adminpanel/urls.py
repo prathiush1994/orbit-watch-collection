@@ -36,4 +36,7 @@ urlpatterns = [
 
 
     path('settings/', views.settings, name='admin_settings'),
+
+    path('orders/',                     views.admin_order_list,   name='admin_order_list'),
+    path('orders/<str:order_number>/',  views.admin_order_detail, name='admin_order_detail'),
 ]
