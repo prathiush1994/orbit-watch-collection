@@ -2,17 +2,18 @@ from django.contrib import messages, auth
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.contrib.messages import get_messages
+from django.views.decorators.cache import never_cache
 
 from ..models import Account
 from ..email_utils import generate_otp, send_otp_email
 from .otp_data import _otp_remaining
-
-
-
+from carts.views    import merge_cart
+from wishlist.views import merge_wishlist
 
 
 # ── Login ─────────────────────────────────────────────────────────────────────
-
+@never_cache
 def login(request):
     if request.user.is_authenticated:
         return redirect('home')
@@ -63,6 +64,7 @@ def login(request):
     return render(request, 'accounts/login.html')
 
 
+# ── Verify Login OTP ──────────────────────────────────────────────────────────
 def verify_login_otp(request):
     user_id = request.session.get('login_user_id')
     if not user_id:
@@ -87,22 +89,30 @@ def verify_login_otp(request):
             user.otp_created_at = None
             user.otp_purpose    = None
             user.save()
+            if not request.session.session_key:
+                request.session.create()
+            old_session_key = request.session.session_key
+            auth.login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            request.session['old_session_key'] = old_session_key
+            merge_cart(request)
+            merge_wishlist(request)
 
-            auth.login(request, user,
-                       backend='django.contrib.auth.backends.ModelBackend')
             del request.session['login_user_id']
+
             messages.success(request, f'Welcome back, {user.first_name}!')
             return redirect(request.GET.get('next', 'home'))
+
         else:
             messages.error(request, 'Invalid OTP. Please try again.')
 
     return render(request, 'accounts/verify_login_otp.html', {
-        'user': user,
+        'user'          : user,
         'remaining_time': remaining,
-        'expired': expired,
+        'expired'       : expired,
     })
 
 
+# ── Resend Login OTP ──────────────────────────────────────────────────────────
 def resend_login_otp(request):
     user_id = request.session.get('login_user_id')
     if not user_id:
@@ -121,15 +131,11 @@ def resend_login_otp(request):
         messages.error(request, 'Failed to send OTP. Please try again.')
 
     return redirect('verify_login_otp')
-# ── Logout ────────────────────────────────────────────────────────────────────
 
+
+# ── Logout ────────────────────────────────────────────────────────────────────
 @login_required(login_url='login')
 def logout(request):
-    # Clear all pending messages before logout
-    storage = get_messages(request)
-    for _ in storage:
-        pass  # iterating clears them
-
     auth.logout(request)
     messages.success(request, 'Logged out successfully.')
     response = redirect('login')
