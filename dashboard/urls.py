@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 
+
 urlpatterns = [
     # Profile
     path('',               views.profile,       name='dashboard_profile'),
@@ -36,4 +37,7 @@ urlpatterns = [
 
     path('change-email/', views.change_email, name='dashboard_change_email'),
     path('change-email/resend/', views.resend_change_email_otp, name='dashboard_resend_change_email_otp'),
+
+    path('wallet/',  views.dashboard_wallet,  name='dashboard_wallet'),
+    path('coupons/', views.dashboard_coupons, name='dashboard_coupons'),
 ]

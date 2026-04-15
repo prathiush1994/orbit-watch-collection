@@ -14,7 +14,7 @@
 
         {% include 'includes/alert.html' %}
 
-        <!-- Google Sign Up -->
+        <!-- Google Sign Up 
         {% get_providers as socialaccount_providers %}
         {% if socialaccount_providers %}
         <a href="{% provider_login_url 'google' %}" class="btn btn-block mb-3"
@@ -27,7 +27,7 @@
             <small>─────── or register with email ───────</small>
         </div>
         {% endif %}
-
+        -->
         <!-- Registration Form -->
         <form action="{% url 'register' %}" method="POST">
             {% csrf_token %}

@@ -5,7 +5,7 @@
 <section class="section-content padding-y bg">
 <div class="container">
 
-{% if not cart_items %}
+{% if cart_items|length == 0 %}
     <h2 class="text-center">Your shopping cart is empty...</h2>
     <br>
     <div class="text-center">
@@ -46,7 +46,7 @@
             <tbody>
 
             {% for cart_item in cart_items %}
-            <tr class="{% if cart_item.variant.stock <= 0 %}text-muted{% endif %}"></tr>
+            <tr class="{% if cart_item.variant.stock <= 0 %}text-muted{% endif %}">
 
                 <!-- PRODUCT -->
                 <td>

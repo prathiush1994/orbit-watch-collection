@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="section-content padding-y">
+<div class="container">
+<div class="row justify-content-center">
+<div class="col-md-6 col-lg-5 text-center">
+
+    <!-- ── FAILURE ILLUSTRATION ─────────────────────────── -->
+    <div style="margin-top:60px; margin-bottom:30px;">
+        <div style="width:100px;height:100px;background:linear-gradient(135deg,#dc3545,#e74c3c);
+                    border-radius:50%;display:inline-flex;align-items:center;
+                    justify-content:center;margin-bottom:24px;
+                    box-shadow:0 8px 25px rgba(220,53,69,0.35);">
+            <i class="fas fa-times" style="font-size:46px;color:#fff;"></i>
+        </div>
+        <h2 class="font-weight-bold mb-2">Payment Failed</h2>
+        <p class="text-muted mb-1">
+            Your payment could not be processed.
+        </p>
+        <p class="text-muted mb-0">
+            Don't worry — <strong>no money has been deducted</strong> from your account.
+        </p>
+    </div>
+
+    <!-- ── REASON CARD ──────────────────────────────────── -->
+    <div class="card mb-4 border-danger" style="border-radius:10px;">
+        <div class="card-body">
+            <p class="mb-0 text-muted" style="font-size:14px;">
+                <i class="fas fa-info-circle text-danger mr-2"></i>
+                This can happen due to an incorrect card number or CVV, insufficient funds,
+                bank-side rejection, or a network timeout. Please try again with a
+                different method if the issue persists.
+            </p>
+        </div>
+    </div>
+
+    <!-- ── RETRY BUTTON (shows Razorpay again if order_id available) ── -->
+    {% if razorpay_order_id %}
+    <button id="rzpRetryBtn" class="btn btn-primary btn-block py-3 mb-3"
+            style="font-size:1rem;font-weight:bold;border-radius:8px;">
+        <i class="fas fa-redo mr-2"></i>Retry Payment
+    </button>
+    {% endif %}
+
+    <!-- ── OTHER OPTIONS ────────────────────────────────── -->
+    <a href="{% url 'checkout' %}" class="btn btn-outline-primary btn-block py-2 mb-2"
+       style="border-radius:8px;">
+        <i class="fas fa-arrow-left mr-2"></i>Back to Checkout
+    </a>
+    <a href="{% url 'store' %}" class="btn btn-outline-secondary btn-block py-2"
+       style="border-radius:8px;">
+        <i class="fas fa-store mr-2"></i>Continue Shopping
+    </a>
+
+    <p class="text-muted small mt-4">
+        Need help?
+        <a href="mailto:support@orbitwatches.com">Contact Support</a>
+    </p>
+
+</div>
+</div>
+</div>
+</section>
+
+{% if razorpay_order_id %}
+<!-- Razorpay SDK for retry -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.getElementById('rzpRetryBtn').addEventListener('click', function () {
+    const options = {
+        key      : '{{ razorpay_key_id }}',
+        order_id : '{{ razorpay_order_id }}',
+        name     : 'Orbit Watch Collection',
+        description: 'Order Payment — Retry',
+        theme    : { color: '#3167eb' },
+
+        handler: function (response) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{% url "razorpay_callback" %}';
+            const fields = {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id  : response.razorpay_order_id,
+                razorpay_signature : response.razorpay_signature,
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+            };
+            for (const [k, v] of Object.entries(fields)) {
+                const inp = document.createElement('input');
+                inp.type  = 'hidden';
+                inp.name  = k;
+                inp.value = v;
+                form.appendChild(inp);
+            }
+            document.body.appendChild(form);
+            form.submit();
+        },
+
+        modal: {
+            ondismiss: function () {
+                // Closed again — stay on this page
+            }
+        }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function () {
+        alert('Payment failed again. Please try a different payment method.');
+    });
+    rzp.open();
+});
+</script>
+{% endif %}
+{% endblock %}

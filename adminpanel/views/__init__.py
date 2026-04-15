@@ -9,3 +9,5 @@ from .product_views   import (
     variant_add, variant_edit, variant_image_add, variant_image_delete, product_variants
 )
 from .admin_order_views import *
+from .adminpanel_approve_return import *
+from .coupon_views import *

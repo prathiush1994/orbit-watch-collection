@@ -1,0 +1,154 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}{{ action }} Coupon{% endblock %}
+{% block page_title %}{{ action }} Coupon{% endblock %}
+{% block nav_coupons %}active{% endblock %}
+
+{% block content %}
+
+<div class="d-flex align-items-center mb-3" style="gap:10px;">
+    <a href="{% url 'admin_coupon_list' %}" class="btn-action" style="background:#f0f0f0;color:#545454;">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+    <h5 class="mb-0 font-weight-bold">{{ action }} Coupon</h5>
+</div>
+
+<div class="a-card" style="max-width:680px;">
+    <div class="a-card-body">
+        <form method="POST">
+            {% csrf_token %}
+
+            <!-- Code -->
+            <div class="a-form-group">
+                <label class="a-label">
+                    Coupon Code <span class="text-danger">*</span>
+                </label>
+                <input type="text" name="code" class="a-input"
+                       value="{{ coupon.code|default:'' }}"
+                       placeholder="e.g. ORBIT20"
+                       style="text-transform:uppercase;" required>
+                <small class="text-muted">Auto-uppercased. Users enter this at checkout.</small>
+            </div>
+
+            <!-- Discount Type -->
+            <div class="a-form-group">
+                <label class="a-label">Discount Type <span class="text-danger">*</span></label>
+                <select name="discount_type" class="a-input" id="discountType"
+                        onchange="toggleMaxDiscount()">
+                    <option value="percentage"
+                        {% if coupon.discount_type == 'percentage' or not coupon %}selected{% endif %}>
+                        Percentage (%)
+                    </option>
+                    <option value="fixed"
+                        {% if coupon.discount_type == 'fixed' %}selected{% endif %}>
+                        Fixed Amount (₹)
+                    </option>
+                </select>
+            </div>
+
+            <!-- Discount Value -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="a-form-group">
+                        <label class="a-label">
+                            Discount Value <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" name="discount" class="a-input"
+                               value="{{ coupon.discount|default:'' }}"
+                               min="0" step="0.01" required
+                               placeholder="e.g. 20 for 20% or ₹200">
+                    </div>
+                </div>
+                <div class="col-md-6" id="maxDiscountWrap"
+                     {% if coupon.discount_type == 'fixed' %}style="display:none;"{% endif %}>
+                    <div class="a-form-group">
+                        <label class="a-label">Max Discount Cap (₹)</label>
+                        <input type="number" name="max_discount" class="a-input"
+                               value="{{ coupon.max_discount|default:'' }}"
+                               min="0" step="0.01"
+                               placeholder="Leave blank = no cap">
+                        <small class="text-muted">Only for % coupons</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Min Order -->
+            <div class="a-form-group">
+                <label class="a-label">Minimum Order Amount (₹)</label>
+                <input type="number" name="min_order_amt" class="a-input"
+                       value="{{ coupon.min_order_amt|default:'0' }}"
+                       min="0" step="0.01">
+                <small class="text-muted">Set 0 for no minimum</small>
+            </div>
+
+            <!-- Usage Limits -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="a-form-group">
+                        <label class="a-label">Uses Per User</label>
+                        <input type="number" name="usage_limit" class="a-input"
+                               value="{{ coupon.usage_limit|default:'1' }}"
+                               min="1" required>
+                        <small class="text-muted">How many times one user can apply it</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="a-form-group">
+                        <label class="a-label">Total Usage Limit</label>
+                        <input type="number" name="max_total_usage" class="a-input"
+                               value="{{ coupon.max_total_usage|default:'' }}"
+                               min="1"
+                               placeholder="Leave blank = unlimited">
+                        <small class="text-muted">Across all users combined</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Validity dates -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="a-form-group">
+                        <label class="a-label">Valid From</label>
+                        <input type="datetime-local" name="valid_from" class="a-input"
+                               value="{% if coupon.valid_from %}{{ coupon.valid_from|date:'Y-m-d' }}T{{ coupon.valid_from|time:'H:i' }}{% endif %}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="a-form-group">
+                        <label class="a-label">Valid Until</label>
+                        <input type="datetime-local" name="valid_until" class="a-input"
+                               value="{% if coupon.valid_until %}{{ coupon.valid_until|date:'Y-m-d' }}T{{ coupon.valid_until|time:'H:i' }}{% endif %}"
+                               placeholder="Leave blank = no expiry">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active -->
+            <div class="a-form-group d-flex align-items-center" style="gap:10px;">
+                <input type="checkbox" name="is_active" id="isActive"
+                       {% if coupon.is_active or not coupon %}checked{% endif %}
+                       style="width:16px;height:16px;">
+                <label class="a-label mb-0" for="isActive">Active (users can apply this coupon)</label>
+            </div>
+
+            <div class="d-flex mt-3" style="gap:10px;">
+                <button type="submit" class="btn-admin">
+                    <i class="fas fa-save mr-1"></i> Save Coupon
+                </button>
+                <a href="{% url 'admin_coupon_list' %}" class="btn-action"
+                   style="background:#f0f0f0;color:#545454;padding:8px 18px;">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleMaxDiscount() {
+    const t = document.getElementById('discountType').value;
+    document.getElementById('maxDiscountWrap').style.display =
+        t === 'fixed' ? 'none' : '';
+}
+</script>
+
+{% endblock %}

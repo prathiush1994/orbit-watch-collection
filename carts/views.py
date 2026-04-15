@@ -8,7 +8,6 @@ from .models import Cart, CartItem
 CART_MAX_TOTAL  = 10
 PRODUCT_MAX_QTY = 3
 
-
 # ─────────────────────────────
 # SESSION CART ID
 # ─────────────────────────────
@@ -19,10 +18,6 @@ def _cart_id(request):
 
 
 def _get_or_create_cart(request):
-    """
-    Authenticated  → cart tied to the user account (persists across devices).
-    Anonymous      → cart tied to the session key (temporary).
-    """
     if request.user.is_authenticated:
         cart, _ = Cart.objects.get_or_create(user=request.user)
         return cart
@@ -35,6 +30,7 @@ def _get_or_create_cart(request):
 # ─────────────────────────────
 # CART PAGE
 # ─────────────────────────────
+
 def cart(request):
     cart = _get_or_create_cart(request)
 

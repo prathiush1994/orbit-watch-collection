@@ -10,7 +10,8 @@ from orders.models import Order, OrderProduct, Payment
 import base64
 import uuid
 from django.core.files.base import ContentFile
-
+from wallet.models import Wallet, WalletTransaction
+from orders.models import Coupon, CouponUsage, Order
 
 OTP_EXPIRY_MINUTES = 2
 
@@ -350,6 +351,82 @@ def resend_delete_account_otp(request):
     else:
         messages.error(request, 'Failed to send OTP.', extra_tags='delete_account')
     return redirect('dashboard_verify_delete_account')
+
+
+
+
+
+
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# USER WALLET DASHBOARD
+# ─────────────────────────────────────────────────────────────────────────────
+@login_required(login_url='login')
+def dashboard_wallet(request):
+    wallet, _ = Wallet.objects.get_or_create(user=request.user)
+
+    transactions = wallet.transactions.select_related('order').all()[:50]
+
+    # Stats
+    total_credited = sum(
+        t.amount for t in wallet.transactions.filter(txn_type='credit')
+    )
+    total_debited = sum(
+        t.amount for t in wallet.transactions.filter(txn_type='debit')
+    )
+
+    context = {
+        'wallet'        : wallet,
+        'transactions'  : transactions,
+        'total_credited': total_credited,
+        'total_debited' : total_debited,
+    }
+    return render(request, 'dashboard/wallet.html', context)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# USER COUPONS PAGE  — shows available coupons + used history
+# ─────────────────────────────────────────────────────────────────────────────
+@login_required(login_url='login')
+def dashboard_coupons(request):
+    now = timezone.now()
+
+    # All active, not expired coupons
+    available = Coupon.objects.filter(
+        is_active  = True,
+        valid_from__lte = now,
+    ).filter(
+        # valid_until is null (no expiry) OR still in future
+        valid_until__isnull=True
+    ) | Coupon.objects.filter(
+        is_active       = True,
+        valid_from__lte = now,
+        valid_until__gt = now,
+    )
+
+    # Coupons this user already used (exclude if at usage limit)
+    used_coupon_ids = CouponUsage.objects.filter(
+        user=request.user
+    ).values_list('coupon_id', flat=True)
+
+    # Mark each coupon: can user still use it?
+    coupon_list = []
+    for c in available.order_by('-id'):
+        usage = CouponUsage.objects.filter(coupon=c, user=request.user).first()
+        used  = usage.used_count if usage else 0
+        coupon_list.append({
+            'coupon'    : c,
+            'used'      : used,
+            'remaining' : c.usage_limit - used,
+            'exhausted' : used >= c.usage_limit,
+        })
+
+    context = {
+        'coupon_list': coupon_list,
+        'now'        : now,
+    }
+    return render(request, 'dashboard/coupons.html', context)
 
 
 # ── Address (Demo) ────────────────────────────────────────────────────────────

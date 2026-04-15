@@ -24,6 +24,7 @@ urlpatterns = [
     path('wishlist/', include('wishlist.urls')),
     path('dashboard/', include('dashboard.urls')),
     path('orders/', include('orders.urls')),
+    path('wallet/', include('wallet.urls')),
     
     # allauth
     path('auth/', include('allauth.urls')),

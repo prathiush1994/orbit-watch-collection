@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="section-content padding-y">
+<div class="container">
+<div class="row justify-content-center">
+<div class="col-md-7 col-lg-6">
+
+    <!-- ── SUCCESS ILLUSTRATION ─────────────────────────── -->
+    <div class="text-center" style="margin-top:50px; margin-bottom:30px;">
+
+        <!-- Animated checkmark circle -->
+        <div style="width:100px;height:100px;background:linear-gradient(135deg,#28a745,#20c997);
+                    border-radius:50%;display:inline-flex;align-items:center;
+                    justify-content:center;margin-bottom:24px;
+                    box-shadow:0 8px 25px rgba(40,167,69,0.35);">
+            <i class="fas fa-check" style="font-size:46px;color:#fff;"></i>
+        </div>
+
+        <h2 class="font-weight-bold mb-2">Payment Successful!</h2>
+        <p class="text-muted mb-0">
+            Thank you for shopping with <strong>Orbit Watch Collection</strong>.
+        </p>
+        <p class="text-muted">Your order has been confirmed and is being processed.</p>
+    </div>
+
+    <!-- ── ORDER META ───────────────────────────────────── -->
+    <div class="card mb-4" style="border-radius:10px;">
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-4 border-right">
+                    <div class="text-muted small mb-1">Order ID</div>
+                    <strong style="color:#3167eb;font-size:13px;">
+                        #{{ order.order_number }}
+                    </strong>
+                </div>
+                <div class="col-4 border-right">
+                    <div class="text-muted small mb-1">Date</div>
+                    <strong style="font-size:13px;">
+                        {{ order.created_at|date:"d M Y" }}
+                    </strong>
+                </div>
+                <div class="col-4">
+                    <div class="text-muted small mb-1">Payment</div>
+                    {% if order.payment.payment_method == 'RAZORPAY' %}
+                    <span class="badge badge-success" style="font-size:11px;">
+                        Online — Razorpay
+                    </span>
+                    {% elif order.payment.payment_method == 'WALLET' %}
+                    <span class="badge badge-primary" style="font-size:11px;">Wallet</span>
+                    {% else %}
+                    <span class="badge badge-warning text-dark" style="font-size:11px;">
+                        {{ order.payment.payment_method }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ORDER ITEMS ──────────────────────────────────── -->
+    <div class="card mb-4" style="border-radius:10px;overflow:hidden;">
+        <div class="card-header bg-white font-weight-bold" style="font-size:14px;">
+            Items Ordered
+        </div>
+        <div class="card-body p-0">
+            {% for item in order_items %}
+            <div class="d-flex align-items-center justify-content-between px-3 py-2
+                        {% if not forloop.last %}border-bottom{% endif %}">
+                <div class="d-flex align-items-center">
+                    {% if item.variant and item.variant.primary_image %}
+                    <img src="{{ item.variant.primary_image.url }}"
+                         style="width:50px;height:50px;object-fit:cover;
+                                border-radius:6px;border:1px solid #dee2e6;"
+                         class="mr-3">
+                    {% endif %}
+                    <div>
+                        <div class="font-weight-bold" style="font-size:14px;">
+                            {{ item.product_name }}
+                        </div>
+                        <small class="text-muted">
+                            {{ item.color_name }} &nbsp;|&nbsp; Qty: {{ item.quantity }}
+                        </small>
+                    </div>
+                </div>
+                <div class="font-weight-bold">&#8377;{{ item.sub_total }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Price breakdown footer -->
+        <div class="card-footer bg-white">
+            {% if order.discount > 0 %}
+            <div class="d-flex justify-content-between mb-1" style="font-size:13px;">
+                <span class="text-muted">Coupon ({{ order.coupon_code }})</span>
+                <span class="text-success">&#8722; &#8377;{{ order.discount }}</span>
+            </div>
+            {% endif %}
+            {% if order.wallet_used > 0 %}
+            <div class="d-flex justify-content-between mb-1" style="font-size:13px;">
+                <span class="text-muted">Wallet Used</span>
+                <span class="text-primary">&#8722; &#8377;{{ order.wallet_used }}</span>
+            </div>
+            {% endif %}
+            <div class="d-flex justify-content-between font-weight-bold pt-1"
+                 style="border-top:1px solid #dee2e6;margin-top:4px;">
+                <span>Total Paid</span>
+                <span style="color:#3167eb;">&#8377;{{ order.order_total }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── DELIVERY ADDRESS ─────────────────────────────── -->
+    <div class="card mb-4" style="border-radius:10px;">
+        <div class="card-body">
+            <h6 class="font-weight-bold mb-2">
+                <i class="fas fa-map-marker-alt mr-2 text-primary"></i>Delivering To
+            </h6>
+            <p class="mb-0 text-muted" style="font-size:14px;line-height:1.8;">
+                <strong class="text-dark">{{ order.full_name }}</strong><br>
+                {{ order.address_line }}<br>
+                {{ order.city }}, {{ order.state }} — {{ order.pincode }}<br>
+                <i class="fa fa-phone mr-1"></i>+91 {{ order.phone }}
+            </p>
+        </div>
+    </div>
+
+    <!-- ── ACTION BUTTONS ───────────────────────────────── -->
+    <div class="d-flex justify-content-center mb-5" style="gap:12px;flex-wrap:wrap;">
+        <a href="{% url 'order_detail' order.order_number %}"
+           class="btn btn-outline-primary px-4">
+            <i class="fa fa-list mr-2"></i>View Order Details
+        </a>
+        <a href="{% url 'store' %}" class="btn btn-primary px-4">
+            <i class="fa fa-shopping-bag mr-2"></i>Continue Shopping
+        </a>
+    </div>
+
+</div>
+</div>
+</div>
+</section>
+{% endblock %}

@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -14,7 +15,6 @@ SECRET_KEY = 'django-insecure-zr06(yrjzt#c)@+!tk_aragkm%&gty5ma1vc1qlj1_t3k9sy0r
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'dashboard',
     'wishlist',
     'orders',
+    'wallet',
 
    # ── Core Auth Settings ─────────────────── 
     'allauth',
@@ -65,7 +66,7 @@ ROOT_URLCONF = 'orbit.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['templates'],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -210,3 +211,7 @@ SOCIALACCOUNT_PROVIDERS = {
         'VERIFIED_EMAIL': True,
     }
 }
+
+
+RAZORPAY_KEY_ID = "rzp_test_ScwXO7OduXuCXG"
+RAZORPAY_KEY_SECRET = "p21l31xj26SqfzXP8yawv28P"

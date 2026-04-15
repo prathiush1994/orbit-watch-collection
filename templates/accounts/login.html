@@ -12,7 +12,7 @@
 
         {% include 'includes/alert.html' %}
 
-        <!-- Google Login -->
+        <!-- Google Login 
         {% get_providers as socialaccount_providers %}
         {% if socialaccount_providers %}
         <a href="{% provider_login_url 'google' %}" class="btn btn-block mb-3"
@@ -25,7 +25,7 @@
             <small>─────── or login with email ───────</small>
         </div>
         {% endif %}
-
+        -->
         <!-- Email / Password Login -->
         <form action="{% url 'login' %}" method="POST">
             {% csrf_token %}

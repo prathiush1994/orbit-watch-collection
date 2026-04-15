@@ -8,11 +8,10 @@
 <div class="col-md-6 text-center">
 
     <!-- Success icon -->
-    <div style="margin: 50px 0 20px;">
-        <i class="fas fa-check-circle" style="font-size:80px; color:#28a745;"></i>
+    <div style="margin:50px 0 20px;">
+        <i class="fas fa-check-circle" style="font-size:80px;color:#28a745;"></i>
     </div>
 
-    <!-- Thank you message -->
     <h2 class="font-weight-bold mb-2">Order Placed Successfully!</h2>
     <p class="text-muted mb-1">
         Thank you for shopping with <strong>Orbit Watch Collection</strong>!
@@ -35,7 +34,11 @@
                 </div>
                 <div class="col-4">
                     <div class="text-muted small mb-1">Payment</div>
+                    {% if order.payment.payment_method == 'WALLET' %}
+                    <span class="badge badge-primary">Paid via Wallet</span>
+                    {% else %}
                     <span class="badge badge-warning text-dark">Cash on Delivery</span>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -49,10 +52,10 @@
                          {% if not forloop.last %}border-bottom{% endif %}">
                 <div class="d-flex align-items-center">
                     {% if item.variant and item.variant.primary_image %}
-                        <img src="{{ item.variant.primary_image.url }}"
-                             style="width:45px;height:45px;object-fit:cover;
-                                    border-radius:4px;border:1px solid #dee2e6;"
-                             class="mr-3">
+                    <img src="{{ item.variant.primary_image.url }}"
+                         style="width:45px;height:45px;object-fit:cover;
+                                border-radius:4px;border:1px solid #dee2e6;"
+                         class="mr-3">
                     {% endif %}
                     <div>
                         <div class="font-weight-bold" style="font-size:14px;">
@@ -63,13 +66,29 @@
                         </small>
                     </div>
                 </div>
-                <div class="font-weight-bold">₹{{ item.sub_total }}</div>
+                <div class="font-weight-bold">&#8377;{{ item.sub_total }}</div>
             </div>
             {% endfor %}
         </div>
-        <div class="card-footer bg-white d-flex justify-content-between">
-            <span class="font-weight-bold">Total Paid</span>
-            <span class="font-weight-bold" style="color:#3167eb;">₹{{ order.order_total }}</span>
+
+        <!-- Price breakdown footer -->
+        <div class="card-footer bg-white text-left">
+            {% if order.discount > 0 %}
+            <div class="d-flex justify-content-between mb-1" style="font-size:13px;">
+                <span class="text-muted">Coupon ({{ order.coupon_code }})</span>
+                <span class="text-success">&#8722; &#8377;{{ order.discount }}</span>
+            </div>
+            {% endif %}
+            {% if order.wallet_used > 0 %}
+            <div class="d-flex justify-content-between mb-1" style="font-size:13px;">
+                <span class="text-muted">Wallet Used</span>
+                <span class="text-primary">&#8722; &#8377;{{ order.wallet_used }}</span>
+            </div>
+            {% endif %}
+            <div class="d-flex justify-content-between font-weight-bold">
+                <span>Total Paid</span>
+                <span style="color:#3167eb;">&#8377;{{ order.order_total }}</span>
+            </div>
         </div>
     </div>
 
@@ -79,7 +98,7 @@
             <h6 class="font-weight-bold mb-2">
                 <i class="fa fa-map-marker-alt mr-2 text-primary"></i>Delivering To
             </h6>
-            <p class="mb-0 text-muted" style="font-size:14px; line-height:1.7;">
+            <p class="mb-0 text-muted" style="font-size:14px;line-height:1.7;">
                 <strong class="text-dark">{{ order.full_name }}</strong><br>
                 {{ order.address_line }}<br>
                 {{ order.city }}, {{ order.state }} — {{ order.pincode }}<br>
@@ -89,14 +108,18 @@
     </div>
 
     <!-- Action buttons -->
-    <div class="d-flex justify-content-center" style="gap:12px;">
+    <div class="d-flex justify-content-center mb-5" style="gap:12px;">
+        <a href="{% url 'order_detail' order.order_number %}"
+           class="btn btn-outline-primary px-4">
+            <i class="fa fa-list mr-2"></i>Order Details
+        </a>
         <a href="{% url 'store' %}" class="btn btn-primary px-4">
             <i class="fa fa-shopping-bag mr-2"></i>Continue Shopping
         </a>
     </div>
 
-</div><!-- /col -->
-</div><!-- /row -->
-</div><!-- /container -->
+</div>
+</div>
+</div>
 </section>
 {% endblock %}

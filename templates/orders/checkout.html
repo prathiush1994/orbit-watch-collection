@@ -5,198 +5,359 @@
 <section class="section-content padding-y bg">
 <div class="container">
 
-    <h3 class="mb-4 font-weight-bold">Billing Details</h3>
+<h3 class="mb-4 font-weight-bold">Checkout</h3>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+<form method="POST" action="{% url 'place_order' %}" id="checkoutForm">
+{% csrf_token %}
+<div class="row">
+
+<!-- ══════════════════════════════════════════════
+     LEFT — Address + Payment Method
+══════════════════════════════════════════════ -->
+<div class="col-lg-6">
+
+    <h5 class="font-weight-bold mb-3">Delivery Address</h5>
+
+    {% if addresses %}
+    {% for address in addresses %}
+    <div class="border rounded p-3 mb-3"
+         style="{% if address.is_default %}border-color:#3167eb!important;background:#f8f9ff;{% endif %}">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="d-flex align-items-start">
+                <input type="radio" name="address_id" value="{{ address.id }}"
+                       class="mt-1 mr-3"
+                       {% if address.is_default %}checked{% endif %} required>
+                <div>
+                    <strong>{{ address.full_name }}</strong>
+                    {% if address.is_default %}
+                    <span class="badge badge-primary ml-2" style="font-size:10px;">Default</span>
+                    {% endif %}
+                    <p class="mb-0 text-muted" style="font-size:14px;line-height:1.7;">
+                        {{ address.address_line }}<br>
+                        {{ address.city }}, {{ address.state }} — {{ address.pincode }}<br>
+                        <i class="fa fa-phone mr-1"></i>+91 {{ address.phone }}
+                    </p>
+                </div>
+            </div>
+            <a href="{% url 'edit_address' address.id %}?next=checkout"
+               class="btn btn-sm btn-outline-secondary flex-shrink-0 ml-2">
+                <i class="fa fa-edit"></i> Edit
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="alert alert-warning">No saved addresses. Please add one to continue.</div>
     {% endif %}
 
-    <form method="POST" action="{% url 'place_order' %}" id="checkoutForm">
-        {% csrf_token %}
+    <div class="text-right mb-4">
+        <a href="{% url 'add_address' %}?next=checkout" class="btn btn-outline-primary px-4">
+            <i class="fa fa-plus mr-1"></i> Add New Address
+        </a>
+    </div>
 
-        <div class="row">
+    <!-- Payment method -->
+    <h5 class="font-weight-bold mb-3">Payment Method</h5>
 
-            <!-- ═══════════════════════════════════════════════
-                 LEFT COLUMN
-            ════════════════════════════════════════════════ -->
-            <div class="col-lg-6">
+    <!-- COD -->
+    <label class="d-flex align-items-center mb-3 p-3 border rounded"
+           style="cursor:pointer;border-radius:8px!important;" for="pay_cod">
+        <input type="radio" name="payment_method" value="COD"
+               id="pay_cod" checked class="mr-3">
+        <i class="fas fa-money-bill-wave mr-3 text-success" style="font-size:22px;"></i>
+        <div>
+            <div class="font-weight-bold">Cash on Delivery</div>
+            <small class="text-muted">Pay when your order arrives</small>
+        </div>
+    </label>
 
-                <!-- ── DELIVERY ADDRESS ─────────────────────── -->
-                <h5 class="font-weight-bold mb-3">Delivery Address</h5>
+    <!-- Razorpay -->
+    <label class="d-flex align-items-center mb-3 p-3 border rounded"
+           style="cursor:pointer;border-radius:8px!important;" for="pay_razorpay">
+        <input type="radio" name="payment_method" value="RAZORPAY"
+               id="pay_razorpay" class="mr-3">
+        <i class="fas fa-credit-card mr-3 text-primary" style="font-size:22px;"></i>
+        <div>
+            <div class="font-weight-bold">Pay Online — Razorpay</div>
+            <small class="text-muted">Cards, UPI, Net Banking, Wallets</small>
+        </div>
+    </label>
 
-                {% if addresses %}
-                    {% for address in addresses %}
-                    <div class="border rounded p-3 mb-3"
-                         style="{% if address.is_default %}border-color:#3167eb !important;{% endif %}">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-start">
-                                <input type="radio"
-                                       name="address_id"
-                                       value="{{ address.id }}"
-                                       class="mt-1 mr-3"
-                                       {% if address.is_default %}checked{% endif %}
-                                       required>
-                                <div>
-                                    <strong>{{ address.full_name }}</strong>
-                                    {% if address.is_default %}
-                                        <span class="badge badge-primary ml-2"
-                                              style="font-size:10px;">Default</span>
-                                    {% endif %}
-                                    <p class="mb-0 text-muted" style="font-size:14px; line-height:1.6;">
-                                        {{ address.address_line }}<br>
-                                        {{ address.city }}, {{ address.state }} — {{ address.pincode }}<br>
-                                        Contact : +91 {{ address.phone }}
-                                    </p>
-                                </div>
-                            </div>
-                            <a href="{% url 'edit_address' address.id %}?next=checkout"
-                               class="btn btn-sm btn-outline-secondary ml-2 flex-shrink-0">
-                                <i class="fa fa-edit"></i> Edit
-                            </a>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="alert alert-warning">
-                        No saved addresses. Please add one to continue.
-                    </div>
-                {% endif %}
+</div><!-- /left -->
 
-                <!-- Add New Address -->
-                <div class="text-right mb-5">
-                    <a href="{% url 'add_address' %}?next=checkout"
-                       class="btn btn-primary px-4">
-                        Add New Address
-                    </a>
+
+<!-- ══════════════════════════════════════════════
+     RIGHT — Order Summary
+══════════════════════════════════════════════ -->
+<div class="col-lg-6">
+
+    <!-- Cart items -->
+    {% for item in cart_items %}
+    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+        <div class="d-flex align-items-center">
+            {% if item.variant.primary_image %}
+            <img src="{{ item.variant.primary_image.url }}"
+                 style="width:60px;height:60px;object-fit:cover;
+                        border-radius:6px;border:1px solid #dee2e6;"
+                 class="mr-3">
+            {% endif %}
+            <div>
+                <div class="font-weight-bold" style="font-size:14px;">
+                    {{ item.variant.product.product_name }}
                 </div>
-
-                <!-- ── PAYMENT METHODS ───────────────────────── -->
-                <h5 class="font-weight-bold mb-2">Payment Methods</h5>
-                <hr>
-                <p class="text-muted mb-3">Select any payment methods</p>
-
-                <!-- Razorpay — disabled -->
-                <div class="d-flex align-items-center mb-3" style="opacity:0.45; cursor:not-allowed;">
-                    <input type="radio" name="payment_method" value="RAZORPAY"
-                           disabled class="mr-3">
-                    <label class="mb-0">
-                        Razor Pay &nbsp;
-                        <span class="badge badge-secondary" style="font-size:10px;">Coming Soon</span>
-                    </label>
-                </div>
-
-                <!-- Cash on Delivery — active -->
-                <div class="d-flex align-items-center mb-3">
-                    <input type="radio" name="payment_method" value="COD"
-                           checked class="mr-3">
-                    <label class="mb-0 font-weight-bold">Cash on delivery</label>
-                </div>
-
+                <small class="text-muted">
+                    {{ item.variant.color_name }} &nbsp;|&nbsp; Qty: {{ item.quantity }}
+                </small>
             </div>
-            <!-- END LEFT COLUMN -->
+        </div>
+        <div class="font-weight-bold">&#8377;{{ item.sub_total }}</div>
+    </div>
+    {% endfor %}
 
+    <hr>
 
-            <!-- ═══════════════════════════════════════════════
-                 RIGHT COLUMN — ORDER SUMMARY
-            ════════════════════════════════════════════════ -->
-            <div class="col-lg-6">
+    <!-- Price breakdown -->
+    <div class="d-flex justify-content-between mb-2">
+        <span class="text-muted">Subtotal</span>
+        <span>&#8377;{{ total }}</span>
+    </div>
+    <div class="d-flex justify-content-between mb-2">
+        <span class="text-muted">Delivery fee</span>
+        <span class="text-success font-weight-bold">Free</span>
+    </div>
+    <div class="d-flex justify-content-between mb-2">
+        <span class="text-muted">GST (18%)</span>
+        <span>&#8377;{{ tax }}</span>
+    </div>
 
-                <!-- Cart items -->
-                {% for item in cart_items %}
-                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-                    <div class="d-flex align-items-center">
-                        {% if item.variant.primary_image %}
-                            <img src="{{ item.variant.primary_image.url }}"
-                                 alt="{{ item.variant.product.product_name }}"
-                                 style="width:60px; height:60px; object-fit:cover;
-                                        border-radius:6px; border:1px solid #dee2e6;"
-                                 class="mr-3">
-                        {% endif %}
-                        <div>
-                            <div class="font-weight-bold">
-                                {{ item.variant.product.product_name }}
-                            </div>
-                            <small class="text-muted">
-                                {{ item.variant.color_name }} &nbsp;|&nbsp; Qty: {{ item.quantity }}
-                            </small>
-                        </div>
-                    </div>
-                    <div class="font-weight-bold">₹{{ item.sub_total }}</div>
-                </div>
-                {% endfor %}
+    <!-- Coupon discount line — hidden until applied -->
+    <div class="d-flex justify-content-between mb-2" id="rowCouponDiscount"
+         {% if not coupon_discount %}style="display:none;"{% endif %}>
+        <span class="text-success">
+            <i class="fas fa-tag mr-1"></i>
+            Coupon (<span id="appliedCouponCode">{{ coupon_code }}</span>)
+        </span>
+        <span class="text-success font-weight-bold">
+            &#8722;&nbsp;&#8377;<span id="couponDiscountAmt">{{ coupon_discount }}</span>
+        </span>
+    </div>
 
-                <hr>
+    <!-- Wallet deduction line — hidden until wallet applied -->
+    <div class="d-flex justify-content-between mb-2" id="rowWalletDeduct"
+         {% if not wallet_used %}style="display:none;"{% endif %}>
+        <span class="text-primary">
+            <i class="fas fa-wallet mr-1"></i>Wallet Used
+        </span>
+        <span class="text-primary font-weight-bold">
+            &#8722;&nbsp;&#8377;<span id="walletUsedAmt">{{ wallet_used }}</span>
+        </span>
+    </div>
 
-                <!-- Subtotal -->
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Subtotal:</span>
-                    <span>₹{{ total }}</span>
-                </div>
+    <hr>
 
-                <!-- Delivery -->
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Delivery fee</span>
-                    <span class="text-success">Free</span>
-                </div>
+    <div class="d-flex justify-content-between mb-4">
+        <span class="font-weight-bold" style="font-size:1.05rem;">Total Payment</span>
+        <span class="font-weight-bold" style="font-size:1.2rem;color:#3167eb;">
+            &#8377;<span id="finalTotalAmt">{{ final_total }}</span>
+        </span>
+    </div>
 
-                <!-- Tax -->
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">GST - 18% &nbsp; Tax</span>
-                    <span>₹{{ tax }}</span>
-                </div>
+    <!-- Hidden values JS reads -->
+    <input type="hidden" id="hGrandTotal"    value="{{ grand_total }}">
+    <input type="hidden" id="hAfterCoupon"   value="{{ after_coupon }}">
+    <input type="hidden" id="hWalletBalance" value="{{ wallet_balance }}">
+    <input type="hidden" id="hWalletUsed"    value="{{ wallet_used }}">
 
-                <hr>
+    <!-- ── COUPON SECTION ─────────────────────────── -->
+    <div class="mb-3">
+        <p class="font-weight-bold mb-2" style="font-size:14px;">
+            <i class="fas fa-tag mr-1 text-primary"></i>Have a coupon?
+        </p>
 
-                <!-- Grand Total -->
-                <div class="d-flex justify-content-between mb-4">
-                    <span class="font-weight-bold" style="font-size:1rem;">Total Payment</span>
-                    <span class="font-weight-bold" style="font-size:1.15rem;">₹{{ grand_total }}</span>
-                </div>
-
-                <!-- Coupon — disabled -->
-                <div class="input-group mb-3">
-                    <input type="text" class="form-control"
-                           placeholder="Coupon Code" disabled>
-                    <div class="input-group-append">
-                        <button class="btn btn-primary" type="button" disabled>
-                            Apply Coupon
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Wallet — disabled -->
-                <div class="input-group mb-4">
-                    <input type="text" class="form-control"
-                           placeholder="Enter the amount to redeem" disabled>
-                    <div class="input-group-append">
-                        <button class="btn btn-primary" type="button" disabled>
-                            Pay Using Wallet
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Place Order -->
-                <button type="submit"
-                        class="btn btn-primary btn-block py-3"
-                        style="font-size:1rem; font-weight:bold;"
-                        {% if not addresses %}disabled title="Add an address first"{% endif %}>
-                    Place Order
+        <!-- Input (hidden after apply) -->
+        <div class="input-group" id="couponInputGroup"
+             {% if coupon_code %}style="display:none;"{% endif %}>
+            <input type="text" id="couponCodeInput" class="form-control"
+                   placeholder="Enter coupon code" style="text-transform:uppercase;"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();applyCoupon();}">
+            <div class="input-group-append">
+                <button class="btn btn-outline-primary" type="button" onclick="applyCoupon()">
+                    Apply
                 </button>
-
-                {% if not addresses %}
-                <p class="text-danger text-center small mt-2">
-                    Please add a delivery address to place your order.
-                </p>
-                {% endif %}
-
             </div>
-            <!-- END RIGHT COLUMN -->
+        </div>
 
-        </div><!-- /row -->
-    </form>
+        <!-- Applied badge (hidden until applied) -->
+        <div class="d-flex align-items-center justify-content-between border border-success
+                    rounded p-2" id="couponAppliedBadge"
+             {% if not coupon_code %}style="display:none;"{% endif %}>
+            <span class="text-success" style="font-size:14px;">
+                <i class="fas fa-check-circle mr-1"></i>
+                Coupon <strong><span id="couponBadgeCode">{{ coupon_code }}</span></strong> applied!
+            </span>
+            <button type="button" class="btn btn-sm btn-outline-danger"
+                    onclick="removeCoupon()">Remove</button>
+        </div>
+        <small id="couponMsg" class="d-block mt-1" style="font-size:13px;"></small>
+    </div>
 
-</div><!-- /container -->
+    <!-- ── WALLET SECTION ────────────────────────── -->
+    <div class="mb-4">
+        <div class="border rounded p-3" style="background:#f8f9ff;border-radius:8px;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-wallet mr-2" style="color:#3167eb;"></i>
+                    <strong>Wallet Balance:</strong>
+                    <span class="font-weight-bold ml-1" style="color:#3167eb;">
+                        &#8377;{{ wallet_balance }}
+                    </span>
+                </div>
+                {% if wallet_balance > 0 %}
+                <button type="button" id="walletBtn"
+                        class="btn btn-sm {% if wallet_applied %}btn-outline-danger{% else %}btn-outline-primary{% endif %}"
+                        onclick="{% if wallet_applied %}removeWallet(){% else %}applyWallet(){% endif %}">
+                    {% if wallet_applied %}Remove{% else %}Use Wallet{% endif %}
+                </button>
+                {% else %}
+                <span class="text-muted small">No balance</span>
+                {% endif %}
+            </div>
+            <small id="walletMsg" class="d-block mt-1" style="font-size:13px;"></small>
+        </div>
+    </div>
+
+    <!-- Place Order -->
+    <button type="submit" class="btn btn-primary btn-block py-3"
+            style="font-size:1rem;font-weight:bold;border-radius:8px;"
+            {% if not addresses %}disabled{% endif %}>
+        <i class="fas fa-lock mr-2"></i>Place Order
+    </button>
+    {% if not addresses %}
+    <p class="text-danger text-center small mt-2">Please add a delivery address first.</p>
+    {% endif %}
+
+</div><!-- /right -->
+</div><!-- /row -->
+</form>
+</div>
 </section>
+
+<script>
+const CSRF = '{{ csrf_token }}';
+
+const grandTotal    = () => parseFloat(document.getElementById('hGrandTotal').value)    || 0;
+const afterCoupon   = () => parseFloat(document.getElementById('hAfterCoupon').value)   || 0;
+const walletBalance = () => parseFloat(document.getElementById('hWalletBalance').value) || 0;
+const walletUsedNow = () => parseFloat(document.getElementById('hWalletUsed').value)    || 0;
+
+function setAfterCoupon(v) { document.getElementById('hAfterCoupon').value = v; }
+function setWalletUsed(v)  { document.getElementById('hWalletUsed').value  = v; }
+function setFinal(v) {
+    document.getElementById('finalTotalAmt').textContent =
+        Math.max(parseFloat(v), 0).toFixed(2);
+}
+function showMsg(id, text, isError) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.style.color = isError ? '#dc3545' : '#28a745';
+}
+
+// ── APPLY COUPON ─────────────────────────────────────
+function applyCoupon() {
+    const code = document.getElementById('couponCodeInput').value.trim().toUpperCase();
+    if (!code) { showMsg('couponMsg', 'Please enter a coupon code.', true); return; }
+    fetch('{% url "apply_coupon" %}', {
+        method : 'POST',
+        headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+        body   : JSON.stringify({code, grand_total: grandTotal()}),
+    }).then(r=>r.json()).then(d=>{
+        if (d.success) {
+            document.getElementById('rowCouponDiscount').style.display  = '';
+            document.getElementById('couponDiscountAmt').textContent    = parseFloat(d.discount).toFixed(2);
+            document.getElementById('appliedCouponCode').textContent    = code;
+            document.getElementById('couponBadgeCode').textContent      = code;
+            document.getElementById('couponInputGroup').style.display   = 'none';
+            document.getElementById('couponAppliedBadge').style.display = '';
+            setAfterCoupon(d.after_coup);
+            setFinal(d.final);
+            if (walletUsedNow() > 0) {
+                document.getElementById('walletUsedAmt').textContent =
+                    Math.min(walletBalance(), parseFloat(d.after_coup)).toFixed(2);
+            }
+            showMsg('couponMsg', d.message, false);
+        } else {
+            showMsg('couponMsg', d.message, true);
+        }
+    });
+}
+
+// ── REMOVE COUPON ────────────────────────────────────
+function removeCoupon() {
+    fetch('{% url "remove_coupon" %}', {
+        method : 'POST',
+        headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+        body   : JSON.stringify({grand_total: grandTotal()}),
+    }).then(r=>r.json()).then(d=>{
+        if (d.success) {
+            document.getElementById('rowCouponDiscount').style.display  = 'none';
+            document.getElementById('couponAppliedBadge').style.display = 'none';
+            document.getElementById('couponInputGroup').style.display   = '';
+            document.getElementById('couponCodeInput').value            = '';
+            setAfterCoupon(d.after_coup);
+            setFinal(d.final);
+            showMsg('couponMsg', '', false);
+        }
+    });
+}
+
+// ── APPLY WALLET ─────────────────────────────────────
+function applyWallet() {
+    fetch('{% url "apply_wallet" %}', {
+        method : 'POST',
+        headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+        body   : JSON.stringify({final_total: afterCoupon()}),
+    }).then(r=>r.json()).then(d=>{
+        if (d.success) {
+            document.getElementById('rowWalletDeduct').style.display = '';
+            document.getElementById('walletUsedAmt').textContent     = parseFloat(d.wallet_used).toFixed(2);
+            setWalletUsed(d.wallet_used);
+            setFinal(d.amount_to_pay);
+            const btn = document.getElementById('walletBtn');
+            btn.textContent = 'Remove';
+            btn.className   = 'btn btn-sm btn-outline-danger';
+            btn.setAttribute('onclick','removeWallet()');
+            showMsg('walletMsg', d.message, false);
+        } else {
+            showMsg('walletMsg', d.message, true);
+        }
+    });
+}
+
+// ── REMOVE WALLET ────────────────────────────────────
+function removeWallet() {
+    fetch('{% url "remove_wallet" %}', {
+        method : 'POST',
+        headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+        body   : JSON.stringify({final_total: afterCoupon()}),
+    }).then(r=>r.json()).then(d=>{
+        if (d.success) {
+            document.getElementById('rowWalletDeduct').style.display = 'none';
+            document.getElementById('walletUsedAmt').textContent     = '0';
+            setWalletUsed('0');
+            setFinal(d.amount_to_pay);
+            const btn = document.getElementById('walletBtn');
+            btn.textContent = 'Use Wallet';
+            btn.className   = 'btn btn-sm btn-outline-primary';
+            btn.setAttribute('onclick','applyWallet()');
+            showMsg('walletMsg', '', false);
+        }
+    });
+}
+</script>
 {% endblock %}

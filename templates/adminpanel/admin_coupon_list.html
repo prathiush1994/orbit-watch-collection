@@ -1,0 +1,120 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Coupons{% endblock %}
+{% block page_title %}Coupon Management{% endblock %}
+{% block nav_coupons %}active{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0 font-weight-bold">All Coupons</h5>
+    <a href="{% url 'admin_coupon_add' %}" class="btn-admin">
+        <i class="fas fa-plus"></i> Add Coupon
+    </a>
+</div>
+
+<div class="a-card">
+    <div class="a-card-body p-0">
+        <table class="a-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Code</th>
+                    <th>Type</th>
+                    <th>Discount</th>
+                    <th>Min Order</th>
+                    <th>Usage</th>
+                    <th>Valid Until</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for c in coupons %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                    <strong style="font-size:15px;letter-spacing:.5px;">{{ c.code }}</strong>
+                </td>
+                <td>
+                    {% if c.discount_type == 'percentage' %}
+                    <span class="abadge ab-staff">% Off</span>
+                    {% else %}
+                    <span class="abadge ab-processing">Fixed ₹</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if c.discount_type == 'percentage' %}
+                        {{ c.discount }}%
+                        {% if c.max_discount %}
+                        <small class="text-muted">(max ₹{{ c.max_discount }})</small>
+                        {% endif %}
+                    {% else %}
+                        ₹{{ c.discount }}
+                    {% endif %}
+                </td>
+                <td>₹{{ c.min_order_amt }}</td>
+                <td>
+                    {{ c.total_usage }}
+                    {% if c.max_total_usage %} / {{ c.max_total_usage }}{% endif %}
+                    <small class="text-muted d-block">{{ c.usage_limit }}x per user</small>
+                </td>
+                <td>
+                    {% if c.valid_until %}
+                        {% if c.valid_until < now %}
+                        <span class="text-danger" style="font-size:13px;">
+                            <i class="fas fa-clock mr-1"></i>Expired<br>
+                            <small>{{ c.valid_until|date:"d M Y" }}</small>
+                        </span>
+                        {% else %}
+                        <span style="font-size:13px;">{{ c.valid_until|date:"d M Y" }}</span>
+                        {% endif %}
+                    {% else %}
+                    <span class="text-muted" style="font-size:13px;">No expiry</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if c.is_active %}
+                    <span class="abadge ab-active"><i class="fas fa-check"></i> Active</span>
+                    {% else %}
+                    <span class="abadge ab-blocked"><i class="fas fa-ban"></i> Inactive</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="d-flex" style="gap:6px;">
+                        <a href="{% url 'admin_coupon_edit' c.id %}"
+                           class="btn-action" style="background:#eef2fd;color:#3167eb;">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'admin_coupon_toggle' c.id %}"
+                           class="btn-action {% if c.is_active %}btn-block-u{% else %}btn-unblock-u{% endif %}">
+                            {% if c.is_active %}
+                            <i class="fas fa-ban"></i>
+                            {% else %}
+                            <i class="fas fa-check"></i>
+                            {% endif %}
+                        </a>
+                        <form method="POST" action="{% url 'admin_coupon_delete' c.id %}"
+                              onsubmit="return confirm('Delete coupon {{ c.code }}?');"
+                              style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-action btn-block-u">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" class="text-center text-muted py-4">
+                    No coupons yet.
+                    <a href="{% url 'admin_coupon_add' %}">Add your first coupon</a>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

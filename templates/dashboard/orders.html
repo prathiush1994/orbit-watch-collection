@@ -111,10 +111,16 @@
                     <i class="fa fa-eye mr-1"></i> View Details
                 </a>
 
+                {% if order.status != 'Return Requested' and order.status != 'Returned' %}
                 <a href="{% url 'download_invoice' order.order_number %}"
-                   class="btn btn-sm btn-outline-secondary">
+                class="btn btn-sm btn-outline-secondary">
                     <i class="fa fa-file-pdf mr-1"></i> Invoice
                 </a>
+                {% else %}
+                <button class="btn btn-sm btn-outline-secondary" disabled>
+                    <i class="fa fa-file-pdf mr-1"></i> Invoice
+                </button>
+                {% endif %}
 
                 <!-- Cancel — only if New or Accepted -->
                 {% if order.status == 'New' or order.status == 'Accepted' %}
