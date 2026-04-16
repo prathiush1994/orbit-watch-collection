@@ -350,8 +350,15 @@ def place_order(request):
             'user_phone'       : getattr(request.user, 'phone_number', ''),
         }
         return render(request, 'orders/razorpay_payment.html', context)
-
-    messages.error(request, 'Invalid payment method selected.')
+        messages.error(request, 'Invalid payment method selected.')
+    variant = order_item.variant
+    inv = variant.inventory
+    inv.deduct_stock(
+        qty=order_item.quantity,
+        reason='order',
+        updated_by=None,   # or request.user if available
+        note=f"Order #{order.id}"
+    )
     return redirect('checkout')
 
 

@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import coupon_views, admin_offer_views, admin_sales_views
+from .views import coupon_views, admin_offer_views, admin_sales_views, admin_order_views
 
 
 urlpatterns = [
@@ -48,6 +48,8 @@ urlpatterns = [
     path('orders/',                     views.admin_order_list,   name='admin_order_list'),
     path('orders/<str:order_number>/',  views.admin_order_detail, name='admin_order_detail'),
     path('orders/return/approve/<str:order_number>/', views.approve_return, name='adminpanel_approve_return'),
+    path('orders/<str:order_number>/item/<int:item_id>/approve-return/',
+        admin_order_views.admin_approve_item_return, name='admin_approve_item_return'),
 
     # ── Coupons ──────────────────────────────────────────
     path('coupons/',                    coupon_views.admin_coupon_list,   name='admin_coupon_list'),

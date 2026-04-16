@@ -28,6 +28,21 @@
     font-size:10px;cursor:pointer;display:flex;
     align-items:center;justify-content:center;padding:0;
   }
+  /* Stock locked box */
+  .stock-locked-box {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px;border-radius:0.37rem;
+    background:var(--blue-light);border:1px solid #c7d2fe;
+    gap:14px;
+  }
+  .stock-locked-left { display:flex;align-items:center;gap:10px; }
+  .stock-locked-icon {
+    width:38px;height:38px;border-radius:8px;background:#dbeafe;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .stock-locked-qty { font-size:22px;font-weight:700;color:var(--blue); }
+  .stock-locked-label { font-size:12px;color:var(--text-2);margin-top:1px; }
+  .stock-locked-note { font-size:12px;color:var(--text-muted); }
 </style>
 {% endblock %}
 
@@ -52,8 +67,6 @@
       </div>
       <div class="a-card-body">
 
-        <!-- IMPORTANT: NO enctype="multipart/form-data"
-             All images are sent as base64 via hidden inputs filled by the crop modal -->
         <form method="POST" action="">
           {% csrf_token %}
           <input type="hidden" name="primary_image" id="primaryImageData">
@@ -85,19 +98,72 @@
             </div>
           </div>
 
-          <!-- Price + Stock -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-            <div class="a-form-group">
-              <label class="a-label">Price (₹) <span style="color:var(--red);">*</span></label>
-              <input type="number" name="price" class="a-input" min="0"
-                     value="{% if is_edit %}{{ variant.price }}{% endif %}" required>
-            </div>
-            <div class="a-form-group">
-              <label class="a-label">Stock</label>
-              <input type="number" name="stock" class="a-input" min="0"
-                     value="{% if is_edit %}{{ variant.stock }}{% else %}0{% endif %}">
-            </div>
+          <!-- Price -->
+          <div class="a-form-group" style="max-width:240px;">
+            <label class="a-label">Price (₹) <span style="color:var(--red);">*</span></label>
+            <input type="number" name="price" class="a-input" min="0"
+                   value="{% if is_edit %}{{ variant.price }}{% endif %}" required>
           </div>
+
+          <!-- ── STOCK: LOCKED — managed by Inventory ─────────────────── -->
+          <div class="a-form-group">
+            <label class="a-label">
+              Stock
+              <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— managed by Inventory</span>
+            </label>
+
+            {% if is_edit %}
+              {% with inv=variant.inventory %}
+              <div class="stock-locked-box">
+                <div class="stock-locked-left">
+                  <div class="stock-locked-icon">
+                    <i class="fas fa-lock" style="color:var(--blue);font-size:14px;"></i>
+                  </div>
+                  <div>
+                    <div class="stock-locked-qty">
+                      {% if inv %}{{ inv.quantity }}{% else %}0{% endif %}
+                      <span style="font-size:13px;font-weight:500;color:var(--text-2);margin-left:4px;">units</span>
+                    </div>
+                    <div class="stock-locked-label">Current stock level</div>
+                  </div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="stock-locked-note" style="margin-bottom:6px;">
+                    Stock can only be changed from Inventory
+                  </div>
+                  {% if inv %}
+                  <a href="{% url 'admin_inventory_add_stock' inv.id %}"
+                     class="btn-admin" style="font-size:12px;padding:6px 14px;">
+                    <i class="fas fa-plus" style="font-size:10px;"></i> Add Stock
+                  </a>
+                  {% else %}
+                  <span style="font-size:12px;color:var(--text-muted);">
+                    Save variant first, then manage stock in Inventory.
+                  </span>
+                  {% endif %}
+                </div>
+              </div>
+              {% endwith %}
+            {% else %}
+              <!-- New variant: show info message, no stock field -->
+              <div class="stock-locked-box">
+                <div class="stock-locked-left">
+                  <div class="stock-locked-icon">
+                    <i class="fas fa-info-circle" style="color:var(--blue);font-size:14px;"></i>
+                  </div>
+                  <div>
+                    <div style="font-size:13px;font-weight:600;color:var(--text-2);">
+                      Stock starts at 0
+                    </div>
+                    <div class="stock-locked-note" style="margin-top:2px;">
+                      After saving, go to <strong>Inventory</strong> to add stock for this variant.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+          <!-- ── END STOCK SECTION ─────────────────────────────────────── -->
 
           <!-- Primary image with crop -->
           <div class="a-form-group">
@@ -123,8 +189,6 @@
           <!-- Gallery images -->
           <div class="a-form-group">
             <label class="a-label">Gallery Images <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— additional photos</span></label>
-
-            <!-- Existing images (edit mode) — delete uses standalone form OUTSIDE main form -->
             {% if is_edit %}
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
               {% for img in variant.images.all %}
@@ -137,13 +201,8 @@
               {% endfor %}
             </div>
             {% endif %}
-
-            <!-- New gallery images selected in this session -->
             <div id="newGalleryWrap" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"></div>
-
-            <!-- Hidden inputs for new gallery base64 data (gallery_image_0, gallery_image_1 ...) -->
             <div id="galleryHiddenInputs"></div>
-
             <label class="upload-btn" for="galleryFileInput">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -224,7 +283,6 @@
 
 </div>
 
-<!-- Standalone delete form — OUTSIDE main form, no nesting -->
 <form method="POST" id="deleteGalleryForm" action="" style="display:none;">
   {% csrf_token %}
 </form>
@@ -234,7 +292,6 @@
 
 {% block extra_js %}
 <script>
-/* ── Color picker sync ── */
 const picker  = document.getElementById('colorPicker');
 const textBox = document.getElementById('colorCodeText');
 const preview = document.getElementById('colorPreview');
@@ -255,42 +312,27 @@ textBox.addEventListener('input', function() {
   }
 });
 
-/* ── Gallery images ── */
 let galIdx = 0;
-
 function addGalleryImage(fileInput) {
   const file = fileInput.files[0];
   if (!file) return;
-  fileInput.value = ''; // reset so same file can be picked again
-
+  fileInput.value = '';
   const myIdx    = galIdx++;
   const hiddenId = 'gallery_image_' + myIdx;
   const prevId   = 'galPrev_' + myIdx;
-
-  // Create hidden input
   const hidden   = document.createElement('input');
   hidden.type    = 'hidden';
   hidden.name    = hiddenId;
   hidden.id      = hiddenId;
   document.getElementById('galleryHiddenInputs').appendChild(hidden);
-
-  // Create preview thumb (hidden until crop confirms)
   const wrap = document.createElement('div');
   wrap.className = 'gal-wrap';
   wrap.id = 'galwrap_' + myIdx;
   wrap.style.display = 'none';
-  wrap.innerHTML = `
-    <img id="${prevId}" src="" class="gal-thumb">
-    <button type="button" class="gal-del" onclick="removeGallery(${myIdx})" title="Remove">✕</button>
-  `;
+  wrap.innerHTML = `<img id="${prevId}" src="" class="gal-thumb"><button type="button" class="gal-del" onclick="removeGallery(${myIdx})" title="Remove">✕</button>`;
   document.getElementById('newGalleryWrap').appendChild(wrap);
-
-  // Open crop modal for this image
-  // We simulate the event object that openCropModal expects
   const fakeEvent = { target: { files: [file], value: '' } };
   openCropModal(fakeEvent, hiddenId, prevId, 1);
-
-  // Show the thumb wrapper after crop confirms (poll for hidden input value)
   const poll = setInterval(function() {
     if (document.getElementById(hiddenId) && document.getElementById(hiddenId).value) {
       document.getElementById('galwrap_' + myIdx).style.display = 'inline-block';
@@ -298,19 +340,17 @@ function addGalleryImage(fileInput) {
     }
   }, 200);
 }
-
 function deleteGalleryImage(url) {
   var form = document.getElementById('deleteGalleryForm');
   form.action = url;
   form.style.display = 'block';
   form.submit();
 }
-
 function removeGallery(idx) {
   const wrap = document.getElementById('galwrap_' + idx);
   if (wrap) wrap.remove();
   const inp = document.getElementById('gallery_image_' + idx);
-  if (inp) inp.value = ''; // clear the data so view ignores it
+  if (inp) inp.value = '';
 }
 </script>
 {% endblock %}

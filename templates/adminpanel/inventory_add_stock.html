@@ -1,0 +1,249 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Add Stock — {{ inventory.variant }}{% endblock %}
+{% block page_title %}Add Stock{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;display:flex;align-items:center;gap:6px;">
+  <a href="{% url 'admin_inventory_list' %}" style="color:var(--blue);text-decoration:none;">
+    <i class="fas fa-boxes" style="font-size:11px;"></i> Inventory
+  </a>
+  <span>›</span>
+  <span>Add Stock — {{ inventory.variant }}</span>
+</div>
+
+<div class="row">
+
+  <!-- LEFT: Add stock form -->
+  <div class="col-md-7">
+    <div class="a-card" style="margin-bottom:20px;">
+      <div class="a-card-header">
+        <div class="a-card-title">
+          <i class="fas fa-plus-circle" style="color:var(--blue);margin-right:6px;"></i>
+          Add Stock
+        </div>
+      </div>
+      <div class="a-card-body">
+
+        <!-- Current stock banner -->
+        <div style="display:flex;align-items:center;gap:16px;padding:14px 18px;border-radius:0.37rem;
+                    margin-bottom:22px;
+                    {% if inventory.quantity <= 0 %}
+                      background:#fff0f0;border:1px solid #ffcdd2;
+                    {% elif inventory.quantity <= inventory.low_stock_threshold %}
+                      background:#fff3e0;border:1px solid #ffe0b2;
+                    {% else %}
+                      background:#e8f8ea;border:1px solid #b3e6c0;
+                    {% endif %}">
+          <div style="font-size:32px;font-weight:700;
+                      {% if inventory.quantity <= 0 %}color:var(--red);
+                      {% elif inventory.quantity <= inventory.low_stock_threshold %}color:var(--amber);
+                      {% else %}color:var(--green);{% endif %}">
+            {{ inventory.quantity }}
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);">Current Stock</div>
+            <div style="font-size:12px;color:var(--text-muted);">
+              {% if inventory.quantity <= 0 %}
+                Out of stock — restock urgently
+              {% elif inventory.quantity <= inventory.low_stock_threshold %}
+                Low stock — consider restocking soon
+              {% else %}
+                Stock level is healthy
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <form method="POST" action="">
+          {% csrf_token %}
+
+          <!-- Quantity -->
+          <div class="a-form-group">
+            <label class="a-label">
+              Quantity to Add <span style="color:var(--red);">*</span>
+            </label>
+            <input type="number" name="quantity" class="a-input"
+                   min="1" placeholder="e.g. 50" required
+                   style="font-size:18px;font-weight:600;max-width:220px;"
+                   id="qtyInput">
+            <div style="font-size:12px;color:var(--text-muted);margin-top:5px;">
+              New total will be:
+              <strong id="newTotal" style="color:var(--blue);">{{ inventory.quantity }}</strong>
+            </div>
+          </div>
+
+          <!-- Reason -->
+          <div class="a-form-group">
+            <label class="a-label">Reason <span style="color:var(--red);">*</span></label>
+            <select name="reason" class="a-input" style="max-width:320px;">
+              {% for val, label in reason_choices %}
+                {% if val != 'order' and val != 'order_cancel' %}
+                  <option value="{{ val }}">{{ label }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Note -->
+          <div class="a-form-group">
+            <label class="a-label">
+              Note
+              <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— optional</span>
+            </label>
+            <textarea name="note" class="a-input" rows="2"
+                      placeholder="e.g. Batch #4422, received from supplier on 10 Jul"></textarea>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:8px;">
+            <button type="submit" class="btn-admin" style="padding:9px 28px;">
+              <i class="fas fa-plus" style="font-size:12px;"></i>
+              Confirm Add Stock
+            </button>
+            <a href="{% url 'admin_inventory_list' %}"
+               style="display:inline-flex;align-items:center;padding:9px 20px;
+                      border:1px solid var(--border);border-radius:0.25rem;
+                      font-size:13.5px;color:var(--text-2);text-decoration:none;">
+              Cancel
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Variant info + recent log -->
+  <div class="col-md-5">
+
+    <!-- Variant card -->
+    <div class="a-card" style="margin-bottom:16px;">
+      <div class="a-card-header">
+        <div class="a-card-title">Variant Info</div>
+      </div>
+      <div class="a-card-body">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          {% if inventory.variant.primary_image %}
+          <img src="{{ inventory.variant.primary_image.url }}"
+               style="width:68px;height:68px;object-fit:cover;border-radius:8px;border:1px solid var(--border);flex-shrink:0;">
+          {% else %}
+          <div style="width:68px;height:68px;border-radius:8px;border:1px dashed var(--border);
+                      display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fas fa-image" style="color:var(--border);"></i>
+          </div>
+          {% endif %}
+          <div>
+            <div style="font-weight:700;color:var(--text);font-size:15px;margin-bottom:3px;">
+              {{ inventory.variant.product.product_name }}
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+              <span style="width:13px;height:13px;border-radius:50%;flex-shrink:0;display:inline-block;
+                           border:1.5px solid var(--border);
+                           background:{% if inventory.variant.color_code %}{{ inventory.variant.color_code }}{% else %}#e2e8f0{% endif %};">
+              </span>
+              <span style="font-size:13px;color:var(--text-2);">{{ inventory.variant.color_name }}</span>
+            </div>
+            <div style="font-size:13px;color:var(--text-muted);">
+              Price: <strong style="color:var(--text);">₹{{ inventory.variant.price }}</strong>
+            </div>
+            {% if inventory.variant.product.brand %}
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+              {{ inventory.variant.product.brand.brand_name }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent log -->
+    <div class="a-card">
+      <div class="a-card-header" style="justify-content:space-between;">
+        <div class="a-card-title">Recent Stock History</div>
+        <a href="{% url 'admin_inventory_log' inventory.id %}"
+           style="font-size:12px;color:var(--blue);text-decoration:none;">
+          View all <i class="fas fa-arrow-right" style="font-size:10px;"></i>
+        </a>
+      </div>
+
+      {% if logs %}
+      <div style="overflow-x:auto;">
+        <table class="a-table" style="font-size:12.5px;">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Qty</th>
+              <th>After</th>
+              <th>By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+            <tr>
+              <td style="white-space:nowrap;color:var(--text-muted);">
+                {{ log.created_at|date:"d M, H:i" }}
+              </td>
+              <td>
+                {% if log.change_type == 'add' %}
+                  <span style="color:var(--green);font-weight:600;">
+                    <i class="fas fa-arrow-up" style="font-size:10px;"></i> Add
+                  </span>
+                {% elif log.change_type == 'deduct' %}
+                  <span style="color:var(--red);font-weight:600;">
+                    <i class="fas fa-arrow-down" style="font-size:10px;"></i> Deduct
+                  </span>
+                {% else %}
+                  <span style="color:var(--amber);font-weight:600;">
+                    <i class="fas fa-pencil-alt" style="font-size:10px;"></i> Adjust
+                  </span>
+                {% endif %}
+              </td>
+              <td style="font-weight:600;">
+                {% if log.change_type == 'add' %}
+                  <span style="color:var(--green);">+{{ log.quantity_changed }}</span>
+                {% else %}
+                  <span style="color:var(--red);">-{{ log.quantity_changed }}</span>
+                {% endif %}
+              </td>
+              <td style="font-weight:600;color:var(--text);">{{ log.quantity_after }}</td>
+              <td style="color:var(--text-muted);">
+                {% if log.updated_by %}{{ log.updated_by.email|truncatechars:16 }}{% else %}—{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">
+        No stock history yet for this variant.
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const qtyInput  = document.getElementById('qtyInput');
+  const newTotal  = document.getElementById('newTotal');
+  const current   = {{ inventory.quantity }};
+
+  qtyInput.addEventListener('input', function () {
+    const val = parseInt(this.value, 10);
+    if (!isNaN(val) && val > 0) {
+      newTotal.textContent = current + val;
+      newTotal.style.color = 'var(--green)';
+    } else {
+      newTotal.textContent = current;
+      newTotal.style.color = 'var(--blue)';
+    }
+  });
+</script>
+{% endblock %}

@@ -1,276 +1,305 @@
 {% extends 'adminpanel/base_admin.html' %}
-{% load static %}
-
 {% block title %}Order #{{ order.order_number }}{% endblock %}
-{% block page_title %}Order Detail{% endblock %}
+{% block page_title %}Order #{{ order.order_number }}{% endblock %}
 {% block nav_orders %}active{% endblock %}
 
 {% block content %}
 
-<!-- ══════════════════════════════════════════════════════
-     HEADER
-══════════════════════════════════════════════════════ -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h5 class="mb-0" style="font-weight:700;">
-      Order <span style="color:#3167eb;">#{{ order.order_number }}</span>
-    </h5>
-    <small class="text-muted">
-      Placed on {{ order.created_at|date:"d M Y, h:i A" }}
-      &nbsp;·&nbsp; {{ order.user.email|default:"—" }}
-    </small>
-  </div>
-  <a href="{% url 'admin_order_list' %}"
-     style="background:#f0f0f0; color:#545454; padding:7px 16px;
-            text-decoration:none; border-radius:0.25rem;
-            display:inline-flex; align-items:center; gap:6px; font-size:13.5px; font-weight:500;">
-    <i class="fas fa-arrow-left"></i> Back to Orders
-  </a>
+<!-- Header -->
+<div class="d-flex align-items-center mb-3" style="gap:10px;">
+    <a href="{% url 'admin_order_list' %}" class="btn-action"
+       style="background:#f0f0f0;color:#545454;">
+        <i class="fas fa-arrow-left"></i> All Orders
+    </a>
+    <div>
+        <h5 class="mb-0 font-weight-bold">
+            Order <span style="color:#3167eb;">#{{ order.order_number }}</span>
+        </h5>
+        <small class="text-muted">Placed {{ order.created_at|date:"d M Y, h:i A" }}</small>
+    </div>
 </div>
 
+<!-- Alert if partial returns pending -->
+{% if pending_returns %}
+<div class="a-alert aa-info mb-3">
+    <i class="fas fa-exclamation-circle"></i>
+    <strong>{{ pending_returns }} item(s) are pending return approval.</strong>
+    Review each item below and click "Approve Return" to process individually.
+</div>
+{% endif %}
 
 <div class="row">
 
-  <!-- ════════════════════════════
-       LEFT  col-8
-  ════════════════════════════ -->
-  <div class="col-md-8">
+<!-- ══════════════════════════════════════
+     LEFT — Items + Status control
+══════════════════════════════════════ -->
+<div class="col-md-8">
 
-    <!-- Current Status (read-only) -->
+    <!-- Order-level status control -->
     <div class="a-card mb-3">
-      <div class="a-card-body py-3 d-flex align-items-center justify-content-between">
-        <span style="font-size:13.5px; color:#545454;">Current Status:</span>
-        {% if order.status == 'New' %}
-          <span class="abadge ab-staff" style="padding:6px 16px;">New</span>
-        {% elif order.status == 'Accepted' %}
-          <span class="abadge" style="background:#e8edff;color:#3167eb;padding:6px 16px;">Accepted</span>
-        {% elif order.status == 'Shipped' %}
-          <span class="abadge ab-processing" style="padding:6px 16px;">Shipped</span>
-        {% elif order.status == 'Delivered' %}
-          <span class="abadge ab-completed" style="padding:6px 16px;">Delivered</span>
-        {% elif order.status == 'Cancelled' %}
-          <span class="abadge ab-rejected" style="padding:6px 16px;">Cancelled</span>
-        {% elif order.status == 'Return Requested' %}
-          <span class="abadge ab-pending" style="padding:6px 16px;">Return Requested</span>
-        {% elif order.status == 'Returned' %}
-          <span class="abadge" style="background:#f0f0f0;color:#545454;padding:6px 16px;">Returned</span>
-        {% endif %}
-      </div>
+        <div class="a-card-header">
+            <span class="a-card-title">Update Order Status</span>
+            <!-- Current badge -->
+            {% if order.status == 'New' %}
+            <span class="abadge ab-pending">New</span>
+            {% elif order.status == 'Accepted' %}
+            <span class="abadge ab-staff">Accepted</span>
+            {% elif order.status == 'Shipped' %}
+            <span class="abadge ab-processing">Shipped</span>
+            {% elif order.status == 'Delivered' %}
+            <span class="abadge ab-completed">Delivered</span>
+            {% elif order.status == 'Cancelled' %}
+            <span class="abadge ab-rejected">Cancelled</span>
+            {% elif order.status == 'Return Requested' %}
+            <span class="abadge ab-processing">Return Requested</span>
+            {% elif order.status == 'Returned' %}
+            <span class="abadge ab-blocked">Returned</span>
+            {% endif %}
+        </div>
+        <div class="a-card-body">
+            <form method="POST" class="d-flex align-items-center" style="gap:10px;">
+                {% csrf_token %}
+                <select name="status" class="a-input" style="max-width:220px;">
+                    {% for s in status_choices %}
+                    <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>
+                        {{ s }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn-admin">
+                    <i class="fas fa-save mr-1"></i> Update Status
+                </button>
+            </form>
+            {% if order.status == 'Return Requested' %}
+            <p class="text-muted small mt-2 mb-0">
+                <i class="fas fa-info-circle mr-1"></i>
+                Changing to <strong>Returned</strong> will approve ALL pending return items at once,
+                restore their stock, and refund the full amount to wallet.
+                Or approve items individually below.
+            </p>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- Update Status -->
+    <!-- Items table with per-item return approve -->
     <div class="a-card mb-3">
-      <div class="a-card-header">
-        <h6 class="a-card-title">
-          <i class="fas fa-exchange-alt mr-2" style="color:#969696;"></i>Update Order Status
-        </h6>
-      </div>
-      <div class="a-card-body">
-        <form method="POST" id="statusForm">
-          {% csrf_token %}
-          <div class="d-flex align-items-center" style="gap:10px;">
-            <select name="status" class="a-input" style="width:auto; min-width:210px;">
-              {% for s in status_choices %}
-                <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>{{ s }}</option>
-              {% endfor %}
-            </select>
-            <button type="button" class="btn-admin" onclick="confirmStatus()">
-              <i class="fas fa-check"></i> Update Status
-            </button>
-          </div>
-          <p style="font-size:12px; color:#969696; margin-top:10px; margin-bottom:0;">
-            <i class="fas fa-info-circle mr-1"></i>
-            Cancelling an order will automatically restore product stock.
-          </p>
-        </form>
-      </div>
+        <div class="a-card-header">
+            <span class="a-card-title">Items ({{ order_items.count }})</span>
+        </div>
+        <div class="a-card-body p-0">
+            <table class="a-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th class="text-center">Price</th>
+                        <th class="text-center">Qty</th>
+                        <th class="text-center">Total</th>
+                        <th class="text-center">Item Status</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in order_items %}
+                <tr {% if item.item_status == 'Return Requested' %}style="background:#fffbf0;"{% endif %}>
+                    <td>
+                        <div class="d-flex align-items-center" style="gap:10px;">
+                            {% if item.variant and item.variant.primary_image %}
+                            <img src="{{ item.variant.primary_image.url }}"
+                                 style="width:44px;height:44px;object-fit:cover;
+                                        border-radius:4px;border:1px solid #e4e4e4;">
+                            {% endif %}
+                            <div>
+                                <div style="font-weight:600;font-size:14px;">
+                                    {{ item.product_name }}
+                                </div>
+                                <small class="text-muted">{{ item.color_name }}</small>
+                                <!-- Show cancel/return reason if exists -->
+                                {% if item.cancel_reason %}
+                                <small class="text-danger d-block">
+                                    Cancel reason: {{ item.cancel_reason }}
+                                </small>
+                                {% endif %}
+                                {% if item.return_reason %}
+                                <small class="text-warning d-block">
+                                    Return reason: {{ item.return_reason }}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center align-middle">&#8377;{{ item.product_price }}</td>
+                    <td class="text-center align-middle">
+                        {{ item.quantity }}
+                        {% if item.cancelled_qty > 0 %}
+                        <small class="text-danger d-block">{{ item.cancelled_qty }} cancelled</small>
+                        {% endif %}
+                        {% if item.returned_qty > 0 %}
+                        <small class="text-warning d-block">{{ item.returned_qty }} returning</small>
+                        {% endif %}
+                    </td>
+                    <td class="text-center align-middle font-weight-bold">
+                        &#8377;{{ item.sub_total }}
+                    </td>
+
+                    <!-- Item-level status badge -->
+                    <td class="text-center align-middle">
+                        {% if item.item_status == 'Active' %}
+                        <span class="abadge ab-completed">Active</span>
+                        {% elif item.item_status == 'Cancelled' %}
+                        <span class="abadge ab-rejected">Cancelled</span>
+                        {% elif item.item_status == 'Return Requested' %}
+                        <span class="abadge ab-processing" style="animation:pulse 1.5s infinite;">
+                            <i class="fas fa-clock mr-1"></i>Return Pending
+                        </span>
+                        {% elif item.item_status == 'Returned' %}
+                        <span class="abadge ab-blocked">Returned</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Approve return action -->
+                    <td class="text-center align-middle">
+                        {% if item.item_status == 'Return Requested' %}
+                        <form method="POST"
+                              action="{% url 'admin_approve_item_return' order.order_number item.id %}"
+                              onsubmit="return confirm('Approve return for \'{{ item.product_name|escapejs }}\'?\nThis will restore stock and refund proportional amount to wallet.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-action btn-unblock-u">
+                                <i class="fas fa-check mr-1"></i>Approve Return
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted" style="font-size:12px;">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <!-- Order Items -->
+</div><!-- /left -->
+
+
+<!-- ══════════════════════════════════════
+     RIGHT — Summary + Payment + Address
+══════════════════════════════════════ -->
+<div class="col-md-4">
+
+    <!-- Price summary -->
     <div class="a-card mb-3">
-      <div class="a-card-header">
-        <h6 class="a-card-title">
-          <i class="fas fa-shopping-bag mr-2" style="color:#969696;"></i>
-          Items &nbsp;<span style="font-weight:400; color:#969696;">({{ order.items.count }})</span>
-        </h6>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="a-table">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th style="text-align:center;">Price</th>
-              <th style="text-align:center;">Qty</th>
-              <th style="text-align:center;">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in order_items %}
-            <tr>
-              <td>
-                <div class="d-flex align-items-center" style="gap:10px;">
-                  {% if item.variant and item.variant.primary_image %}
-                    <img src="{{ item.variant.primary_image.url }}"
-                         style="width:48px; height:48px; object-fit:cover;
-                                border-radius:4px; border:1px solid #e4e4e4; flex-shrink:0;">
-                  {% else %}
-                    <div style="width:48px; height:48px; background:#f0f0f0; border-radius:4px;
-                                display:flex; align-items:center; justify-content:center;
-                                color:#ccc; flex-shrink:0;">
-                      <i class="fas fa-image"></i>
-                    </div>
-                  {% endif %}
-                  <div>
-                    <div style="font-weight:600; font-size:13.5px;">{{ item.product_name }}</div>
-                    <small style="color:#969696;">{{ item.color_name }}</small>
-                  </div>
-                </div>
-              </td>
-              <td style="text-align:center; font-size:13.5px;">₹{{ item.product_price }}</td>
-              <td style="text-align:center; font-size:13.5px;">{{ item.quantity }}</td>
-              <td style="text-align:center; font-weight:600; font-size:13.5px; color:#3167eb;">
-                ₹{{ item.sub_total }}
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="4" style="text-align:center; padding:30px; color:#969696;">
-                No items found for this order.
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div><!-- /col-md-8 -->
-
-
-  <!-- ════════════════════════════
-       RIGHT  col-4
-  ════════════════════════════ -->
-  <div class="col-md-4">
-
-    <!-- Price Details -->
-    <div class="a-card mb-3">
-      <div class="a-card-header"><h6 class="a-card-title">Price Details</h6></div>
-      <div class="a-card-body">
-        <div class="d-flex justify-content-between mb-2">
-          <span style="font-size:13px; color:#969696;">Tax (18%):</span>
-          <span style="font-size:13px;">₹{{ order.tax }}</span>
+        <div class="a-card-header">
+            <span class="a-card-title">Price Breakdown</span>
         </div>
-        <div class="d-flex justify-content-between mb-2">
-          <span style="font-size:13px; color:#969696;">Shipping:</span>
-          <span style="font-size:13px; color:#00b517;">Free</span>
+        <div class="a-card-body">
+            <div class="d-flex justify-content-between mb-2" style="font-size:14px;">
+                <span class="text-muted">Order Total</span>
+                <span>&#8377;{{ order.order_total }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2" style="font-size:14px;">
+                <span class="text-muted">Tax (18%)</span>
+                <span>&#8377;{{ order.tax }}</span>
+            </div>
+            {% if order.discount > 0 %}
+            <div class="d-flex justify-content-between mb-2" style="font-size:14px;">
+                <span class="text-muted">Coupon ({{ order.coupon_code }})</span>
+                <span class="text-success">&#8722; &#8377;{{ order.discount }}</span>
+            </div>
+            {% endif %}
+            {% if order.wallet_used > 0 %}
+            <div class="d-flex justify-content-between mb-2" style="font-size:14px;">
+                <span class="text-muted">Wallet Used</span>
+                <span class="text-primary">&#8722; &#8377;{{ order.wallet_used }}</span>
+            </div>
+            {% endif %}
+            <hr style="margin:8px 0;">
+            <div class="d-flex justify-content-between font-weight-bold">
+                <span>Grand Total</span>
+                <span style="color:#3167eb;font-size:16px;">&#8377;{{ order.order_total }}</span>
+            </div>
         </div>
-        <hr style="margin:10px 0;">
-        <div class="d-flex justify-content-between">
-          <span style="font-weight:700; font-size:14px;">Grand Total:</span>
-          <span style="font-weight:700; font-size:15px; color:#3167eb;">₹{{ order.order_total }}</span>
-        </div>
-      </div>
     </div>
 
     <!-- Payment -->
     <div class="a-card mb-3">
-      <div class="a-card-header"><h6 class="a-card-title">Payment</h6></div>
-      <div class="a-card-body">
-        <div class="d-flex justify-content-between mb-2">
-          <span style="font-size:13px; color:#969696;">Method:</span>
-          <strong style="font-size:13px;">
-            {{ order.payment.payment_method|default:"Cash on Delivery" }}
-          </strong>
+        <div class="a-card-header">
+            <span class="a-card-title">Payment</span>
         </div>
-        <div class="d-flex justify-content-between">
-          <span style="font-size:13px; color:#969696;">Status:</span>
-          {% with ps=order.payment.status|default:"Pending" %}
-            {% if ps == 'Completed' %}
-              <span class="abadge ab-completed">{{ ps }}</span>
-            {% else %}
-              <span class="abadge ab-pending">{{ ps }}</span>
+        <div class="a-card-body">
+            <div class="d-flex justify-content-between mb-2" style="font-size:14px;">
+                <span class="text-muted">Method</span>
+                <strong>{{ order.payment.payment_method|default:"—" }}</strong>
+            </div>
+            <div class="d-flex justify-content-between" style="font-size:14px;">
+                <span class="text-muted">Status</span>
+                {% if order.payment.status == 'Completed' %}
+                <span class="abadge ab-completed">Completed</span>
+                {% elif order.payment.status == 'Pending' %}
+                <span class="abadge ab-pending">Pending</span>
+                {% elif order.payment.status == 'Refunded' %}
+                <span class="abadge ab-staff">Refunded</span>
+                {% elif order.payment.status == 'Failed' %}
+                <span class="abadge ab-rejected">Failed</span>
+                {% else %}
+                <span>{{ order.payment.status|default:"—" }}</span>
+                {% endif %}
+            </div>
+            {% if order.payment.transaction_id %}
+            <div class="mt-2" style="font-size:12px;color:#888;">
+                TXN: {{ order.payment.transaction_id }}
+            </div>
             {% endif %}
-          {% endwith %}
         </div>
-      </div>
     </div>
 
     <!-- Customer -->
     <div class="a-card mb-3">
-      <div class="a-card-header"><h6 class="a-card-title">Customer</h6></div>
-      <div class="a-card-body">
-        <div class="d-flex align-items-center mb-2" style="gap:10px;">
-          <div class="ua" style="width:38px; height:38px; font-size:14px; flex-shrink:0;">
-            {{ order.full_name|first|upper }}
-          </div>
-          <div>
-            <div style="font-weight:600; font-size:13.5px;">{{ order.full_name }}</div>
-            <small style="color:#969696;">{{ order.user.email|default:"—" }}</small>
-          </div>
+        <div class="a-card-header">
+            <span class="a-card-title">Customer</span>
         </div>
-        <div style="font-size:12.5px; color:#969696;">
-          <i class="fas fa-phone mr-1"></i>+91 {{ order.phone }}
+        <div class="a-card-body" style="font-size:14px;">
+            <strong>{{ order.user.get_full_name|default:order.user.email }}</strong><br>
+            <span class="text-muted">{{ order.user.email }}</span>
         </div>
-      </div>
     </div>
 
-    <!-- Delivery Address -->
+    <!-- Delivery address -->
     <div class="a-card mb-3">
-      <div class="a-card-header"><h6 class="a-card-title">Delivery Address</h6></div>
-      <div class="a-card-body">
-        <p style="font-weight:600; font-size:13.5px; margin-bottom:6px;">{{ order.full_name }}</p>
-        <p style="font-size:13px; color:#969696; line-height:1.7; margin-bottom:6px;">
-          {{ order.address_line }}<br>
-          {{ order.city }}, {{ order.state }} — {{ order.pincode }}
-        </p>
-        <div style="font-size:12.5px; color:#969696; margin-bottom:8px;">
-          <i class="fas fa-phone mr-1"></i>+91 {{ order.phone }}
+        <div class="a-card-header">
+            <span class="a-card-title">Delivery Address</span>
         </div>
-        <span class="abadge ab-staff" style="font-size:11px;">{{ order.address_type }}</span>
-      </div>
+        <div class="a-card-body" style="font-size:14px;line-height:1.8;">
+            <strong>{{ order.full_name }}</strong><br>
+            <span class="text-muted">
+                {{ order.address_line }}<br>
+                {{ order.city }}, {{ order.state }} — {{ order.pincode }}<br>
+                <i class="fas fa-phone mr-1"></i>+91 {{ order.phone }}
+            </span>
+        </div>
     </div>
 
-  </div><!-- /col-md-4 -->
+    <!-- Cancel/return notes -->
+    {% if order.cancel_reason %}
+    <div class="a-card mb-3">
+        <div class="a-card-header"><span class="a-card-title">Cancel Reason</span></div>
+        <div class="a-card-body" style="font-size:14px;">{{ order.cancel_reason }}</div>
+    </div>
+    {% endif %}
+    {% if order.return_reason %}
+    <div class="a-card mb-3">
+        <div class="a-card-header"><span class="a-card-title">Return Reason</span></div>
+        <div class="a-card-body" style="font-size:14px;">{{ order.return_reason }}</div>
+    </div>
+    {% endif %}
+
+</div><!-- /right -->
 </div><!-- /row -->
 
+<style>
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.6; }
+}
+</style>
 
-<!-- ══════════════════════════════════════════════════════
-     CONFIRM MODAL
-══════════════════════════════════════════════════════ -->
-<div class="confirm-overlay" id="statusModal">
-  <div class="confirm-box">
-    <div class="confirm-ico" style="background:#e8edff; color:#3167eb;">
-      <i class="fas fa-exchange-alt"></i>
-    </div>
-    <div class="confirm-title">Update Order Status?</div>
-    <div class="confirm-msg">
-      Change order <strong>#{{ order.order_number }}</strong> to
-      <strong id="newStatusLabel" style="color:#3167eb;"></strong>?
-    </div>
-    <div class="confirm-btns">
-      <button class="btn-cancel-c" onclick="closeModal()">Cancel</button>
-      <button class="btn-do-unblock" onclick="document.getElementById('statusForm').submit()">
-        Yes, Update
-      </button>
-    </div>
-  </div>
-</div>
-
-{% endblock %}
-
-
-{% block extra_js %}
-<script>
-  function confirmStatus() {
-    const sel = document.querySelector('[name="status"]');
-    document.getElementById('newStatusLabel').textContent = sel.options[sel.selectedIndex].text;
-    document.getElementById('statusModal').classList.add('show');
-  }
-  function closeModal() {
-    document.getElementById('statusModal').classList.remove('show');
-  }
-  document.getElementById('statusModal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-  });
-</script>
 {% endblock %}

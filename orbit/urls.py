@@ -25,7 +25,7 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls')),
     path('orders/', include('orders.urls')),
     path('wallet/', include('wallet.urls')),
-    
+    path('inventory/', include('inventory.urls')),
     # allauth
     path('auth/', include('allauth.urls')),
 

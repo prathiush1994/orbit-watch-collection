@@ -179,6 +179,10 @@
      class="s-link {% if active == 'offers' %}active{% endif %}">
      <i class="fas fa-percent"></i> Offers
   </a>
+  <a href="{% url 'admin_inventory_list' %}"
+       class="s-link {% if active == 'inventory' %}active{% endif %}">
+       <i class="fas fa-boxes"></i> Inventory
+  </a>
 
   <a href="{% url 'admin_settings' %}"
      class="s-link {% if active == 'settings' %}active{% endif %}">

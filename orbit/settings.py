@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'orders',
     'wallet',
     'offers',
-
+    'inventory',
+    
    # ── Core Auth Settings ─────────────────── 
     'allauth',
     'allauth.account',

@@ -38,12 +38,12 @@ def admin_order_list(request):
     if status_filter:
         orders = orders.filter(status=status_filter)
 
-    sort = request.GET.get('sort', '-created_at')
+    sort  = request.GET.get('sort', '-created_at')
     VALID = {
         'created_at': 'created_at', '-created_at': '-created_at',
         'order_total': 'order_total', '-order_total': '-order_total',
     }
-    orders   = orders.order_by(VALID.get(sort, '-created_at'))
+    orders    = orders.order_by(VALID.get(sort, '-created_at'))
     paginator = Paginator(orders, 10)
     page_obj  = paginator.get_page(request.GET.get('page', 1))
 
@@ -58,12 +58,14 @@ def admin_order_list(request):
 
 
 # ─────────────────────────────────────────────────────────
-# ORDER DETAIL + STATUS UPDATE
+# ORDER DETAIL + ORDER-LEVEL STATUS CHANGE
 # ─────────────────────────────────────────────────────────
 @staff_member_required(login_url='admin_login')
 def admin_order_detail(request, order_number):
     order       = get_object_or_404(Order, order_number=order_number)
-    order_items = OrderProduct.objects.filter(order=order).select_related('variant')
+    order_items = OrderProduct.objects.filter(order=order).select_related(
+        'variant', 'variant__product'
+    )
 
     if request.method == 'POST':
         new_status = request.POST.get('status', '').strip()
@@ -73,7 +75,7 @@ def admin_order_detail(request, order_number):
 
         old_status = order.status
 
-        # ── Admin cancels → restock active items + refund ──
+        # ── Admin cancels the whole order ─────────────────
         if new_status == 'Cancelled' and old_status not in ['Cancelled', 'Returned']:
             for item in order.items.filter(item_status='Active').select_related('variant'):
                 if item.variant:
@@ -85,7 +87,7 @@ def admin_order_detail(request, order_number):
                 item.save(update_fields=['item_status', 'cancelled_qty', 'cancelled_at'])
             _process_refund(request, order, 'Admin cancelled order')
 
-        # ── Admin approves return → restock + refund ───────
+        # ── Admin approves ALL pending return items ────────
         if new_status == 'Returned' and old_status == 'Return Requested':
             for item in order.items.filter(
                 item_status='Return Requested'
@@ -101,29 +103,32 @@ def admin_order_detail(request, order_number):
         order.status = new_status
         order.save(update_fields=['status'])
 
-        # ── Update payment status ──────────────────────────
+        # ── Payment status sync ────────────────────────────
         if order.payment:
             pm = order.payment.payment_method
             if new_status == 'Delivered' and pm == 'COD':
                 order.payment.status = 'Completed'
+                order.payment.save(update_fields=['status'])
             elif new_status in ['Cancelled', 'Returned']:
                 order.payment.status = 'Refunded'
-            elif new_status not in ['Delivered']:
-                pass   # leave as-is for Razorpay/Wallet already Completed
-            order.payment.save(update_fields=['status'])
+                order.payment.save(update_fields=['status'])
 
-        messages.success(request, f'Order #{order_number} → "{new_status}".')
+        messages.success(request, f'Order #{order_number} updated to "{new_status}".')
         return redirect('admin_order_detail', order_number=order_number)
 
+    # ── Count items needing action ─────────────────────────
+    pending_returns = order_items.filter(item_status='Return Requested').count()
+
     return render(request, 'adminpanel/admin_order_detail.html', {
-        'order'         : order,
-        'order_items'   : order_items,
-        'status_choices': STATUS_CHOICES,
+        'order'          : order,
+        'order_items'    : order_items,
+        'status_choices' : STATUS_CHOICES,
+        'pending_returns': pending_returns,
     })
 
 
 # ─────────────────────────────────────────────────────────
-# APPROVE INDIVIDUAL ITEM RETURN
+# APPROVE INDIVIDUAL ITEM RETURN  ← fixes issue 1
 # ─────────────────────────────────────────────────────────
 @staff_member_required(login_url='admin_login')
 def admin_approve_item_return(request, order_number, item_id):
@@ -131,7 +136,7 @@ def admin_approve_item_return(request, order_number, item_id):
     item  = get_object_or_404(OrderProduct, id=item_id, order=order)
 
     if item.item_status != 'Return Requested':
-        messages.error(request, 'Item is not in "Return Requested" state.')
+        messages.error(request, f'Item "{item.product_name}" is not pending return.')
         return redirect('admin_order_detail', order_number=order_number)
 
     if request.method != 'POST':
@@ -139,12 +144,12 @@ def admin_approve_item_return(request, order_number, item_id):
 
     return_qty = item.returned_qty or item.quantity
 
-    # Restore stock
+    # 1. Restore stock
     if item.variant:
         item.variant.stock += return_qty
         item.variant.save(update_fields=['stock'])
 
-    # Proportional refund
+    # 2. Proportional wallet refund based on item value vs order total
     order_subtotal = sum(i.product_price * i.quantity for i in order.items.all())
     item_value     = item.product_price * return_qty
     proportion     = (item_value / order_subtotal) if order_subtotal > 0 else Decimal('0')
@@ -152,15 +157,18 @@ def admin_approve_item_return(request, order_number, item_id):
     wallet_portion = round((order.wallet_used or Decimal('0')) * proportion, 2)
     online_portion = Decimal('0')
     payment        = order.payment
+
     if payment and payment.payment_method in ['RAZORPAY', 'COD'] \
             and payment.status in ['Completed', 'Pending']:
         online_portion = round(Decimal(str(payment.amount_paid)) * proportion, 2)
 
     total_refund = wallet_portion + online_portion
 
+    # 3. Update item status → Returned
     item.item_status = 'Returned'
     item.save(update_fields=['item_status'])
 
+    # 4. Credit wallet
     if total_refund > 0 and order.user:
         wallet, _ = Wallet.objects.get_or_create(user=order.user)
         wallet.credit(
@@ -171,22 +179,41 @@ def admin_approve_item_return(request, order_number, item_id):
         )
         messages.success(
             request,
-            f'Return approved. ₹{total_refund} refunded to {order.user.email}\'s wallet.'
+            f'✓ Return approved for "{item.product_name}". '
+            f'₹{total_refund} refunded to {order.user.email}\'s wallet.'
         )
     else:
-        messages.success(request, f'Return approved for "{item.product_name}".')
+        messages.success(request, f'✓ Return approved for "{item.product_name}".')
 
-    # If no more pending returns and no active items → set order Returned
-    if (not order.items.filter(item_status='Return Requested').exists()
-            and not order.items.filter(item_status='Active').exists()):
+    # 5. Check if ALL items are now Returned or Cancelled
+    #    If so → set order status to Returned
+    still_active  = order.items.filter(item_status='Active').exists()
+    still_pending = order.items.filter(item_status='Return Requested').exists()
+
+    if not still_active and not still_pending:
         order.status = 'Returned'
         order.save(update_fields=['status'])
+        if payment and payment.status not in ['Refunded']:
+            payment.status = 'Refunded'
+            payment.save(update_fields=['status'])
+        messages.info(request, 'All items returned — order marked as Returned.')
+
+    # 6. If some items still Active (partial return) → keep order Delivered
+    #    The order stays at whatever status it was (Delivered or Return Requested)
+    elif still_active and not still_pending:
+        # All return requests processed, some items still delivered normally
+        order.status = 'Delivered'
+        order.save(update_fields=['status'])
+        messages.info(
+            request,
+            'Partial return complete. Remaining items stay as Delivered.'
+        )
 
     return redirect('admin_order_detail', order_number=order_number)
 
 
 # ─────────────────────────────────────────────────────────
-# INTERNAL HELPER — full order wallet refund
+# INTERNAL — full order refund helper
 # ─────────────────────────────────────────────────────────
 def _process_refund(request, order, reason=''):
     refund_amount = Decimal('0')

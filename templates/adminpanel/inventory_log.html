@@ -1,0 +1,183 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Stock History — {{ inventory.variant }}{% endblock %}
+{% block page_title %}Stock History{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;display:flex;align-items:center;gap:6px;">
+  <a href="{% url 'admin_inventory_list' %}" style="color:var(--blue);text-decoration:none;">
+    <i class="fas fa-boxes" style="font-size:11px;"></i> Inventory
+  </a>
+  <span>›</span>
+  <span>History — {{ inventory.variant }}</span>
+</div>
+
+<!-- Variant + current stock summary -->
+<div class="a-card" style="margin-bottom:20px;">
+  <div class="a-card-body">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+      <div style="display:flex;align-items:center;gap:14px;">
+        {% if inventory.variant.primary_image %}
+        <img src="{{ inventory.variant.primary_image.url }}"
+             style="width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
+        {% endif %}
+        <div>
+          <div style="font-weight:700;font-size:15px;color:var(--text);">
+            {{ inventory.variant.product.product_name }}
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+            <span style="width:12px;height:12px;border-radius:50%;display:inline-block;
+                         border:1.5px solid var(--border);
+                         background:{% if inventory.variant.color_code %}{{ inventory.variant.color_code }}{% else %}#e2e8f0{% endif %};">
+            </span>
+            <span style="font-size:13px;color:var(--text-2);">{{ inventory.variant.color_name }}</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px;">
+        <div style="text-align:center;">
+          <div style="font-size:28px;font-weight:700;
+                      {% if inventory.quantity <= 0 %}color:var(--red);
+                      {% elif inventory.quantity <= inventory.low_stock_threshold %}color:var(--amber);
+                      {% else %}color:var(--green);{% endif %}">
+            {{ inventory.quantity }}
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">
+            Current Stock
+          </div>
+        </div>
+        <a href="{% url 'admin_inventory_add_stock' inventory.id %}" class="btn-admin">
+          <i class="fas fa-plus" style="font-size:12px;"></i> Add Stock
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Log table -->
+<div class="a-card">
+  <div class="a-card-header">
+    <div class="a-card-title">
+      <i class="fas fa-history" style="color:var(--blue);margin-right:6px;"></i>
+      Full Stock History
+    </div>
+    <span style="font-size:12px;color:var(--text-muted);">
+      {{ logs.paginator.count }} record{{ logs.paginator.count|pluralize }}
+    </span>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="a-table">
+      <thead>
+        <tr>
+          <th style="width:16%;">Date & Time</th>
+          <th style="width:12%;">Type</th>
+          <th style="width:10%;">Qty Changed</th>
+          <th style="width:10%;">Stock After</th>
+          <th style="width:14%;">Reason</th>
+          <th style="width:20%;">Note</th>
+          <th style="width:18%;">Updated By</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td style="color:var(--text-muted);white-space:nowrap;font-size:12.5px;">
+            {{ log.created_at|date:"d M Y" }}<br>
+            <span style="font-size:11px;">{{ log.created_at|time:"H:i" }}</span>
+          </td>
+          <td>
+            {% if log.change_type == 'add' %}
+              <span class="abadge ab-active" style="font-size:11px;">
+                <i class="fas fa-arrow-up" style="font-size:9px;"></i> Added
+              </span>
+            {% elif log.change_type == 'deduct' %}
+              <span class="abadge ab-blocked" style="font-size:11px;">
+                <i class="fas fa-arrow-down" style="font-size:9px;"></i> Deducted
+              </span>
+            {% else %}
+              <span class="abadge" style="background:#fff3e0;color:#b96a00;font-size:11px;">
+                <i class="fas fa-pencil-alt" style="font-size:9px;"></i> Adjusted
+              </span>
+            {% endif %}
+          </td>
+          <td style="font-size:15px;font-weight:700;
+                    {% if log.change_type == 'add' %}color:var(--green);
+                    {% elif log.change_type == 'deduct' %}color:var(--red);
+                    {% else %}color:var(--amber);
+                    {% endif %}">
+            {% if log.change_type == 'add' %}
+              +{{ log.quantity_changed }}
+            {% elif log.change_type == 'deduct' %}
+              -{{ log.quantity_changed }}
+            {% else %}
+              {{ log.quantity_changed }}
+            {% endif %}
+          </td>
+          <td style="font-weight:700;font-size:15px;color:var(--text);">
+            {{ log.quantity_after }}
+          </td>
+          <td>
+            <span style="font-size:12.5px;color:var(--text-2);">{{ log.get_reason_display }}</span>
+          </td>
+          <td style="font-size:12.5px;color:var(--text-muted);">
+            {% if log.note %}{{ log.note }}{% else %}—{% endif %}
+          </td>
+          <td style="font-size:12.5px;color:var(--text-muted);">
+            {% if log.updated_by %}
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="ua" style="width:26px;height:26px;font-size:10px;">
+                  {{ log.updated_by.email|first|upper }}
+                </span>
+                {{ log.updated_by.email }}
+              </div>
+            {% else %}
+              <span style="color:var(--text-muted);">System</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">
+            <i class="fas fa-history" style="font-size:28px;display:block;margin-bottom:10px;opacity:0.2;"></i>
+            No stock history yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div style="padding:14px 20px;border-top:1px solid var(--border);">
+    <div class="a-pages">
+      {% if logs.has_previous %}
+        <a class="a-page" href="?page={{ logs.previous_page_number }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+      {% else %}
+        <span class="a-page dis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg></span>
+      {% endif %}
+      {% for num in logs.paginator.page_range %}
+        {% if logs.number == num %}
+          <span class="a-page cur">{{ num }}</span>
+        {% elif num > logs.number|add:'-3' and num < logs.number|add:'3' %}
+          <a class="a-page" href="?page={{ num }}">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+      {% if logs.has_next %}
+        <a class="a-page" href="?page={{ logs.next_page_number }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      {% else %}
+        <span class="a-page dis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg></span>
+      {% endif %}
+    </div>
+    <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:8px;">
+      Page {{ logs.number }} of {{ logs.paginator.num_pages }}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

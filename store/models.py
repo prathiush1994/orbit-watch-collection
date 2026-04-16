@@ -126,6 +126,11 @@ class ProductVariant(models.Model):
     def is_in_stock(self):
         return self.stock > 0
 
+    def is_in_stock(self):
+        try:
+            return self.inventory.quantity > 0
+        except Exception:
+            return self.stock > 0
 
 class VariantImage(models.Model):
 

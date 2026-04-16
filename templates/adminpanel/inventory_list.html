@@ -1,0 +1,243 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Inventory Management{% endblock %}
+{% block page_title %}Inventory Management{% endblock %}
+
+{% block content %}
+
+<!-- Summary stats -->
+<div class="stat-grid" style="margin-bottom:20px;">
+
+  <div class="stat-card">
+    <div>
+      <div class="stat-label">Total SKUs Tracked</div>
+      <div class="stat-value">{{ total_items }}</div>
+    </div>
+    <div class="stat-icon si-blue">
+      <i class="fas fa-boxes"></i>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div>
+      <div class="stat-label">Low Stock</div>
+      <div class="stat-value" style="color:var(--amber);">{{ low_stock }}</div>
+      <div class="stat-change" style="color:var(--amber);">≤ 5 units remaining</div>
+    </div>
+    <div class="stat-icon si-amber">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div>
+      <div class="stat-label">Out of Stock</div>
+      <div class="stat-value" style="color:var(--red);">{{ out_of_stock }}</div>
+      <div class="stat-change down">Needs restocking</div>
+    </div>
+    <div class="stat-icon si-red">
+      <i class="fas fa-times-circle"></i>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toolbar -->
+<div class="a-card" style="margin-bottom:16px;">
+  <div style="padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+
+    <form method="GET" action="{% url 'admin_inventory_list' %}" id="invSearchForm"
+          style="display:flex;align-items:center;gap:8px;" autocomplete="off">
+
+      <div class="search-wrap">
+        <svg class="s-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" name="q" class="search-input"
+               value="{{ search_query }}" placeholder="Search product, color, brand…">
+      </div>
+
+      <!-- Stock filter tabs -->
+      <div style="display:flex;gap:4px;">
+        <a href="?{% if search_query %}q={{ search_query }}&{% endif %}"
+           style="padding:7px 14px;border-radius:0.25rem;font-size:13px;font-weight:500;
+                  text-decoration:none;border:1px solid var(--border);
+                  {% if not filter_stock %}background:var(--blue);color:#fff;border-color:var(--blue);
+                  {% else %}background:#fff;color:var(--text-2);{% endif %}">
+          All
+        </a>
+        <a href="?{% if search_query %}q={{ search_query }}&{% endif %}stock=low"
+           style="padding:7px 14px;border-radius:0.25rem;font-size:13px;font-weight:500;
+                  text-decoration:none;border:1px solid var(--border);
+                  {% if filter_stock == 'low' %}background:var(--amber);color:#fff;border-color:var(--amber);
+                  {% else %}background:#fff;color:var(--text-2);{% endif %}">
+          Low Stock
+        </a>
+        <a href="?{% if search_query %}q={{ search_query }}&{% endif %}stock=out"
+           style="padding:7px 14px;border-radius:0.25rem;font-size:13px;font-weight:500;
+                  text-decoration:none;border:1px solid var(--border);
+                  {% if filter_stock == 'out' %}background:var(--red);color:#fff;border-color:var(--red);
+                  {% else %}background:#fff;color:var(--text-2);{% endif %}">
+          Out of Stock
+        </a>
+      </div>
+
+      <button type="submit" class="btn-admin" style="padding:7px 14px;">Search</button>
+    </form>
+
+    <div style="font-size:13px;color:var(--text-muted);">
+      <strong style="color:var(--text);">{{ inventories.paginator.count }}</strong>
+      variant{{ inventories.paginator.count|pluralize }}
+    </div>
+
+  </div>
+</div>
+
+<!-- Table -->
+<div class="a-card">
+  <div class="a-card-header">
+    <div class="a-card-title">Stock Overview</div>
+    <span style="font-size:12px;color:var(--text-muted);">
+      Stock is managed here — not on the product variant page
+    </span>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="a-table" style="table-layout:fixed;width:100%;">
+      <thead>
+        <tr>
+          <th style="width:5%;">#</th>
+          <th style="width:28%;">Product / Variant</th>
+          <th style="width:12%;">Image</th>
+          <th style="width:12%;">Price</th>
+          <th style="width:12%;">Stock</th>
+          <th style="width:12%;">Status</th>
+          <th style="width:19%;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in inventories %}
+        <tr>
+          <td style="color:var(--text-muted);font-size:12px;">
+            {{ forloop.counter|add:inventories.start_index|add:"-1" }}
+          </td>
+
+          <td>
+            <div style="font-weight:600;color:var(--text);font-size:14px;">
+              {{ inv.variant.product.product_name }}
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+              <span style="width:12px;height:12px;border-radius:50%;flex-shrink:0;display:inline-block;
+                           border:1.5px solid var(--border);
+                           background:{% if inv.variant.color_code %}{{ inv.variant.color_code }}{% else %}#e2e8f0{% endif %};">
+              </span>
+              <span style="font-size:13px;color:var(--text-2);">{{ inv.variant.color_name }}</span>
+            </div>
+            {% if inv.variant.product.brand %}
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+              {{ inv.variant.product.brand.brand_name }}
+            </div>
+            {% endif %}
+          </td>
+
+          <td>
+            {% if inv.variant.primary_image %}
+              <img src="{{ inv.variant.primary_image.url }}"
+                   style="width:46px;height:46px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">
+            {% else %}
+              <div style="width:46px;height:46px;border-radius:6px;border:1px dashed var(--border);
+                          display:flex;align-items:center;justify-content:center;">
+                <i class="fas fa-image" style="color:var(--border);font-size:14px;"></i>
+              </div>
+            {% endif %}
+          </td>
+
+          <td style="font-weight:600;color:var(--text);">₹{{ inv.variant.price }}</td>
+
+          <td>
+            {% if inv.quantity <= 0 %}
+              <span style="color:var(--red);font-weight:700;font-size:15px;">0</span>
+              <div style="font-size:11px;color:var(--red);margin-top:1px;">Out of stock</div>
+            {% elif inv.quantity <= inv.low_stock_threshold %}
+              <span style="color:var(--amber);font-weight:700;font-size:15px;">{{ inv.quantity }}</span>
+              <div style="font-size:11px;color:var(--amber);margin-top:1px;">Low stock</div>
+            {% else %}
+              <span style="color:var(--green);font-weight:700;font-size:15px;">{{ inv.quantity }}</span>
+            {% endif %}
+          </td>
+
+          <td>
+            {% if inv.quantity <= 0 %}
+              <span class="abadge ab-blocked">
+                <i class="fas fa-times-circle" style="font-size:10px;"></i> Out
+              </span>
+            {% elif inv.quantity <= inv.low_stock_threshold %}
+              <span class="abadge" style="background:#fff3e0;color:#b96a00;">
+                <i class="fas fa-exclamation-triangle" style="font-size:10px;"></i> Low
+              </span>
+            {% else %}
+              <span class="abadge ab-active">
+                <i class="fas fa-check-circle" style="font-size:10px;"></i> In Stock
+              </span>
+            {% endif %}
+          </td>
+
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <a href="{% url 'admin_inventory_add_stock' inv.id %}"
+                 class="btn-action"
+                 style="background:var(--blue-light);color:var(--blue);border:1px solid #c7d2fe;text-decoration:none;">
+                <i class="fas fa-plus" style="font-size:10px;"></i> Add Stock
+              </a>
+              <a href="{% url 'admin_inventory_log' inv.id %}"
+                 class="btn-action"
+                 style="background:#f1f5f9;color:var(--text-2);border:1px solid var(--border);text-decoration:none;">
+                <i class="fas fa-history" style="font-size:10px;"></i> Log
+              </a>
+            </div>
+          </td>
+
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center;padding:48px;color:var(--text-muted);">
+            <i class="fas fa-boxes" style="font-size:32px;display:block;margin-bottom:12px;opacity:0.2;"></i>
+            No inventory records found{% if search_query %} for "{{ search_query }}"{% endif %}.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div style="padding:14px 20px;border-top:1px solid var(--border);">
+    <div class="a-pages">
+      {% if inventories.has_previous %}
+        <a class="a-page" href="?page={{ inventories.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_stock %}&stock={{ filter_stock }}{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+      {% else %}
+        <span class="a-page dis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg></span>
+      {% endif %}
+      {% for num in inventories.paginator.page_range %}
+        {% if inventories.number == num %}
+          <span class="a-page cur">{{ num }}</span>
+        {% elif num > inventories.number|add:'-3' and num < inventories.number|add:'3' %}
+          <a class="a-page" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_stock %}&stock={{ filter_stock }}{% endif %}">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+      {% if inventories.has_next %}
+        <a class="a-page" href="?page={{ inventories.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_stock %}&stock={{ filter_stock }}{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      {% else %}
+        <span class="a-page dis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg></span>
+      {% endif %}
+    </div>
+    <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:8px;">
+      Page {{ inventories.number }} of {{ inventories.paginator.num_pages }}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
