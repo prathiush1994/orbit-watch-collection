@@ -154,24 +154,64 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.order_number} — {self.user}"
+    
+    def active_items(self):
+        """Items that are not individually cancelled or returned."""
+        return self.items.exclude(
+            item_status__in=['Cancelled', 'Return Requested', 'Returned']
+        )
 
+    def all_items_cancelled(self):
+        return not self.items.exclude(item_status='Cancelled').exists()
+
+    def all_items_returned(self):
+        return not self.items.exclude(
+            item_status__in=['Returned', 'Cancelled']
+        ).exists()
 
 # ─────────────────────────────────────────────────────────
-# ORDER PRODUCT
+# ORDER PRODUCT  — item-level status added
 # ─────────────────────────────────────────────────────────
 class OrderProduct(models.Model):
-    order         = models.ForeignKey(Order,          on_delete=models.CASCADE,   related_name='items')
-    user          = models.ForeignKey(Account,        on_delete=models.SET_NULL,  null=True)
-    variant       = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL,  null=True)
+
+    ITEM_STATUS_CHOICES = (
+        ('Active',           'Active'),
+        ('Cancelled',        'Cancelled'),
+        ('Return Requested', 'Return Requested'),
+        ('Returned',         'Returned'),
+    )
+
+    order         = models.ForeignKey(Order,          on_delete=models.CASCADE,  related_name='items')
+    user          = models.ForeignKey(Account,        on_delete=models.SET_NULL, null=True)
+    variant       = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, null=True)
+
     product_name  = models.CharField(max_length=250)
     color_name    = models.CharField(max_length=100)
     product_price = models.DecimalField(max_digits=10, decimal_places=2)
-    quantity      = models.IntegerField()
+    quantity      = models.IntegerField()         # original ordered qty
+
+    # ── Item-level cancel / return ────────────────────────
+    item_status      = models.CharField(
+        max_length=20, choices=ITEM_STATUS_CHOICES, default='Active'
+    )
+    # How many units were cancelled or returned (≤ quantity)
+    cancelled_qty    = models.IntegerField(default=0)
+    returned_qty     = models.IntegerField(default=0)
+    cancel_reason    = models.CharField(max_length=255, blank=True)
+    return_reason    = models.CharField(max_length=255, blank=True)
+    cancelled_at     = models.DateTimeField(null=True, blank=True)
+    return_requested_at = models.DateTimeField(null=True, blank=True)
+
     ordered       = models.BooleanField(default=False)
     created_at    = models.DateTimeField(auto_now_add=True)
 
     def sub_total(self):
         return self.product_price * self.quantity
 
+    def active_qty(self):
+        """Qty that is still active (not cancelled/returned)."""
+        return self.quantity - self.cancelled_qty - self.returned_qty
+
     def __str__(self):
         return f"{self.product_name} ({self.color_name}) × {self.quantity}"
+

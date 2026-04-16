@@ -1,0 +1,319 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Offers{% endblock %}
+{% block page_title %}Offer Management{% endblock %}
+{% block nav_offers %}active{% endblock %}
+
+{% block content %}
+
+<!-- ── TABS ───────────────────────────────────────────── -->
+<ul class="nav nav-tabs mb-4" id="offerTabs">
+    <li class="nav-item">
+        <a class="nav-link active" data-toggle="tab" href="#product-offers">
+            <i class="fas fa-box mr-1"></i>Product Offers
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-toggle="tab" href="#category-offers">
+            <i class="fas fa-list mr-1"></i>Category Offers
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-toggle="tab" href="#referral-offers">
+            <i class="fas fa-user-plus mr-1"></i>Referral Codes
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content">
+
+<!-- ══════════════════════════════════════
+     PRODUCT OFFERS TAB
+══════════════════════════════════════ -->
+<div class="tab-pane fade show active" id="product-offers">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0 font-weight-bold">Product Offers</h6>
+        <a href="{% url 'admin_product_offer_add' %}" class="btn-admin">
+            <i class="fas fa-plus"></i> Add Product Offer
+        </a>
+    </div>
+    <div class="a-card">
+        <div class="a-card-body p-0">
+            <table class="a-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Product</th>
+                        <th>Discount</th>
+                        <th>Valid Until</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for o in product_offers %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ o.product.product_name }}</strong></td>
+                    <td>
+                        <span style="font-size:16px;font-weight:700;color:#3167eb;">
+                            {{ o.discount_pct }}% OFF
+                        </span>
+                    </td>
+                    <td style="font-size:13px;">
+                        {% if o.valid_until %}
+                            {% if o.valid_until < now %}
+                            <span class="text-danger">
+                                <i class="fas fa-clock mr-1"></i>Expired {{ o.valid_until|date:"d M Y" }}
+                            </span>
+                            {% else %}
+                            {{ o.valid_until|date:"d M Y" }}
+                            {% endif %}
+                        {% else %}
+                        <span class="text-muted">No expiry</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if o.is_active and o.is_valid %}
+                        <span class="abadge ab-active"><i class="fas fa-check"></i> Active</span>
+                        {% elif not o.is_active %}
+                        <span class="abadge ab-blocked"><i class="fas fa-ban"></i> Inactive</span>
+                        {% else %}
+                        <span class="abadge ab-rejected"><i class="fas fa-clock"></i> Expired</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex" style="gap:6px;">
+                            <a href="{% url 'admin_product_offer_edit' o.id %}"
+                               class="btn-action" style="background:#eef2fd;color:#3167eb;">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'admin_product_offer_toggle' o.id %}"
+                               class="btn-action {% if o.is_active %}btn-block-u{% else %}btn-unblock-u{% endif %}">
+                                {% if o.is_active %}<i class="fas fa-ban"></i>
+                                {% else %}<i class="fas fa-check"></i>{% endif %}
+                            </a>
+                            <form method="POST" action="{% url 'admin_product_offer_delete' o.id %}"
+                                  onsubmit="return confirm('Delete this offer?');" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-action btn-block-u">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        No product offers yet.
+                        <a href="{% url 'admin_product_offer_add' %}">Add one</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     CATEGORY OFFERS TAB
+══════════════════════════════════════ -->
+<div class="tab-pane fade" id="category-offers">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0 font-weight-bold">Category Offers</h6>
+        <a href="{% url 'admin_category_offer_add' %}" class="btn-admin">
+            <i class="fas fa-plus"></i> Add Category Offer
+        </a>
+    </div>
+    <div class="alert alert-info" style="font-size:13px;">
+        <i class="fas fa-info-circle mr-1"></i>
+        When both a product offer and category offer apply, the <strong>larger discount wins</strong> automatically.
+    </div>
+    <div class="a-card">
+        <div class="a-card-body p-0">
+            <table class="a-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Category</th>
+                        <th>Discount</th>
+                        <th>Valid Until</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for o in category_offers %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ o.category.category_name }}</strong></td>
+                    <td>
+                        <span style="font-size:16px;font-weight:700;color:#28a745;">
+                            {{ o.discount_pct }}% OFF
+                        </span>
+                    </td>
+                    <td style="font-size:13px;">
+                        {% if o.valid_until %}
+                            {% if o.valid_until < now %}
+                            <span class="text-danger">Expired {{ o.valid_until|date:"d M Y" }}</span>
+                            {% else %}
+                            {{ o.valid_until|date:"d M Y" }}
+                            {% endif %}
+                        {% else %}
+                        <span class="text-muted">No expiry</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if o.is_active and o.is_valid %}
+                        <span class="abadge ab-active"><i class="fas fa-check"></i> Active</span>
+                        {% elif not o.is_active %}
+                        <span class="abadge ab-blocked"><i class="fas fa-ban"></i> Inactive</span>
+                        {% else %}
+                        <span class="abadge ab-rejected">Expired</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex" style="gap:6px;">
+                            <a href="{% url 'admin_category_offer_edit' o.id %}"
+                               class="btn-action" style="background:#eef2fd;color:#3167eb;">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'admin_category_offer_toggle' o.id %}"
+                               class="btn-action {% if o.is_active %}btn-block-u{% else %}btn-unblock-u{% endif %}">
+                                {% if o.is_active %}<i class="fas fa-ban"></i>
+                                {% else %}<i class="fas fa-check"></i>{% endif %}
+                            </a>
+                            <form method="POST" action="{% url 'admin_category_offer_delete' o.id %}"
+                                  onsubmit="return confirm('Delete this offer?');" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-action btn-block-u">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        No category offers yet.
+                        <a href="{% url 'admin_category_offer_add' %}">Add one</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     REFERRAL CODES TAB
+══════════════════════════════════════ -->
+<div class="tab-pane fade" id="referral-offers">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0 font-weight-bold">Referral Codes</h6>
+    </div>
+    <div class="alert alert-info mb-3" style="font-size:13px;">
+        <i class="fas fa-info-circle mr-1"></i>
+        Referee (new user) gets a wallet credit on first order.
+        Referrer (code owner) gets a wallet reward after referee's first purchase.
+    </div>
+
+    <!-- Generate form -->
+    <div class="a-card mb-4">
+        <div class="a-card-header"><span class="a-card-title">Generate Referral Code</span></div>
+        <div class="a-card-body">
+            <form method="POST" action="{% url 'admin_referral_generate' %}" class="row">
+                {% csrf_token %}
+                <div class="col-md-4">
+                    <div class="a-form-group">
+                        <label class="a-label">User Email</label>
+                        <input type="text" name="user_id" id="userSearchInput"
+                               class="a-input" placeholder="Type user ID or select below">
+                        <small class="text-muted">Enter the user's ID (from Users page)</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="a-form-group">
+                        <label class="a-label">Referee Discount (₹)</label>
+                        <input type="number" name="referee_discount" class="a-input"
+                               value="100" min="1" step="1">
+                        <small class="text-muted">Wallet credit for new user's first order</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="a-form-group">
+                        <label class="a-label">Referrer Reward (₹)</label>
+                        <input type="number" name="referrer_reward" class="a-input"
+                               value="50" min="1" step="1">
+                        <small class="text-muted">Wallet reward for code owner</small>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="a-form-group w-100">
+                        <button type="submit" class="btn-admin w-100">
+                            <i class="fas fa-plus mr-1"></i> Generate
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Existing referral codes -->
+    <div class="a-card">
+        <div class="a-card-body p-0">
+            <table class="a-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Code</th>
+                        <th>Referee Gets</th>
+                        <th>Referrer Gets</th>
+                        <th>Times Used</th>
+                        <th>Referral URL</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for rc in referral_codes %}
+                <tr>
+                    <td style="font-size:13px;">{{ rc.user.email }}</td>
+                    <td>
+                        <strong style="letter-spacing:1px;color:#3167eb;">{{ rc.code }}</strong>
+                    </td>
+                    <td class="text-success font-weight-bold">₹{{ rc.referee_discount }}</td>
+                    <td class="text-primary font-weight-bold">₹{{ rc.referrer_reward }}</td>
+                    <td>{{ rc.times_used }}</td>
+                    <td>
+                        <span style="font-size:11px;color:#888;word-break:break-all;">
+                            /accounts/register/?ref={{ rc.token }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if rc.is_active %}
+                        <span class="abadge ab-active">Active</span>
+                        {% else %}
+                        <span class="abadge ab-blocked">Inactive</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        No referral codes generated yet.
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</div><!-- /tab-content -->
+{% endblock %}

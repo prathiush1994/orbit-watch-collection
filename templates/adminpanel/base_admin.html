@@ -133,19 +133,59 @@
       <img class="logo" src="{% static 'images/orbitlogo01.png' %}" alt="Orbit">
     </a>
   </div>
-  <nav class="sidebar-nav">
-    <a href="{% url 'admin_dashboard' %}"      class="s-link {% block nav_dashboard %}{% endblock %}"><i class="fas fa-th-large"></i> Dashboard</a>
-    <a href="{% url 'admin_product_list' %}"   class="s-link {% block nav_products %}{% endblock %}"><i class="fas fa-box"></i> Products</a>
-    <a href="{% url 'admin_order_list' %}"     class="s-link {% block nav_orders %}{% endblock %}"><i class="fas fa-file-alt"></i> Orders</a>
-    <a href="{% url 'admin_user_list' %}"      class="s-link {% block nav_users %}{% endblock %}"><i class="fas fa-users"></i> Users</a>
-    <a href="#"                                class="s-link {% block nav_sales %}{% endblock %}"><i class="fas fa-chart-bar"></i> Sales Report</a>
-    <a href="{% url 'admin_category_list' %}"  class="s-link {% block nav_category %}{% endblock %}"><i class="fas fa-list"></i> Category</a>
-    <!-- ▼ COUPON LINK NOW WORKING ▼ -->
-    <a href="{% url 'admin_coupon_list' %}"    class="s-link {% block nav_coupons %}{% endblock %}"><i class="fas fa-tag"></i> Coupons</a>
-    <a href="{% url 'admin_brand_list' %}"     class="s-link {% block nav_brands %}{% endblock %}"><i class="fas fa-award"></i> Brand</a>
-    <a href="#"                                class="s-link {% block nav_offers %}{% endblock %}"><i class="fas fa-percent"></i> Offers</a>
-    <a href="{% url 'admin_settings' %}"       class="s-link {% block nav_settings %}{% endblock %}"><i class="fas fa-cog"></i> Settings</a>
-  </nav>
+<nav class="sidebar-nav">
+
+  <a href="{% url 'admin_dashboard' %}"
+     class="s-link {% if active == 'dashboard' %}active{% endif %}">
+     <i class="fas fa-th-large"></i> Dashboard
+  </a>
+
+  <a href="{% url 'admin_product_list' %}"
+     class="s-link {% if active == 'products' %}active{% endif %}">
+     <i class="fas fa-box"></i> Products
+  </a>
+
+  <a href="{% url 'admin_order_list' %}"
+     class="s-link {% if active == 'orders' %}active{% endif %}">
+     <i class="fas fa-file-alt"></i> Orders
+  </a>
+
+  <a href="{% url 'admin_user_list' %}"
+     class="s-link {% if active == 'users' %}active{% endif %}">
+     <i class="fas fa-users"></i> Users
+  </a>
+
+  <a href="{% url 'admin_sales_report' %}"
+     class="s-link {% if active == 'sales' %}active{% endif %}">
+     <i class="fas fa-chart-bar"></i> Sales Report
+  </a>
+
+  <a href="{% url 'admin_category_list' %}"
+     class="s-link {% if active == 'category' %}active{% endif %}">
+     <i class="fas fa-list"></i> Category
+  </a>
+
+  <a href="{% url 'admin_coupon_list' %}"
+     class="s-link {% if active == 'coupons' %}active{% endif %}">
+     <i class="fas fa-tag"></i> Coupons
+  </a>
+
+  <a href="{% url 'admin_brand_list' %}"
+     class="s-link {% if active == 'brands' %}active{% endif %}">
+     <i class="fas fa-award"></i> Brand
+  </a>
+
+  <a href="{% url 'admin_offer_list' %}"
+     class="s-link {% if active == 'offers' %}active{% endif %}">
+     <i class="fas fa-percent"></i> Offers
+  </a>
+
+  <a href="{% url 'admin_settings' %}"
+     class="s-link {% if active == 'settings' %}active{% endif %}">
+     <i class="fas fa-cog"></i> Settings
+  </a>
+
+</nav>
   <div class="sidebar-bottom">
     <a href="{% url 'admin_logout' %}" class="logout-link">
       <i class="fas fa-sign-out-alt"></i> Logout

@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-
+from wallet.views import wallet_dashboard
 
 urlpatterns = [
     # Profile
@@ -16,14 +16,14 @@ urlpatterns = [
     # Returns
     path('returns/',       views.returns,       name='dashboard_returns'),
 
-    # Address (Demo)
+    # Address 
     path('address/',       views.address,       name='dashboard_address'),
 
-    # Wallet (Demo)
-    path('wallet/',        views.wallet,        name='dashboard_wallet'),
+    # Wallet
+    path('wallet/', wallet_dashboard, name='dashboard_wallet'),
 
-    # Coupons (Demo)
-    path('coupons/',       views.coupons,       name='dashboard_coupons'),
+    # Coupons 
+    path('coupons/', views.dashboard_coupons, name='dashboard_coupons'),
 
     # Change Password
     path('change-password/',         views.change_password,            name='dashboard_change_password'),

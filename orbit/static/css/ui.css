@@ -412,6 +412,7 @@ p:last-child {
   direction: ltr;
 }
 
+
 /* ================== SECTIONS =================== */
 /* ================== header main ==================  */
 .header-top-light .nav-link {
@@ -1432,4 +1433,3 @@ a[class*=card]:hover .title {
 .icon i {
     color: gray;
 }
-

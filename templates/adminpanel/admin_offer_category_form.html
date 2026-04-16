@@ -1,0 +1,90 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}{{ action }} Category Offer{% endblock %}
+{% block page_title %}{{ action }} Category Offer{% endblock %}
+{% block nav_offers %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-3" style="gap:10px;">
+    <a href="{% url 'admin_offer_list' %}" class="btn-action" style="background:#f0f0f0;color:#545454;">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+    <h5 class="mb-0 font-weight-bold">{{ action }} Category Offer</h5>
+</div>
+
+<div class="a-card" style="max-width:560px;">
+    <div class="a-card-body">
+        <form method="POST">
+            {% csrf_token %}
+
+            {% if action == 'Add' %}
+            <div class="a-form-group">
+                <label class="a-label">Category <span class="text-danger">*</span></label>
+                <select name="category_id" class="a-input" required>
+                    <option value="">-- Select category --</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.category_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% else %}
+            <div class="a-form-group">
+                <label class="a-label">Category</label>
+                <div class="a-input" style="background:#f8f9fa;cursor:default;">
+                    {{ offer.category.category_name }}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="a-form-group">
+                <label class="a-label">Discount Percentage <span class="text-danger">*</span></label>
+                <div class="input-group">
+                    <input type="number" name="discount_pct" class="a-input"
+                           value="{% if offer %}{{ offer.discount_pct }}{% endif %}"
+                           min="1" max="90" step="0.5" required
+                           placeholder="e.g. 10 for 10% off"
+                           style="border-radius:0.25rem 0 0 0.25rem;">
+                    <div class="input-group-append">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <small class="text-muted">
+                    Applies to all products in this category.
+                    If a product also has its own offer, the larger discount applies.
+                </small>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="a-form-group">
+                        <label class="a-label">Valid From</label>
+                        <input type="datetime-local" name="valid_from" class="a-input"
+                               value="{% if offer.valid_from %}{{ offer.valid_from|date:'Y-m-d' }}T{{ offer.valid_from|time:'H:i' }}{% endif %}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="a-form-group">
+                        <label class="a-label">Valid Until</label>
+                        <input type="datetime-local" name="valid_until" class="a-input"
+                               value="{% if offer.valid_until %}{{ offer.valid_until|date:'Y-m-d' }}T{{ offer.valid_until|time:'H:i' }}{% endif %}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="a-form-group d-flex align-items-center" style="gap:10px;">
+                <input type="checkbox" name="is_active" id="isActive"
+                       {% if offer.is_active or not offer %}checked{% endif %}
+                       style="width:16px;height:16px;">
+                <label class="a-label mb-0" for="isActive">Active</label>
+            </div>
+
+            <div class="d-flex mt-3" style="gap:10px;">
+                <button type="submit" class="btn-admin">
+                    <i class="fas fa-save mr-1"></i> Save Offer
+                </button>
+                <a href="{% url 'admin_offer_list' %}" class="btn-action"
+                   style="background:#f0f0f0;color:#545454;padding:8px 18px;">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

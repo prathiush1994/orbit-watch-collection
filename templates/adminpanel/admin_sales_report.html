@@ -1,0 +1,227 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Sales Report{% endblock %}
+{% block page_title %}Sales Report{% endblock %}
+{% block nav_sales %}active{% endblock %}
+
+{% block content %}
+
+<!-- ── FILTER BAR ─────────────────────────────────────── -->
+<div class="a-card mb-4">
+    <div class="a-card-body">
+        <form method="GET" class="row align-items-end" style="gap:0;">
+
+            <!-- Period buttons -->
+            <div class="col-md-5 mb-2">
+                <label class="a-label">Period</label>
+                <div class="btn-group w-100" role="group">
+                    {% for p, label in  periods %}
+                    <a href="?period={{ p }}"
+                       class="btn btn-sm {% if period == p %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                        {{ label }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Custom date range -->
+            <div class="col-md-3 mb-2">
+                <label class="a-label">From</label>
+                <input type="date" name="date_from" class="a-input"
+                       value="{{ date_from|date:'Y-m-d' }}"
+                       onchange="this.form.submit()">
+            </div>
+            <div class="col-md-3 mb-2">
+                <label class="a-label">To</label>
+                <input type="date" name="date_to" class="a-input"
+                       value="{{ date_to|date:'Y-m-d' }}"
+                       onchange="this.form.submit()">
+            </div>
+            <div class="col-md-1 mb-2">
+                <label class="a-label">&nbsp;</label>
+                <button type="submit" name="period" value="custom" class="btn-admin w-100">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- ── SUMMARY STATS ──────────────────────────────────── -->
+<div class="stat-grid mb-4">
+    <div class="stat-card">
+        <div>
+            <div class="stat-label">Total Orders</div>
+            <div class="stat-value">{{ summary.total_orders }}</div>
+            <div class="stat-change">
+                {{ date_from|date:"d M" }} — {{ date_to|date:"d M Y" }}
+            </div>
+        </div>
+        <div class="stat-icon si-blue"><i class="fas fa-file-alt"></i></div>
+    </div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-label">Total Revenue</div>
+            <div class="stat-value" style="font-size:22px;">&#8377;{{ summary.total_revenue }}</div>
+            <div class="stat-change up">Net after all deductions</div>
+        </div>
+        <div class="stat-icon si-green"><i class="fas fa-rupee-sign"></i></div>
+    </div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-label">Coupon Discounts</div>
+            <div class="stat-value" style="font-size:22px;">&#8377;{{ summary.total_discount }}</div>
+            <div class="stat-change down">Total coupon deductions</div>
+        </div>
+        <div class="stat-icon si-amber"><i class="fas fa-tag"></i></div>
+    </div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-label">Wallet Used</div>
+            <div class="stat-value" style="font-size:22px;">&#8377;{{ summary.total_wallet }}</div>
+            <div class="stat-change">Paid via wallet</div>
+        </div>
+        <div class="stat-icon si-blue"><i class="fas fa-wallet"></i></div>
+    </div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-label">Cancelled</div>
+            <div class="stat-value" style="color:var(--red);">{{ summary.cancelled_count }}</div>
+        </div>
+        <div class="stat-icon si-red"><i class="fas fa-times-circle"></i></div>
+    </div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-label">Returned</div>
+            <div class="stat-value" style="color:var(--amber);">{{ summary.returned_count }}</div>
+        </div>
+        <div class="stat-icon si-amber"><i class="fas fa-undo"></i></div>
+    </div>
+</div>
+
+<!-- ── DOWNLOAD BUTTONS ───────────────────────────────── -->
+<div class="d-flex mb-3" style="gap:10px;">
+    <a href="{% url 'admin_sales_pdf' %}?period={{ period }}&date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}"
+       class="btn-admin" style="background:#dc3545;">
+        <i class="fas fa-file-pdf mr-1"></i> Download PDF
+    </a>
+    <a href="{% url 'admin_sales_excel' %}?period={{ period }}&date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}"
+       class="btn-admin" style="background:#28a745;">
+        <i class="fas fa-file-excel mr-1"></i> Download Excel
+    </a>
+</div>
+
+<!-- ── ORDERS TABLE ───────────────────────────────────── -->
+<div class="a-card">
+    <div class="a-card-header">
+        <span class="a-card-title">Order Details</span>
+        <span class="text-muted" style="font-size:13px;">
+            Showing {{ page_obj.start_index }}–{{ page_obj.end_index }}
+            of {{ page_obj.paginator.count }} orders
+        </span>
+    </div>
+    <div class="a-card-body p-0">
+        <table class="a-table">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Payment</th>
+                    <th class="text-right">Coupon Disc.</th>
+                    <th class="text-right">Wallet</th>
+                    <th class="text-right">Total</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for o in page_obj %}
+            <tr>
+                <td>
+                    <a href="{% url 'admin_order_detail' o.order_number %}"
+                       style="color:#3167eb;font-weight:600;">
+                        #{{ o.order_number }}
+                    </a>
+                </td>
+                <td style="font-size:13px;white-space:nowrap;">
+                    {{ o.created_at|date:"d M Y" }}<br>
+                    <small class="text-muted">{{ o.created_at|time:"h:i A" }}</small>
+                </td>
+                <td style="font-size:13px;">{{ o.user.email|default:"—" }}</td>
+                <td>
+                    {% if o.payment %}
+                        {% if o.payment.payment_method == 'COD' %}
+                        <span class="abadge ab-pending">COD</span>
+                        {% elif o.payment.payment_method == 'RAZORPAY' %}
+                        <span class="abadge ab-completed">Razorpay</span>
+                        {% elif o.payment.payment_method == 'WALLET' %}
+                        <span class="abadge ab-staff">Wallet</span>
+                        {% endif %}
+                    {% else %}—{% endif %}
+                </td>
+                <td class="text-right text-success font-weight-bold">
+                    {% if o.discount > 0 %}&#8722; &#8377;{{ o.discount }}{% else %}—{% endif %}
+                </td>
+                <td class="text-right text-primary">
+                    {% if o.wallet_used > 0 %}&#8722; &#8377;{{ o.wallet_used }}{% else %}—{% endif %}
+                </td>
+                <td class="text-right font-weight-bold">&#8377;{{ o.order_total }}</td>
+                <td>
+                    {% if o.status == 'Delivered' %}
+                    <span class="abadge ab-completed">Delivered</span>
+                    {% elif o.status == 'Cancelled' %}
+                    <span class="abadge ab-rejected">Cancelled</span>
+                    {% elif o.status == 'Returned' %}
+                    <span class="abadge ab-rejected">Returned</span>
+                    {% elif o.status == 'Shipped' %}
+                    <span class="abadge ab-processing">Shipped</span>
+                    {% elif o.status == 'New' %}
+                    <span class="abadge ab-pending">New</span>
+                    {% else %}
+                    <span class="abadge ab-pending">{{ o.status }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center text-muted py-5">
+                    No orders found for this period.
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="a-card-body border-top">
+        <div class="a-pages">
+            {% if page_obj.has_previous %}
+            <a href="?period={{ period }}&date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&page={{ page_obj.previous_page_number }}"
+               class="a-page">‹</a>
+            {% else %}
+            <span class="a-page dis">‹</span>
+            {% endif %}
+
+            {% for p in page_obj.paginator.page_range %}
+            {% if page_obj.number == p %}
+            <span class="a-page cur">{{ p }}</span>
+            {% elif p >= page_obj.number|add:'-2' and p <= page_obj.number|add:'2' %}
+            <a href="?period={{ period }}&date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&page={{ p }}"
+               class="a-page">{{ p }}</a>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?period={{ period }}&date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&page={{ page_obj.next_page_number }}"
+               class="a-page">›</a>
+            {% else %}
+            <span class="a-page dis">›</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

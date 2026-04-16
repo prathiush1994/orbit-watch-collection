@@ -11,3 +11,6 @@ from .product_views   import (
 from .admin_order_views import *
 from .adminpanel_approve_return import *
 from .coupon_views import *
+from .admin_offer_views import *
+from .admin_sales_views import *
+

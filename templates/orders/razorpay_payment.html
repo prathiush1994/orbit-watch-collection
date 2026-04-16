@@ -54,58 +54,93 @@
 
 <!-- Razorpay SDK -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
 <script>
 document.getElementById('rzpPayBtn').addEventListener('click', function () {
+
     const options = {
-        key      : '{{ razorpay_key_id }}',
-        amount   : {{ amount_paise }},
-        currency : '{{ order_currency }}',
-        name     : 'Orbit Watch Collection',
+        key: '{{ razorpay_key_id }}',
+        amount: {{ amount_paise }},
+        currency: '{{ order_currency }}',
+        name: 'Orbit Watch Collection',
         description: 'Order Payment',
-        order_id : '{{ razorpay_order_id }}',
-        prefill  : {
-            name : '{{ user_name }}',
+        order_id: '{{ razorpay_order_id }}',
+
+        method: {
+            card: true,
+            upi: false,
+            netbanking: false,
+            wallet: false
+        },
+
+        prefill: {
+            name: '{{ user_name }}',
             email: '{{ user_email }}',
             contact: '{{ user_phone }}',
         },
-        theme: { color: '#3167eb' },
 
+        theme: {
+            color: '#3167eb'
+        },
+
+        // ✅ SUCCESS HANDLER
         handler: function (response) {
-            // Payment succeeded on Razorpay side — POST to our callback for verification
+            console.log("✅ PAYMENT SUCCESS:", response);
+
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '{% url "razorpay_callback" %}';
 
             const fields = {
-                razorpay_payment_id : response.razorpay_payment_id,
-                razorpay_order_id   : response.razorpay_order_id,
-                razorpay_signature  : response.razorpay_signature,
-                csrfmiddlewaretoken : '{{ csrf_token }}',
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                csrfmiddlewaretoken: '{{ csrf_token }}',
             };
-            for (const [k, v] of Object.entries(fields)) {
-                const inp = document.createElement('input');
-                inp.type  = 'hidden';
-                inp.name  = k;
-                inp.value = v;
-                form.appendChild(inp);
+
+            for (const key in fields) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = fields[key];
+                form.appendChild(input);
             }
+
             document.body.appendChild(form);
             form.submit();
         },
 
+        // ✅ FIXED MODAL BEHAVIOR
         modal: {
             ondismiss: function () {
-                // User closed the popup without paying
+                console.log("⚠️ POPUP CLOSED");
+
+                alert("Payment popup closed. You did not complete payment.");
+
+                // redirect only if user actually cancels
                 window.location.href = '{% url "payment_failed" %}';
             }
         }
     };
 
     const rzp = new Razorpay(options);
+
+    // ✅ REAL FAILURE HANDLER
     rzp.on('payment.failed', function (response) {
+        console.log("❌ PAYMENT FAILED:", response);
+
+        alert(
+            "Payment Failed\n\n" +
+            "Reason: " + response.error.reason + "\n" +
+            "Description: " + response.error.description
+        );
+
         window.location.href = '{% url "payment_failed" %}';
     });
+
     rzp.open();
 });
 </script>
+
+
 {% endblock %}

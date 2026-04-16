@@ -128,11 +128,7 @@ class ProductVariant(models.Model):
 
 
 class VariantImage(models.Model):
-    """
-    Gallery images for a ProductVariant.
-    Shown as thumbnails on the left side of the product detail page.
-    Clicking a thumbnail changes the main image.
-    """
+
     variant  = models.ForeignKey(
         ProductVariant,
         on_delete=models.CASCADE,

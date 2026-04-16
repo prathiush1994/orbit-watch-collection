@@ -16,8 +16,18 @@
 .thumb-item img { width:100%; height:100%; object-fit:cover; display:block; }
 .thumb-item:hover { border-color:#aaa; transform:scale(1.03); }
 .thumb-item.active { border-color:#3167eb; box-shadow:0 0 0 2px rgba(49,103,235,0.2); }
-.main-image-area { flex:1; display:flex; align-items:center; justify-content:center; background:#fafafa; border-radius:10px; height:480px; overflow:hidden; }
-.main-image-area img { max-width:100%; max-height:440px; object-fit:contain; transition:opacity 0.22s ease; display:block; }
+.main-image-area {
+    position: relative;
+    overflow: hidden;
+    cursor: zoom-in;
+}
+
+.main-image-area img {
+    max-width: 100%;
+    max-height: 440px;
+    object-fit: contain;
+    transition: transform 0.2s ease;
+}
 .info-panel { width:50%; padding:36px 40px; }
 .product-title { font-size:1.8rem; font-weight:700; color:#111; margin-bottom:10px; line-height:1.25; }
 .product-color-label { font-size:0.88rem; color:#888; margin-bottom:14px; }
@@ -236,5 +246,24 @@ window.GALLERY_IMAGES = [
 
 <script src="{% static 'js/product-detail.js' %}"></script>
 
+
+<script>
+const zoomArea = document.querySelector(".main-image-area");
+const img = document.getElementById("mainImage");
+
+zoomArea.addEventListener("mousemove", function(e) {
+    const rect = zoomArea.getBoundingClientRect();
+
+    const x = (e.clientX - rect.left) / rect.width * 100;
+    const y = (e.clientY - rect.top) / rect.height * 100;
+
+    img.style.transformOrigin = `${x}% ${y}%`;
+    img.style.transform = "scale(2)";
+});
+
+zoomArea.addEventListener("mouseleave", function() {
+    img.style.transform = "scale(1)";
+});
+</script>
 
 {% endblock %}

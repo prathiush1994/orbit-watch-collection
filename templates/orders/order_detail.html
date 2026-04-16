@@ -11,222 +11,541 @@
             <h4 class="mb-0 font-weight-bold">
                 Order <span style="color:#3167eb;">#{{ order.order_number }}</span>
             </h4>
-            <small class="text-muted">
-                Placed on {{ order.created_at|date:"d M Y, h:i A" }}
-            </small>
+            <small class="text-muted">Placed on {{ order.created_at|date:"d M Y, h:i A" }}</small>
         </div>
         <div class="d-flex" style="gap:8px;">
             <a href="{% url 'download_invoice' order.order_number %}"
                class="btn btn-outline-secondary btn-sm">
-                <i class="fa fa-file-pdf mr-1"></i> Download Invoice
+                <i class="fa fa-file-pdf mr-1"></i>Invoice
             </a>
             <a href="{% url 'my_orders' %}" class="btn btn-outline-primary btn-sm">
-                <i class="fa fa-arrow-left mr-1"></i> All Orders
+                <i class="fa fa-arrow-left mr-1"></i>All Orders
             </a>
         </div>
     </div>
 
     {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
     {% endif %}
 
     <div class="row">
 
-        <!-- LEFT: Items + Status -->
-        <div class="col-md-8">
+    <!-- ════════════════════════════════════════════
+         LEFT — Items + Actions
+    ════════════════════════════════════════════ -->
+    <div class="col-md-8">
 
-            <!-- Status badge -->
-            <div class="card mb-3">
-                <div class="card-body py-2 d-flex align-items-center justify-content-between">
-                    <span class="text-muted">Order Status:</span>
-                    {% if order.status == 'New' %}
-                        <span class="badge badge-info px-3 py-2">New</span>
-                    {% elif order.status == 'Accepted' %}
-                        <span class="badge badge-primary px-3 py-2">Accepted</span>
-                    {% elif order.status == 'Shipped' %}
-                        <span class="badge badge-warning text-dark px-3 py-2">Shipped</span>
-                    {% elif order.status == 'Delivered' %}
-                        <span class="badge badge-success px-3 py-2">Delivered</span>
-                    {% elif order.status == 'Cancelled' %}
-                        <span class="badge badge-danger px-3 py-2">Cancelled</span>
-                    {% elif order.status == 'Return Requested' %}
-                        <span class="badge badge-secondary px-3 py-2">Return Requested</span>
-                    {% elif order.status == 'Returned' %}
-                        <span class="badge badge-dark px-3 py-2">Returned</span>
-                    {% endif %}
-                </div>
+        <!-- Order status -->
+        <div class="card mb-3">
+            <div class="card-body py-2 d-flex align-items-center justify-content-between">
+                <span class="text-muted">Order Status:</span>
+                {% if order.status == 'New' %}
+                    <span class="badge badge-info px-3 py-2">New</span>
+                {% elif order.status == 'Accepted' %}
+                    <span class="badge badge-primary px-3 py-2">Accepted</span>
+                {% elif order.status == 'Shipped' %}
+                    <span class="badge badge-warning text-dark px-3 py-2">Shipped</span>
+                {% elif order.status == 'Delivered' %}
+                    <span class="badge badge-success px-3 py-2">Delivered</span>
+                {% elif order.status == 'Cancelled' %}
+                    <span class="badge badge-danger px-3 py-2">Cancelled</span>
+                {% elif order.status == 'Return Requested' %}
+                    <span class="badge badge-secondary px-3 py-2">Return Requested</span>
+                {% elif order.status == 'Returned' %}
+                    <span class="badge badge-dark px-3 py-2">Returned</span>
+                {% endif %}
             </div>
-
-            <!-- Order items -->
-            <div class="card mb-3">
-                <div class="card-header bg-white">
-                    <strong>Items ({{ order.items.count }})</strong>
-                </div>
-                <div class="card-body p-0">
-                    <table class="table mb-0">
-                        <thead class="thead-light">
-                            <tr>
-                                <th>Product</th>
-                                <th class="text-center">Price</th>
-                                <th class="text-center">Qty</th>
-                                <th class="text-center">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in order_items %}
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        {% if item.variant and item.variant.primary_image %}
-                                        <img src="{{ item.variant.primary_image.url }}"
-                                             style="width:50px;height:50px;object-fit:cover;
-                                                    border-radius:4px;border:1px solid #dee2e6;"
-                                             class="mr-3">
-                                        {% endif %}
-                                        <div>
-                                            <div class="font-weight-bold">{{ item.product_name }}</div>
-                                            <small class="text-muted">{{ item.color_name }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="text-center align-middle">₹{{ item.product_price }}</td>
-                                <td class="text-center align-middle">{{ item.quantity }}</td>
-                                <td class="text-center align-middle font-weight-bold">
-                                    ₹{{ item.sub_total }}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Cancel / Return actions -->
-            {% if order.status == 'New' or order.status == 'Accepted' %}
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h6 class="font-weight-bold mb-3">Cancel Order</h6>
-                    <form method="POST" action="{% url 'cancel_order' order.order_number %}"
-                          onsubmit="return confirm('Are you sure you want to cancel this order?');">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <label>Reason for cancellation <span class="text-muted">(optional)</span></label>
-                            <select name="cancel_reason" class="form-control">
-                                <option value="">-- Select a reason --</option>
-                                <option>Changed my mind</option>
-                                <option>Found a better price elsewhere</option>
-                                <option>Ordered by mistake</option>
-                                <option>Delivery taking too long</option>
-                                <option>Other</option>
-                            </select>
-                        </div>
-                        <p class="text-muted small mb-3">
-                            <i class="fa fa-info-circle mr-1"></i>
-                            Stock will be automatically restored on cancellation.
-                        </p>
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fa fa-times-circle mr-1"></i> Cancel This Order
-                        </button>
-                    </form>
-                </div>
-            </div>
-            {% endif %}
-
-            {% if order.status == 'Delivered' %}
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h6 class="font-weight-bold mb-3">Return Order</h6>
-                    <form method="POST" action="{% url 'return_order' order.order_number %}">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <label>Reason for return <span class="text-danger">*</span></label>
-                            <select name="return_reason" class="form-control" required>
-                                <option value="">-- Select a reason --</option>
-                                <option>Defective or damaged product</option>
-                                <option>Wrong product delivered</option>
-                                <option>Product not as described</option>
-                                <option>Changed my mind</option>
-                                <option>Other</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-warning">
-                            <i class="fa fa-undo mr-1"></i> Submit Return Request
-                        </button>
-                    </form>
-                </div>
-            </div>
-            {% endif %}
-
         </div>
 
-        <!-- RIGHT: Summary + Address -->
-        <div class="col-md-4">
-
-            <!-- Price summary -->
-            <div class="card mb-3">
-                <div class="card-header bg-white"><strong>Price Details</strong></div>
-                <div class="card-body">
-                    <dl class="dlist-align">
-                        <dt class="text-muted">Subtotal:</dt>
-                        <dd class="text-right">₹{{ order.order_total|floatformat:2 }}</dd>
-                    </dl>
-                    <dl class="dlist-align">
-                        <dt class="text-muted">Tax (18%):</dt>
-                        <dd class="text-right">₹{{ order.tax }}</dd>
-                    </dl>
-                    <dl class="dlist-align">
-                        <dt class="text-muted">Shipping:</dt>
-                        <dd class="text-right text-success">Free</dd>
-                    </dl>
-                    <hr class="my-2">
-                    <dl class="dlist-align mb-0">
-                        <dt><strong>Grand Total:</strong></dt>
-                        <dd class="text-right">
-                            <strong style="font-size:1.1rem;">₹{{ order.order_total }}</strong>
-                        </dd>
-                    </dl>
-                </div>
+        <!-- Items table -->
+        <div class="card mb-3">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>Items ({{ order.items.count }})</strong>
+                <!-- Cancel ALL button — only when New/Accepted and not all cancelled -->
+                {% if order.status == 'New' or order.status == 'Accepted' %}
+                {% if order.items.filter.is_active %}{% endif %}
+                <button class="btn btn-sm btn-outline-danger"
+                        onclick="openCancelAllModal()">
+                    <i class="fa fa-times-circle mr-1"></i>Cancel Entire Order
+                </button>
+                {% endif %}
             </div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Product</th>
+                            <th class="text-center">Price</th>
+                            <th class="text-center">Qty</th>
+                            <th class="text-center">Total</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in order_items %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if item.variant and item.variant.primary_image %}
+                                <img src="{{ item.variant.primary_image.url }}"
+                                     style="width:50px;height:50px;object-fit:cover;
+                                            border-radius:4px;border:1px solid #dee2e6;"
+                                     class="mr-3">
+                                {% endif %}
+                                <div>
+                                    <div class="font-weight-bold">{{ item.product_name }}</div>
+                                    <small class="text-muted">{{ item.color_name }}</small>
+                                    {% if item.cancelled_qty > 0 %}
+                                    <small class="text-danger d-block">
+                                        {{ item.cancelled_qty }} unit(s) cancelled
+                                    </small>
+                                    {% endif %}
+                                    {% if item.returned_qty > 0 %}
+                                    <small class="text-warning d-block">
+                                        {{ item.returned_qty }} unit(s) return requested
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center align-middle">&#8377;{{ item.product_price }}</td>
+                        <td class="text-center align-middle">{{ item.quantity }}</td>
+                        <td class="text-center align-middle font-weight-bold">
+                            &#8377;{{ item.sub_total }}
+                        </td>
 
-            <!-- Payment info -->
-            <div class="card mb-3">
-                <div class="card-header bg-white"><strong>Payment</strong></div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Method:</span>
-                        <strong class="small">
-                            {{ order.payment.payment_method|default:"Cash on Delivery" }}
-                        </strong>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted small">Status:</span>
-                        <span class="badge badge-warning text-dark">
-                            {{ order.payment.status|default:"Pending" }}
-                        </span>
-                    </div>
-                </div>
+                        <!-- Item status badge -->
+                        <td class="text-center align-middle">
+                            {% if item.item_status == 'Active' %}
+                            <span class="badge badge-success">Active</span>
+                            {% elif item.item_status == 'Cancelled' %}
+                            <span class="badge badge-danger">Cancelled</span>
+                            {% elif item.item_status == 'Return Requested' %}
+                            <span class="badge badge-warning text-dark">Return Requested</span>
+                            {% elif item.item_status == 'Returned' %}
+                            <span class="badge badge-dark">Returned</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Per-item action button -->
+                        <td class="text-center align-middle">
+                            {% if item.item_status == 'Active' %}
+
+                                {% if order.status == 'New' or order.status == 'Accepted' %}
+                                <!-- Cancel item button -->
+                                <button class="btn btn-sm btn-outline-danger"
+                                        onclick="openItemCancelModal(
+                                            {{ item.id }},
+                                            '{{ item.product_name|escapejs }}',
+                                            {{ item.active_qty }},
+                                            '{% url 'cancel_item' order.order_number item.id %}'
+                                        )">
+                                    <i class="fa fa-times mr-1"></i>Cancel
+                                </button>
+
+                                {% elif order.status == 'Delivered' %}
+                                <!-- Return item button -->
+                                <button class="btn btn-sm btn-outline-warning"
+                                        onclick="openItemReturnModal(
+                                            {{ item.id }},
+                                            '{{ item.product_name|escapejs }}',
+                                            {{ item.active_qty }},
+                                            '{% url 'return_item' order.order_number item.id %}'
+                                        )">
+                                    <i class="fa fa-undo mr-1"></i>Return
+                                </button>
+                                {% else %}
+                                <span class="text-muted small">—</span>
+                                {% endif %}
+
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
+        </div><!-- /items card -->
 
-            <!-- Delivery address -->
-            <div class="card mb-3">
-                <div class="card-header bg-white"><strong>Delivery Address</strong></div>
-                <div class="card-body">
-                    <p class="mb-1 font-weight-bold">{{ order.full_name }}</p>
-                    <p class="mb-1 text-muted small" style="line-height:1.7;">
-                        {{ order.address_line }}<br>
-                        {{ order.city }}, {{ order.state }} — {{ order.pincode }}
-                    </p>
-                    <small class="text-muted">
-                        <i class="fa fa-phone mr-1"></i>+91 {{ order.phone }}
-                    </small>
-                </div>
+        <!-- Return ENTIRE order (only when Delivered and items still Active) -->
+        {% if order.status == 'Delivered' %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h6 class="font-weight-bold mb-1">Return Entire Order</h6>
+                <p class="text-muted small mb-3">
+                    Use the button in each row above to return individual items,
+                    or return everything at once below.
+                </p>
+                <button class="btn btn-warning btn-sm"
+                        onclick="openReturnAllModal()">
+                    <i class="fa fa-undo mr-1"></i>Return All Items
+                </button>
             </div>
+        </div>
+        {% endif %}
 
+    </div><!-- /left col -->
+
+
+    <!-- ════════════════════════════════════════════
+         RIGHT — Price summary + Payment + Address
+    ════════════════════════════════════════════ -->
+    <div class="col-md-4">
+
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong>Price Details</strong></div>
+            <div class="card-body">
+                <dl class="dlist-align">
+                    <dt class="text-muted">Subtotal:</dt>
+                    <dd class="text-right">&#8377;{{ order.order_total|floatformat:2 }}</dd>
+                </dl>
+                <dl class="dlist-align">
+                    <dt class="text-muted">Tax (18%):</dt>
+                    <dd class="text-right">&#8377;{{ order.tax }}</dd>
+                </dl>
+                {% if order.discount > 0 %}
+                <dl class="dlist-align">
+                    <dt class="text-muted">Coupon ({{ order.coupon_code }}):</dt>
+                    <dd class="text-right text-success">&#8722; &#8377;{{ order.discount }}</dd>
+                </dl>
+                {% endif %}
+                {% if order.wallet_used > 0 %}
+                <dl class="dlist-align">
+                    <dt class="text-muted">Wallet Used:</dt>
+                    <dd class="text-right text-primary">&#8722; &#8377;{{ order.wallet_used }}</dd>
+                </dl>
+                {% endif %}
+                <dl class="dlist-align">
+                    <dt class="text-muted">Shipping:</dt>
+                    <dd class="text-right text-success">Free</dd>
+                </dl>
+                <hr class="my-2">
+                <dl class="dlist-align mb-0">
+                    <dt><strong>Grand Total:</strong></dt>
+                    <dd class="text-right">
+                        <strong style="font-size:1.1rem;">&#8377;{{ order.order_total }}</strong>
+                    </dd>
+                </dl>
+            </div>
         </div>
 
-    </div>
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong>Payment</strong></div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted small">Method:</span>
+                    <strong class="small">{{ order.payment.payment_method|default:"COD" }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted small">Status:</span>
+                    <span class="badge badge-warning text-dark">
+                        {{ order.payment.status|default:"Pending" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong>Delivery Address</strong></div>
+            <div class="card-body">
+                <p class="mb-1 font-weight-bold">{{ order.full_name }}</p>
+                <p class="mb-1 text-muted small" style="line-height:1.7;">
+                    {{ order.address_line }}<br>
+                    {{ order.city }}, {{ order.state }} — {{ order.pincode }}
+                </p>
+                <small class="text-muted">
+                    <i class="fa fa-phone mr-1"></i>+91 {{ order.phone }}
+                </small>
+            </div>
+        </div>
+
+    </div><!-- /right col -->
+    </div><!-- /row -->
 </div>
 </section>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL — Cancel Individual Item
+══════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="itemCancelModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" id="itemCancelForm">
+                {% csrf_token %}
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-weight-bold">Cancel Item</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">
+                        Cancelling: <strong id="cancelItemName"></strong>
+                    </p>
+
+                    <!-- Qty selector — shown only if qty > 1 -->
+                    <div class="form-group" id="cancelQtyWrap">
+                        <label class="font-weight-bold">
+                            How many units to cancel?
+                        </label>
+                        <div class="d-flex align-items-center mt-2" style="gap:10px;">
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="changeQty('cancel', -1)">&#8722;</button>
+                            <span id="cancelQtyDisplay"
+                                  style="font-size:20px;font-weight:700;min-width:32px;text-align:center;">
+                                1
+                            </span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="changeQty('cancel', 1)">+</button>
+                            <span class="text-muted small" id="cancelQtyMax"></span>
+                        </div>
+                        <input type="hidden" name="cancel_qty" id="cancelQtyInput" value="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">Reason <span class="text-muted font-weight-normal">(optional)</span></label>
+                        <select name="cancel_reason" class="form-control">
+                            <option value="">-- Select a reason --</option>
+                            <option>Changed my mind</option>
+                            <option>Found a better price elsewhere</option>
+                            <option>Ordered by mistake</option>
+                            <option>Delivery taking too long</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+
+                    <div class="alert alert-info py-2 small mb-0">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Stock will be restored and any refund credited to your wallet instantly.
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-dismiss="modal">Keep Item</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fa fa-times-circle mr-1"></i>Confirm Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL — Return Individual Item
+══════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="itemReturnModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" id="itemReturnForm">
+                {% csrf_token %}
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-weight-bold">Return Item</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">
+                        Returning: <strong id="returnItemName"></strong>
+                    </p>
+
+                    <div class="form-group" id="returnQtyWrap">
+                        <label class="font-weight-bold">How many units to return?</label>
+                        <div class="d-flex align-items-center mt-2" style="gap:10px;">
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="changeQty('return', -1)">&#8722;</button>
+                            <span id="returnQtyDisplay"
+                                  style="font-size:20px;font-weight:700;min-width:32px;text-align:center;">
+                                1
+                            </span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                    onclick="changeQty('return', 1)">+</button>
+                            <span class="text-muted small" id="returnQtyMax"></span>
+                        </div>
+                        <input type="hidden" name="return_qty" id="returnQtyInput" value="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">
+                            Reason <span class="text-danger">*</span>
+                        </label>
+                        <select name="return_reason" class="form-control" required>
+                            <option value="">-- Select a reason --</option>
+                            <option>Defective or damaged product</option>
+                            <option>Wrong product delivered</option>
+                            <option>Product not as described</option>
+                            <option>Changed my mind</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+
+                    <div class="alert alert-warning py-2 small mb-0">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Refund will be credited to your wallet once admin approves the return.
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fa fa-undo mr-1"></i>Submit Return
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL — Cancel Entire Order
+══════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="cancelAllModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'cancel_order' order.order_number %}">
+                {% csrf_token %}
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-weight-bold">Cancel Entire Order</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">
+                        This will cancel <strong>all active items</strong> in
+                        Order <strong>#{{ order.order_number }}</strong>.
+                    </p>
+                    <div class="form-group">
+                        <label class="font-weight-bold">
+                            Reason <span class="text-muted font-weight-normal">(optional)</span>
+                        </label>
+                        <select name="cancel_reason" class="form-control">
+                            <option value="">-- Select a reason --</option>
+                            <option>Changed my mind</option>
+                            <option>Found a better price elsewhere</option>
+                            <option>Ordered by mistake</option>
+                            <option>Delivery taking too long</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-danger py-2 small mb-0">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        This action cannot be undone.
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-dismiss="modal">Keep Order</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fa fa-times-circle mr-1"></i>Yes, Cancel Order
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL — Return Entire Order
+══════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="returnAllModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'return_order' order.order_number %}">
+                {% csrf_token %}
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-weight-bold">Return Entire Order</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="font-weight-bold">
+                            Reason <span class="text-danger">*</span>
+                        </label>
+                        <select name="return_reason" class="form-control" required>
+                            <option value="">-- Select a reason --</option>
+                            <option>Defective or damaged product</option>
+                            <option>Wrong product delivered</option>
+                            <option>Product not as described</option>
+                            <option>Changed my mind</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-info py-2 small mb-0">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Refund credited to your wallet after admin approval.
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary"
+                            data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fa fa-undo mr-1"></i>Submit Return Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script>
+// ── Qty state ────────────────────────────────────────────
+let cancelMaxQty = 1;
+let returnMaxQty = 1;
+
+// ── Open cancel item modal ───────────────────────────────
+function openItemCancelModal(itemId, itemName, activeQty, actionUrl) {
+    cancelMaxQty = activeQty;
+    document.getElementById('cancelItemName').textContent = itemName;
+    document.getElementById('cancelQtyDisplay').textContent = activeQty;
+    document.getElementById('cancelQtyInput').value        = activeQty;
+    document.getElementById('cancelQtyMax').textContent    = `of ${activeQty} available`;
+    // Hide qty controls if only 1 unit
+    document.getElementById('cancelQtyWrap').style.display =
+        activeQty > 1 ? '' : 'none';
+    document.getElementById('itemCancelForm').action = actionUrl;
+    $('#itemCancelModal').modal('show');
+}
+
+// ── Open return item modal ───────────────────────────────
+function openItemReturnModal(itemId, itemName, activeQty, actionUrl) {
+    returnMaxQty = activeQty;
+    document.getElementById('returnItemName').textContent = itemName;
+    document.getElementById('returnQtyDisplay').textContent = activeQty;
+    document.getElementById('returnQtyInput').value         = activeQty;
+    document.getElementById('returnQtyMax').textContent     = `of ${activeQty} available`;
+    document.getElementById('returnQtyWrap').style.display  =
+        activeQty > 1 ? '' : 'none';
+    document.getElementById('itemReturnForm').action = actionUrl;
+    $('#itemReturnModal').modal('show');
+}
+
+// ── Open whole-order modals ──────────────────────────────
+function openCancelAllModal() { $('#cancelAllModal').modal('show'); }
+function openReturnAllModal()  { $('#returnAllModal').modal('show'); }
+
+// ── +/- qty buttons ──────────────────────────────────────
+function changeQty(type, delta) {
+    if (type === 'cancel') {
+        const display = document.getElementById('cancelQtyDisplay');
+        const input   = document.getElementById('cancelQtyInput');
+        let val = parseInt(display.textContent) + delta;
+        val = Math.max(1, Math.min(cancelMaxQty, val));
+        display.textContent = val;
+        input.value         = val;
+    } else {
+        const display = document.getElementById('returnQtyDisplay');
+        const input   = document.getElementById('returnQtyInput');
+        let val = parseInt(display.textContent) + delta;
+        val = Math.max(1, Math.min(returnMaxQty, val));
+        display.textContent = val;
+        input.value         = val;
+    }
+}
+</script>
 {% endblock %}

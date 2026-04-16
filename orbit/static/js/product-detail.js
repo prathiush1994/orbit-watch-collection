@@ -1,7 +1,3 @@
-// product-detail.js
-// Thumbnails are rendered directly in HTML by Django template.
-// This file handles: click to swap main image, arrow scroll.
-
 document.addEventListener('DOMContentLoaded', function () {
 
     var thumbList  = document.getElementById('thumbList');
@@ -12,12 +8,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!thumbList || !mainImage) return;
 
-    var STEP          = 84;   // 76px thumb + 8px gap
+    var STEP          = 84;
     var currentOffset = 0;
 
-
-    // ── Attach click handlers to every thumbnail ───────────────────────
-    // Thumbnails already exist in DOM — just wire up the clicks.
     var thumbItems = thumbList.querySelectorAll('.thumb-item');
 
     thumbItems.forEach(function (thumb) {
@@ -25,23 +18,18 @@ document.addEventListener('DOMContentLoaded', function () {
             var src = thumb.dataset.src;
             var alt = thumb.dataset.alt;
 
-            // Remove active from all, set on clicked
             thumbItems.forEach(function (t) { t.classList.remove('active'); });
             thumb.classList.add('active');
 
-            // Fade main image to new src
-            mainImage.style.transition = 'opacity 0.22s ease';
-            mainImage.style.opacity    = '0';
+            mainImage.style.opacity = '0';
             setTimeout(function () {
-                mainImage.src           = src;
-                mainImage.alt           = alt;
+                mainImage.src = src;
+                mainImage.alt = alt;
                 mainImage.style.opacity = '1';
             }, 220);
         });
     });
 
-
-    // ── Arrow scroll ───────────────────────────────────────────────────
     function getMaxOffset() {
         var totalHeight = thumbItems.length * STEP;
         var boxHeight   = scrollBox.clientHeight || 400;
@@ -49,21 +37,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function applyOffset() {
-        thumbList.style.transition = 'transform 0.3s ease';
         thumbList.style.transform  = 'translateY(-' + currentOffset + 'px)';
         updateArrows();
     }
 
     function updateArrows() {
         var max = getMaxOffset();
-        if (max <= 0) {
-            // Everything fits — hide both arrows
-            btnUp.style.visibility   = 'hidden';
-            btnDown.style.visibility = 'hidden';
-        } else {
-            btnUp.style.visibility   = currentOffset > 0   ? 'visible' : 'hidden';
-            btnDown.style.visibility = currentOffset < max ? 'visible' : 'hidden';
-        }
+        btnUp.style.visibility   = currentOffset > 0   ? 'visible' : 'hidden';
+        btnDown.style.visibility = currentOffset < max ? 'visible' : 'hidden';
     }
 
     if (btnUp) {
@@ -80,10 +61,22 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    var container = document.querySelector(".main-image-area");
 
-    // ── Init ───────────────────────────────────────────────────────────
-    requestAnimationFrame(function () {
-        updateArrows();
-    });
+    if (container && mainImage) {
 
+        container.addEventListener("mousemove", function(e) {
+            const rect = container.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+            mainImage.style.transformOrigin = `${x}% ${y}%`;
+            mainImage.style.transform = "scale(2)";
+        });
+
+        container.addEventListener("mouseleave", function() {
+            mainImage.style.transform = "scale(1)";
+        });
+
+    }
 });

@@ -21,9 +21,9 @@ def get_or_create_wallet(user):
 def wallet_dashboard(request):
     wallet       = get_or_create_wallet(request.user)
     transactions = wallet.transactions.select_related('order').all()[:50]
-    return render(request, 'wallet/wallet_dashboard.html', {
-        'wallet'      : wallet,
-        'transactions': transactions,
+    return render(request, 'dashboard/wallet.html', {
+        'wallet'        : wallet,
+        'transactions'  : transactions,
     })
 
 

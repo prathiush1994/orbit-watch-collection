@@ -5,6 +5,7 @@ import random
 import string
 from decimal import Decimal
 import razorpay
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
@@ -18,6 +19,8 @@ from accounts.models import UserAddress
 from .models import Payment, Order, OrderProduct
 from wallet.models import Wallet
 from .models import Order, OrderProduct, Payment, Coupon, CouponUsage
+from reportlab.platypus import Paragraph
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPERS
@@ -28,23 +31,22 @@ def _generate_order_number():
         if not Order.objects.filter(order_number=number).exists():
             return number
 
+def _get_cart_id(request):
+    if not request.session.session_key:
+        request.session.create()
+    return request.session.session_key
 
 def _get_wallet(user):
     wallet, _ = Wallet.objects.get_or_create(user=user)
     return wallet
-
 
 def _razorpay_client():
     return razorpay.Client(
         auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
     )
 
-
 def _compute_totals(cart_items, session):
-    """
-    Returns a dict with all price breakdown values.
-    Re-computes everything server-side — never trust hidden form fields.
-    """
+
     subtotal    = sum(item.variant.price * item.quantity
                       for item in cart_items if item.variant.stock > 0)
     tax         = round(Decimal('0.18') * subtotal, 2)
@@ -72,12 +74,8 @@ def _compute_totals(cart_items, session):
         'final_total'    : final_total,
     }
 
-
 def _build_order_from_session(request, address, payment_obj, totals):
-    """
-    Creates Order + OrderProducts + decrements stock.
-    Returns the Order instance.
-    """
+
     order = Order.objects.create(
         user         = request.user,
         payment      = payment_obj,
@@ -152,9 +150,6 @@ def _build_order_from_session(request, address, payment_obj, totals):
         request.session.pop(key, None)
 
     return order
-
-
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # APPLY COUPON  (AJAX — POST)
@@ -245,68 +240,6 @@ def remove_coupon(request):
     })
 
 
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# HELPER
-# ─────────────────────────────────────────────────────────────────────────────
-
-def _get_cart_id(request):
-    if not request.session.session_key:
-        request.session.create()
-    return request.session.session_key
-
-
-# ─────────────────────────────────────────────────────────
-# CHECKOUT PAGE
-# ─────────────────────────────────────────────────────────
-@login_required(login_url='login')
-def checkout(request):
-    cart       = _get_or_create_cart(request)
-    cart_items = CartItem.objects.filter(
-        cart=cart, is_active=True
-    ).select_related('variant', 'variant__product')
-
-    if not cart_items.exists():
-        messages.warning(request, 'Your cart is empty.')
-        return redirect('cart')
-
-    total       = sum(item.variant.price * item.quantity
-                      for item in cart_items if item.variant.stock > 0)
-    tax         = round(Decimal('0.18') * total, 2)
-    grand_total = round(total + tax, 2)
-
-    coupon_discount = Decimal(request.session.get('coupon_discount', '0'))
-    coupon_code     = request.session.get('coupon_code', '')
-    after_coupon    = round(grand_total - coupon_discount, 2)
-
-    wallet_used    = Decimal(request.session.get('wallet_used', '0'))
-    wallet_applied = request.session.get('wallet_applied', False)
-    final_total    = max(round(after_coupon - wallet_used, 2), Decimal('0'))
-
-    wallet    = _get_wallet(request.user)
-    addresses = UserAddress.objects.filter(user=request.user).order_by('-is_default')
-
-    context = {
-        'cart_items'     : cart_items,
-        'total'          : total,
-        'tax'            : tax,
-        'grand_total'    : grand_total,
-        'coupon_discount': coupon_discount,
-        'coupon_code'    : coupon_code,
-        'after_coupon'   : after_coupon,
-        'wallet_balance' : wallet.balance,
-        'wallet_used'    : wallet_used,
-        'wallet_applied' : wallet_applied,
-        'final_total'    : final_total,
-        'addresses'      : addresses,
-    }
-    return render(request, 'orders/checkout.html', context)
-
-
-
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # CHECKOUT PAGE
 # ─────────────────────────────────────────────────────────────────────────────
@@ -341,7 +274,6 @@ def checkout(request):
         'razorpay_key_id': settings.RAZORPAY_KEY_ID,
     }
     return render(request, 'orders/checkout.html', context)
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PLACE ORDER
@@ -427,8 +359,8 @@ def place_order(request):
 # RAZORPAY CALLBACK  (POST from frontend after payment)
 # Signature is verified server-side — never trust the frontend alone.
 # ─────────────────────────────────────────────────────────────────────────────
-@csrf_exempt                     # Razorpay posts without Django CSRF cookie
 @login_required(login_url='login')
+@csrf_exempt
 def razorpay_callback(request):
     if request.method != 'POST':
         return redirect('checkout')
@@ -437,6 +369,9 @@ def razorpay_callback(request):
     rz_order_id   = request.POST.get('razorpay_order_id', '')
     rz_signature  = request.POST.get('razorpay_signature', '')
 
+    print("PAYMENT ID:", rz_payment_id)
+    print("ORDER ID:", rz_order_id)
+    print("SIGNATURE:", rz_signature)
     # ── Verify signature ──────────────────────────────────
     try:
         rz_client = _razorpay_client()
@@ -446,7 +381,8 @@ def razorpay_callback(request):
             'razorpay_signature' : rz_signature,
         })
         signature_ok = True
-    except razorpay.errors.SignatureVerificationError:
+    except Exception as e:
+        print("SIGNATURE ERROR:", str(e))
         signature_ok = False
 
     if not signature_ok:
@@ -491,7 +427,6 @@ def order_complete(request, order_number):
         'order': order, 'order_items': order_items,
     })
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # RAZORPAY SUCCESS PAGE  (richer — for online payments)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -503,7 +438,6 @@ def payment_success(request, order_number):
         'order': order, 'order_items': order_items,
     })
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # PAYMENT FAILED PAGE
 # ─────────────────────────────────────────────────────────────────────────────
@@ -514,27 +448,6 @@ def payment_failed(request):
         'razorpay_key_id': settings.RAZORPAY_KEY_ID,
         'razorpay_order_id': rz_order_id,
     })
-
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# MY ORDERS LIST
-# ─────────────────────────────────────────────────────────────────────────────
-
-@login_required(login_url='login')
-def my_orders(request):
-    orders = Order.objects.filter(user=request.user, is_ordered=True)
-
-    q = request.GET.get('q', '').strip()
-    if q:
-        orders = orders.filter(order_number__icontains=q)
-
-    return render(request, 'dashboard/orders.html', {
-        'orders' : orders,
-        'q'      : q,
-    })
-
-
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -558,7 +471,7 @@ def my_orders(request):
     orders = Order.objects.filter(
         user=request.user, is_ordered=True
     ).select_related('payment').prefetch_related('items')
-    return render(request, 'orders/my_orders.html', {'orders': orders})
+    return render(request, 'dashboard/orders.html', {'orders': orders})
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -585,34 +498,34 @@ def cancel_order(request, order_number):
 
     # 2. Calculate refund
     refund_amount = Decimal('0')
-    parts         = []
+    now = timezone.now()
 
-    wallet_paid = order.wallet_used or Decimal('0')
-    if wallet_paid > 0:
-        refund_amount += wallet_paid
-        parts.append(f'wallet ₹{wallet_paid}')
-
+    # Cancel every active item
+    for item in order.items.filter(item_status='Active').select_related('variant'):
+        if item.variant:
+            item.variant.stock += item.quantity
+            item.variant.save(update_fields=['stock'])
+        refund_amount  += item.product_price * item.quantity
+        item.item_status   = 'Cancelled'
+        item.cancelled_qty = item.quantity
+        item.cancel_reason = reason
+        item.cancelled_at  = now
+        item.save(update_fields=['item_status', 'cancelled_qty', 'cancel_reason', 'cancelled_at'])
+    # Proportional refund: add wallet_used and any online payment
+    wallet_refund = order.wallet_used or Decimal('0')
     payment = order.payment
     if payment and payment.payment_method == 'RAZORPAY' and payment.status == 'Completed':
-        razorpay_paid = Decimal(str(payment.amount_paid))
-        if razorpay_paid > 0:
-            refund_amount += razorpay_paid
-            parts.append(f'Razorpay ₹{razorpay_paid}')
+        online = Decimal(str(payment.amount_paid))
+        if online > 0:
+            wallet_refund += online
             payment.status = 'Refunded'
             payment.save(update_fields=['status'])
-
-    # 3. Credit wallet
-    if refund_amount > 0:
+    if wallet_refund > 0:
         wallet = _get_wallet(request.user)
-        wallet.credit(
-            amount      = refund_amount,
-            description = f'Refund — cancelled Order #{order.order_number} ({", ".join(parts)})',
-            order       = order,
-        )
-        messages.success(
-            request,
-            f'Order cancelled. ₹{refund_amount} refunded to your wallet instantly.'
-        )
+        wallet.credit(amount=wallet_refund,
+                      description=f'Refund — cancelled Order #{order.order_number}',
+                      order=order)
+        messages.success(request, f'Order cancelled. ₹{wallet_refund} refunded to your wallet.')
     else:
         messages.success(request, 'Order cancelled. Stock has been restored.')
 
@@ -622,7 +535,6 @@ def cancel_order(request, order_number):
     order.save(update_fields=['status', 'cancel_reason'])
 
     return redirect('order_detail', order_number=order_number)
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # RETURN ORDER  →  "Return Requested" — admin approves → wallet credit
@@ -643,6 +555,14 @@ def return_order(request, order_number):
         messages.error(request, 'Please select a return reason.')
         return redirect('order_detail', order_number=order_number)
 
+    # Mark all active items as Return Requested
+    now = timezone.now()
+    for item in order.items.filter(item_status='Active'):
+        item.item_status         = 'Return Requested'
+        item.return_reason       = reason
+        item.return_requested_at = now
+        item.save(update_fields=['item_status', 'return_reason', 'return_requested_at'])
+
     order.status        = 'Return Requested'
     order.return_reason = reason
     order.save(update_fields=['status', 'return_reason'])
@@ -652,6 +572,160 @@ def return_order(request, order_number):
         'Return request submitted. Once approved, your refund will be '
         'credited to your wallet and stock will be restored automatically.'
     )
+    return redirect('order_detail', order_number=order_number)
+
+# ─────────────────────────────────────────────────────────
+# RETURN INDIVIDUAL ITEM
+# Allows partial qty return when qty > 1
+# ─────────────────────────────────────────────────────────
+@login_required(login_url='login')
+def return_item(request, order_number, item_id):
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    item  = get_object_or_404(OrderProduct, id=item_id, order=order)
+
+    if order.status != 'Delivered':
+        messages.error(request, 'Only delivered orders can have items returned.')
+        return redirect('order_detail', order_number=order_number)
+
+    if item.item_status != 'Active':
+        messages.error(request, 'This item has already been cancelled or a return has been requested.')
+        return redirect('order_detail', order_number=order_number)
+
+    if request.method != 'POST':
+        return redirect('order_detail', order_number=order_number)
+
+    try:
+        return_qty = int(request.POST.get('return_qty', item.active_qty()))
+    except (ValueError, TypeError):
+        return_qty = item.active_qty()
+
+    active_qty = item.active_qty()
+    if return_qty < 1 or return_qty > active_qty:
+        messages.error(request, f'Invalid quantity. You can return 1 to {active_qty} unit(s).')
+        return redirect('order_detail', order_number=order_number)
+
+    reason = request.POST.get('return_reason', '').strip()
+    if not reason:
+        messages.error(request, 'Please select a reason for return.')
+        return redirect('order_detail', order_number=order_number)
+
+    item.returned_qty       += return_qty
+    item.return_reason       = reason
+    item.return_requested_at = timezone.now()
+    if item.returned_qty >= item.active_qty() + return_qty:
+        item.item_status = 'Return Requested'
+    else:
+        item.item_status = 'Return Requested'
+    item.save(update_fields=['returned_qty', 'return_reason', 'return_requested_at', 'item_status'])
+
+    # Update order-level status to reflect partial return pending
+    active_non_returned = order.items.filter(item_status='Active').count()
+    if active_non_returned == 0:
+        order.status = 'Return Requested'
+        order.save(update_fields=['status'])
+
+    messages.success(
+        request,
+        f'Return request submitted for {return_qty}x "{item.product_name}". '
+        'Refund will be credited to your wallet once admin approves.'
+    )
+    return redirect('order_detail', order_number=order_number)
+
+
+# ─────────────────────────────────────────────────────────
+# CANCEL INDIVIDUAL ITEM
+# Allows partial qty cancel when qty > 1
+# Calculates proportional refund based on item's share of total
+# ─────────────────────────────────────────────────────────
+@login_required(login_url='login')
+def cancel_item(request, order_number, item_id):
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    item  = get_object_or_404(OrderProduct, id=item_id, order=order)
+
+    if order.status not in ['New', 'Accepted']:
+        messages.error(request, 'Items in this order cannot be cancelled now.')
+        return redirect('order_detail', order_number=order_number)
+
+    if item.item_status != 'Active':
+        messages.error(request, 'This item has already been cancelled or returned.')
+        return redirect('order_detail', order_number=order_number)
+
+    if request.method != 'POST':
+        return redirect('order_detail', order_number=order_number)
+
+    # How many units to cancel (user picks, default = all active)
+    try:
+        cancel_qty = int(request.POST.get('cancel_qty', item.active_qty()))
+    except (ValueError, TypeError):
+        cancel_qty = item.active_qty()
+
+    active_qty = item.active_qty()
+    if cancel_qty < 1 or cancel_qty > active_qty:
+        messages.error(request, f'Invalid quantity. You can cancel 1 to {active_qty} unit(s).')
+        return redirect('order_detail', order_number=order_number)
+
+    reason = request.POST.get('cancel_reason', '')
+
+    # 1. Restore stock
+    if item.variant:
+        item.variant.stock += cancel_qty
+        item.variant.save(update_fields=['stock'])
+
+    # 2. Calculate proportional refund
+    #    Item's unit price share in the total order
+    #    refund = unit_price × cancel_qty
+    #    We also proportionally refund wallet/online payment
+    item_unit_refund = item.product_price * cancel_qty
+
+    # Proportion of this item's value vs the whole order
+    # We refund from wallet_used and online payment proportionally
+    order_subtotal = sum(
+        i.product_price * i.quantity for i in order.items.all()
+    )
+    if order_subtotal > 0:
+        proportion    = item_unit_refund / order_subtotal
+    else:
+        proportion    = Decimal('0')
+
+    wallet_to_refund = round((order.wallet_used or Decimal('0')) * proportion, 2)
+    payment          = order.payment
+    online_to_refund = Decimal('0')
+    if payment and payment.payment_method == 'RAZORPAY' and payment.status == 'Completed':
+        online_to_refund = round(Decimal(str(payment.amount_paid)) * proportion, 2)
+
+    total_refund = wallet_to_refund + online_to_refund
+
+    # 3. Update item
+    item.cancelled_qty  += cancel_qty
+    item.cancel_reason   = reason
+    item.cancelled_at    = timezone.now()
+    if item.cancelled_qty >= item.quantity:
+        item.item_status = 'Cancelled'
+    item.save(update_fields=['cancelled_qty', 'cancel_reason', 'cancelled_at', 'item_status'])
+
+    # 4. Credit wallet refund
+    if total_refund > 0:
+        wallet = _get_wallet(request.user)
+        wallet.credit(
+            amount      = total_refund,
+            description = f'Refund — cancelled {cancel_qty}x {item.product_name} '
+                          f'from Order #{order.order_number}',
+            order       = order,
+        )
+        messages.success(request, f'{cancel_qty} unit(s) of "{item.product_name}" cancelled. '
+                                   f'₹{total_refund} refunded to your wallet.')
+    else:
+        messages.success(request, f'{cancel_qty} unit(s) of "{item.product_name}" cancelled.')
+
+    # 5. If all items are now cancelled → update order status
+    if order.all_items_cancelled():
+        order.status        = 'Cancelled'
+        order.cancel_reason = 'All items cancelled individually'
+        order.save(update_fields=['status', 'cancel_reason'])
+        if payment and payment.payment_method == 'RAZORPAY' and payment.status == 'Completed':
+            payment.status = 'Refunded'
+            payment.save(update_fields=['status'])
+
     return redirect('order_detail', order_number=order_number)
 
 
@@ -666,8 +740,19 @@ def download_invoice(request, order_number):
     order       = get_object_or_404(Order, order_number=order_number, user=request.user)
     order_items = OrderProduct.objects.filter(order=order)
 
-    if order.status in ['Return Requested', 'Returned', 'Cancelled']:
-        messages.error(request, 'Invoice not available for cancelled or returned orders.')
+    # Case 1: Fully cancelled order
+    if order.status == 'Cancelled':
+        messages.error(request, 'Invoice not available for cancelled orders.')
+        return redirect('order_detail', order_number=order_number)
+
+    # Case 2: Fully returned order
+    if order.status == 'Returned':
+        messages.error(request, 'Invoice not available for returned orders.')
+        return redirect('order_detail', order_number=order_number)
+
+    # Case 3: Partial return / cancel (item-level)
+    if order.items.filter(item_status__in=['Return Requested', 'Returned', 'Cancelled']).exists():
+        messages.error(request, 'Invoice not available because some items are returned or cancelled.')
         return redirect('order_detail', order_number=order_number)
 
     try:
@@ -676,42 +761,47 @@ def download_invoice(request, order_number):
         from reportlab.lib.units import cm
         from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.enums import TA_RIGHT, TA_CENTER
+        from reportlab.lib.enums import TA_CENTER
         import io
 
         buffer = io.BytesIO()
-        doc    = SimpleDocTemplate(buffer, pagesize=A4,
-                                   rightMargin=2*cm, leftMargin=2*cm,
-                                   topMargin=2*cm,   bottomMargin=2*cm)
-        styles = getSampleStyleSheet()
-        story  = []
+        doc = SimpleDocTemplate(
+            buffer, pagesize=A4,
+            rightMargin=2*cm, leftMargin=2*cm,
+            topMargin=2*cm, bottomMargin=2*cm
+        )
 
-        # Title
-        title_style = ParagraphStyle('title', parent=styles['Heading1'],
-                                     fontSize=20,
-                                     textColor=colors.HexColor('#3167eb'),
-                                     spaceAfter=4)
+        styles = getSampleStyleSheet()
+        story = []
+
+        # ───────────────── TITLE ─────────────────
+        title_style = ParagraphStyle(
+            'title', parent=styles['Heading1'],
+            fontSize=20, textColor=colors.HexColor('#3167eb'),
+            spaceAfter=4
+        )
         story.append(Paragraph('Orbit Watch Collection', title_style))
         story.append(Paragraph('Invoice', styles['Heading2']))
         story.append(Spacer(1, 0.3*cm))
 
-        # Order info
+        # ───────────────── ORDER INFO ─────────────────
         info_data = [
             ['Order Number:', f'#{order.order_number}'],
-            ['Date:',         order.created_at.strftime('%d %B %Y')],
-            ['Payment:',      order.payment.payment_method if order.payment else 'COD'],
-            ['Status:',       order.status],
+            ['Date:', order.created_at.strftime('%d %B %Y')],
+            ['Payment:', order.payment.payment_method if order.payment else 'COD'],
+            ['Status:', order.status],
         ]
+
         info_table = Table(info_data, colWidths=[4*cm, 10*cm])
         info_table.setStyle(TableStyle([
-            ('FONTNAME',      (0,0), (0,-1), 'Helvetica-Bold'),
-            ('FONTSIZE',      (0,0), (-1,-1), 10),
+            ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 10),
             ('BOTTOMPADDING', (0,0), (-1,-1), 4),
         ]))
         story.append(info_table)
         story.append(Spacer(1, 0.4*cm))
 
-        # Delivery address
+        # ───────────────── ADDRESS ─────────────────
         story.append(Paragraph('<b>Deliver To:</b>', styles['Normal']))
         story.append(Paragraph(
             f"{order.full_name} | +91 {order.phone}<br/>"
@@ -720,99 +810,108 @@ def download_invoice(request, order_number):
         ))
         story.append(Spacer(1, 0.5*cm))
 
-        # Items table
-        headers   = [['#', 'Product', 'Color', 'Price', 'Qty', 'Total']]
+        # ───────────────── ITEMS TABLE (WRAP FIXED) ─────────────────
+        headers = [['#', 'Product', 'Color', 'Price', 'Qty', 'Total']]
         item_rows = []
+
         for idx, item in enumerate(order_items, 1):
             item_rows.append([
-                str(idx),
-                item.product_name,
-                item.color_name,
-                f'Rs.{item.product_price}',
-                str(item.quantity),
-                f'Rs.{item.sub_total()}',
+                Paragraph(str(idx), styles['Normal']),
+                Paragraph(item.product_name, styles['Normal']),
+                Paragraph(item.color_name or '-', styles['Normal']),
+                Paragraph(f'Rs.{item.product_price}', styles['Normal']),
+                Paragraph(str(item.quantity), styles['Normal']),
+                Paragraph(f'Rs.{item.sub_total()}', styles['Normal']),
             ])
-        item_table = Table(headers + item_rows,
-                           colWidths=[1*cm, 6*cm, 3*cm, 2.5*cm, 1.5*cm, 2.5*cm])
+
+        item_table = Table(
+            headers + item_rows,
+            colWidths=[1*cm, 6*cm, 3*cm, 2.5*cm, 1.5*cm, 2.5*cm]
+        )
+
         item_table.setStyle(TableStyle([
-            ('BACKGROUND',    (0,0),  (-1,0),  colors.HexColor('#3167eb')),
-            ('TEXTCOLOR',     (0,0),  (-1,0),  colors.white),
-            ('FONTNAME',      (0,0),  (-1,0),  'Helvetica-Bold'),
-            ('FONTSIZE',      (0,0),  (-1,-1), 9),
-            ('ROWBACKGROUNDS',(0,1),  (-1,-1), [colors.white, colors.HexColor('#f4f6ff')]),
-            ('GRID',          (0,0),  (-1,-1), 0.5, colors.HexColor('#dee2e6')),
-            ('ALIGN',         (3,0),  (-1,-1), 'RIGHT'),
-            ('BOTTOMPADDING', (0,0),  (-1,-1), 6),
-            ('TOPPADDING',    (0,0),  (-1,-1), 6),
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3167eb')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 9),
+            ('ROWBACKGROUNDS', (0,1), (-1,-1),
+                [colors.white, colors.HexColor('#f4f6ff')]),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#dee2e6')),
+            ('ALIGN', (3,0), (-1,-1), 'RIGHT'),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('WORDWRAP', (0,0), (-1,-1), 'CJK'),
         ]))
+
         story.append(item_table)
         story.append(Spacer(1, 0.4*cm))
 
-        # Totals
-        subtotal    = float(order.order_total) - float(order.tax)
+        # ───────────────── CORRECT TOTAL CALCULATION ─────────────────
+        grand_total = float(order.order_total) + float(order.discount or 0) + float(order.wallet_used or 0)
+        subtotal = grand_total - float(order.tax)
+
         totals_data = [
-            ['', 'Subtotal:',    f'Rs.{subtotal:.2f}'],
-            ['', 'Tax (18%):',   f'Rs.{order.tax}'],
-            ['', 'Shipping:',    'Free'],
-            ['', 'Grand Total:', f'Rs.{order.order_total}'],
+            ['', 'Subtotal:', f'Rs.{subtotal:.2f}'],
+            ['', 'GST (18%):', f'Rs.{order.tax}'],
         ]
+
+        # Coupon
+        if order.discount and order.discount > 0:
+            totals_data.append([
+                '', f'Coupon ({order.coupon_code}):', f'- Rs.{order.discount}'
+            ])
+
+        # Wallet
+        if order.wallet_used and order.wallet_used > 0:
+            totals_data.append([
+                '', 'Wallet Used:', f'- Rs.{order.wallet_used}'
+            ])
+
+        # Shipping
+        totals_data.append(['', 'Delivery:', 'Free'])
+
+        # Final
+        totals_data.append([
+            '', 'Total Payment:', f'Rs.{order.order_total}'
+        ])
+
         totals_table = Table(totals_data, colWidths=[9*cm, 4*cm, 3.5*cm])
+
+        last_row = len(totals_data) - 1
+
         totals_table.setStyle(TableStyle([
-            ('FONTNAME',      (1,3),  (2,3),  'Helvetica-Bold'),
-            ('FONTSIZE',      (0,0),  (-1,-1), 10),
-            ('ALIGN',         (1,0),  (-1,-1), 'RIGHT'),
-            ('LINEABOVE',     (1,3),  (-1,3),  1, colors.HexColor('#3167eb')),
-            ('BOTTOMPADDING', (0,0),  (-1,-1), 5),
+            ('FONTNAME', (1,last_row), (2,last_row), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 10),
+            ('ALIGN', (1,0), (-1,-1), 'RIGHT'),
+            ('LINEABOVE', (1,last_row), (-1,last_row), 1, colors.HexColor('#3167eb')),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 5),
         ]))
+
         story.append(totals_table)
         story.append(Spacer(1, 1*cm))
 
-        # Footer
-        center_style = ParagraphStyle('center', parent=styles['Normal'],
-                                      alignment=TA_CENTER,
-                                      textColor=colors.grey, fontSize=9)
-        story.append(Paragraph('Thank you for shopping with Orbit Watch Collection!', center_style))
-        story.append(Paragraph('support@orbit.com  |  +859-321-1234  |  Thrissur, Guruvayoor', center_style))
+        # ───────────────── FOOTER ─────────────────
+        center_style = ParagraphStyle(
+            'center', parent=styles['Normal'],
+            alignment=TA_CENTER,
+            textColor=colors.grey,
+            fontSize=9
+        )
+
+        story.append(Paragraph(
+            'Thank you for shopping with Orbit Watch Collection!',
+            center_style
+        ))
+        story.append(Paragraph(
+            'support@orbit.com | +91-859-321-1234 | Kerala, India',
+            center_style
+        ))
 
         doc.build(story)
         buffer.seek(0)
 
         response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = (
-            f'attachment; filename="Invoice_{order_number}.pdf"'
-        )
+        response['Content-Disposition'] = f'attachment; filename="Invoice_{order_number}.pdf"'
         return response
 
     except ImportError:
-        # Fallback plain text if reportlab not installed
-        lines = [
-            'ORBIT WATCH COLLECTION',
-            f'Invoice — Order #{order.order_number}',
-            f'Date: {order.created_at.strftime("%d %B %Y")}',
-            '',
-            f'Deliver To: {order.full_name} | +91 {order.phone}',
-            f'{order.address_line}, {order.city}, {order.state} - {order.pincode}',
-            '',
-            f"{'Product':<35} {'Qty':>4} {'Price':>10} {'Total':>10}",
-            '-' * 65,
-        ]
-        for item in order_items:
-            lines.append(
-                f"{item.product_name:<35} {item.quantity:>4} "
-                f"Rs.{item.product_price:>8} Rs.{item.sub_total():>8}"
-            )
-        subtotal = float(order.order_total) - float(order.tax)
-        lines += [
-            '-' * 65,
-            f"{'Subtotal:':<50} Rs.{subtotal:.2f}",
-            f"{'Tax (18%):':<50} Rs.{order.tax}",
-            f"{'Shipping:':<50} Free",
-            f"{'Grand Total:':<50} Rs.{order.order_total}",
-            '',
-            'Thank you for shopping with Orbit Watch Collection!',
-        ]
-        response = HttpResponse('\n'.join(lines), content_type='text/plain')
-        response['Content-Disposition'] = (
-            f'attachment; filename="Invoice_{order_number}.txt"'
-        )
-        return response
+        return HttpResponse("ReportLab not installed", status=500)

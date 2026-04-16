@@ -166,7 +166,6 @@ def resend_change_email_otp(request):
 
 @login_required(login_url='login')
 def orders(request):
-    """Redirects to the orders app my_orders view."""
     return redirect('my_orders')
 
 
@@ -437,12 +436,6 @@ def address(request):
     addresses = UserAddress.objects.filter(user=request.user)
     return render(request, 'dashboard/address.html', {'addresses': addresses})
 
-
-# ── Wallet (Demo) ─────────────────────────────────────────────────────────────
-
-@login_required(login_url='login')
-def wallet(request):
-    return render(request, 'dashboard/wallet.html')
 
 
 # ── Coupons (Demo) ────────────────────────────────────────────────────────────
