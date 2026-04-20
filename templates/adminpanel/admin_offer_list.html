@@ -7,7 +7,7 @@
 
 <ul class="nav nav-tabs mb-4" id="offerTabs" role="tablist">
     <li class="nav-item">
-        <a class="nav-link {% if active_tab != 'category' and active_tab != 'referral' %}active{% endif %}"
+        <a class="nav-link {% if active_tab != 'category' %}active{% endif %}"
            data-toggle="tab" href="#tab-product" role="tab">
             <i class="fas fa-box mr-1"></i>Product Offers
         </a>
@@ -18,12 +18,6 @@
             <i class="fas fa-list mr-1"></i>Category Offers
         </a>
     </li>
-    <li class="nav-item">
-        <a class="nav-link {% if active_tab == 'referral' %}active{% endif %}"
-           data-toggle="tab" href="#tab-referral" role="tab">
-            <i class="fas fa-user-plus mr-1"></i>Referral Codes
-        </a>
-    </li>
 </ul>
 
 <div class="tab-content">
@@ -31,7 +25,7 @@
 <!-- ════════════════════════════════════
      TAB 1 — PRODUCT OFFERS
 ════════════════════════════════════ -->
-<div class="tab-pane fade {% if active_tab != 'category' and active_tab != 'referral' %}show active{% endif %}"
+<div class="tab-pane fade {% if active_tab != 'category' %}show active{% endif %}"
      id="tab-product">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="mb-0 font-weight-bold">Product Offers</h6>
@@ -168,131 +162,6 @@
                 </tbody>
             </table>
         </div>
-    </div>
-</div>
-
-
-<!-- ════════════════════════════════════
-     TAB 3 — REFERRAL CODES
-     No JS. Generate = separate page.
-     Edit = separate page.
-     Toggle = simple GET link.
-════════════════════════════════════ -->
-<div class="tab-pane fade {% if active_tab == 'referral' %}show active{% endif %}"
-     id="tab-referral">
-
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="mb-0 font-weight-bold">User Referral Codes</h6>
-        <small class="text-muted">Codes auto-created when users visit their profile.</small>
-    </div>
-
-    <div class="a-alert aa-info mb-3">
-        <i class="fas fa-info-circle"></i>
-        Friend uses code at checkout → gets wallet credit on first order.
-        Code owner gets reward credited to wallet automatically.
-        <strong>Each code can only be used once per new user.</strong>
-    </div>
-
-    <div class="a-card">
-        <div class="a-card-body p-0">
-            <table class="a-table">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Code</th>
-                        <th>Friend Gets</th>
-                        <th>Owner Earns</th>
-                        <th>Times Used</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for user in ref_page_obj %}
-                <tr>
-                    <td style="font-size:13px;">
-                        <strong>{{ user.get_full_name|default:"—" }}</strong><br>
-                        <small class="text-muted">{{ user.email }}</small>
-                    </td>
-
-                    {% if user.ref %}
-                    {% with ref=user.ref.0 %}
-                    <td>
-                        <strong style="letter-spacing:2px;color:#3167eb;font-size:14px;">
-                            {{ ref.code }}
-                        </strong>
-                    </td>
-                    <td class="text-success font-weight-bold">&#8377;{{ ref.referee_discount }}</td>
-                    <td class="text-primary font-weight-bold">&#8377;{{ ref.referrer_reward }}</td>
-                    <td>{{ ref.times_used }}</td>
-                    <td>
-                        {% if ref.is_active %}
-                        <span class="abadge ab-active"><i class="fas fa-check"></i> Active</span>
-                        {% else %}
-                        <span class="abadge ab-blocked"><i class="fas fa-ban"></i> Inactive</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div class="d-flex" style="gap:6px;">
-                            <!-- Toggle active/inactive -->
-                            <a href="{% url 'admin_referral_toggle' ref.id %}"
-                               class="btn-action {% if ref.is_active %}btn-block-u{% else %}btn-unblock-u{% endif %}">
-                                {% if ref.is_active %}
-                                <i class="fas fa-ban"></i> Disable
-                                {% else %}
-                                <i class="fas fa-check"></i> Enable
-                                {% endif %}
-                            </a>
-                            <!-- Edit rewards — separate page, no JS -->
-                            <a href="{% url 'admin_referral_edit' ref.id %}"
-                               class="btn-action" style="background:#eef2fd;color:#3167eb;">
-                                <i class="fas fa-edit"></i> Edit
-                            </a>
-                        </div>
-                    </td>
-                    {% endwith %}
-
-                    {% else %}
-                    <!-- No code yet — show Generate link to a separate page -->
-                    <td colspan="4">
-                        <span class="text-muted" style="font-size:13px;">No code generated yet</span>
-                    </td>
-                    <td><span class="abadge" style="background:#f0f0f0;color:#aaa;">None</span></td>
-                    <td>
-                        <a href="{% url 'admin_referral_generate_page' user.id %}"
-                           class="btn-action btn-unblock-u">
-                            <i class="fas fa-plus"></i> Generate
-                        </a>
-                    </td>
-                    {% endif %}
-                </tr>
-                {% empty %}
-                <tr><td colspan="7" class="text-center text-muted py-4">No users found.</td></tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination -->
-        {% if ref_page_obj.has_other_pages %}
-        <div class="a-card-body border-top">
-            <div class="a-pages">
-                {% if ref_page_obj.has_previous %}
-                <a href="?tab=referral&ref_page={{ ref_page_obj.previous_page_number }}" class="a-page">‹</a>
-                {% endif %}
-                {% for p in ref_page_obj.paginator.page_range %}
-                    {% if ref_page_obj.number == p %}
-                    <span class="a-page cur">{{ p }}</span>
-                    {% elif p >= ref_page_obj.number|add:'-2' and p <= ref_page_obj.number|add:'2' %}
-                    <a href="?tab=referral&ref_page={{ p }}" class="a-page">{{ p }}</a>
-                    {% endif %}
-                {% endfor %}
-                {% if ref_page_obj.has_next %}
-                <a href="?tab=referral&ref_page={{ ref_page_obj.next_page_number }}" class="a-page">›</a>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
     </div>
 </div>
 

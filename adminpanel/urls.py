@@ -75,12 +75,6 @@ urlpatterns = [
     path('offers/category/<int:offer_id>/toggle/', admin_offer_views.admin_category_offer_toggle, name='admin_category_offer_toggle'),
     path('offers/category/<int:offer_id>/delete/', admin_offer_views.admin_category_offer_delete, name='admin_category_offer_delete'),
 
-
-    # Referral — per user (generate uses user_id, edit/toggle use ref_id)
-    path('offers/referral/<int:user_id>/generate/', admin_offer_views.admin_referral_generate_page, name='admin_referral_generate_page'),
-    path('offers/referral/<int:ref_id>/toggle/',    admin_offer_views.admin_referral_toggle,        name='admin_referral_toggle'),
-    path('offers/referral/<int:ref_id>/edit/',      admin_offer_views.admin_referral_edit,          name='admin_referral_edit'),
-
     # ── Sales Report ─────────────────────────────────────
     path('sales/',       admin_sales_views.admin_sales_report, name='admin_sales_report'),
     path('sales/pdf/',   admin_sales_views.admin_sales_pdf,    name='admin_sales_pdf'),

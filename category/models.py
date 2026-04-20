@@ -9,9 +9,12 @@ class Category(models.Model):
     cat_image     = models.ImageField(upload_to='photos/categories', blank=True)
     status        = models.CharField(max_length=20, default='active')  # active / inactive
 
+    is_offer_applicable = models.BooleanField(default=True)
+    
     def __str__(self):
         return self.category_name
 
+    
     class Meta:
         verbose_name        = 'category'
         verbose_name_plural = 'categories'
