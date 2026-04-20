@@ -33,4 +33,6 @@ urlpatterns = [
     # Razorpay callback
     path('razorpay/callback/',                 views.razorpay_callback,  name='razorpay_callback'),
 
+    path('apply-referral/',  views.apply_referral,  name='apply_referral'),
+    path('remove-referral/', views.remove_referral, name='remove_referral'),
 ]

@@ -61,17 +61,25 @@ urlpatterns = [
     # ── Offers ───────────────────────────────────────────
     path('offers/',                         admin_offer_views.admin_offer_list,           name='admin_offer_list'),
 
+    # Product offers
     path('offers/product/add/',             admin_offer_views.admin_product_offer_add,    name='admin_product_offer_add'),
     path('offers/product/<int:offer_id>/edit/',   admin_offer_views.admin_product_offer_edit,   name='admin_product_offer_edit'),
     path('offers/product/<int:offer_id>/toggle/', admin_offer_views.admin_product_offer_toggle, name='admin_product_offer_toggle'),
     path('offers/product/<int:offer_id>/delete/', admin_offer_views.admin_product_offer_delete, name='admin_product_offer_delete'),
 
+
+
+    # Category offers
     path('offers/category/add/',            admin_offer_views.admin_category_offer_add,    name='admin_category_offer_add'),
     path('offers/category/<int:offer_id>/edit/',   admin_offer_views.admin_category_offer_edit,   name='admin_category_offer_edit'),
     path('offers/category/<int:offer_id>/toggle/', admin_offer_views.admin_category_offer_toggle, name='admin_category_offer_toggle'),
     path('offers/category/<int:offer_id>/delete/', admin_offer_views.admin_category_offer_delete, name='admin_category_offer_delete'),
 
-    path('offers/referral/generate/',       admin_offer_views.admin_referral_generate,     name='admin_referral_generate'),
+
+    # Referral — per user (generate uses user_id, edit/toggle use ref_id)
+    path('offers/referral/<int:user_id>/generate/', admin_offer_views.admin_referral_generate_page, name='admin_referral_generate_page'),
+    path('offers/referral/<int:ref_id>/toggle/',    admin_offer_views.admin_referral_toggle,        name='admin_referral_toggle'),
+    path('offers/referral/<int:ref_id>/edit/',      admin_offer_views.admin_referral_edit,          name='admin_referral_edit'),
 
     # ── Sales Report ─────────────────────────────────────
     path('sales/',       admin_sales_views.admin_sales_report, name='admin_sales_report'),

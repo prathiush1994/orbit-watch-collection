@@ -4,7 +4,9 @@
 {% block nav_profile %}active{% endblock %}
 
 {% block dashboard_content %}
-<div class="card">
+
+<!-- ── PROFILE CARD ───────────────────────────────────── -->
+<div class="card mb-3">
     <div class="card-header d-flex justify-content-between align-items-center">
         <strong>My Profile</strong>
         <a href="{% url 'dashboard_edit_profile' %}" class="btn btn-sm"
@@ -14,23 +16,18 @@
     </div>
     <div class="card-body">
         <div class="row align-items-center">
-            <!-- Photo -->
             <div class="col-md-3 text-center mb-3">
                 {% if request.user.profile_photo %}
                     <img src="{{ request.user.profile_photo.url }}"
                          class="rounded-circle"
-                         style="width:120px;height:120px;object-fit:cover;
-                                border:3px solid #FF6B00;">
+                         style="width:120px;height:120px;object-fit:cover;border:3px solid #FF6B00;">
                 {% else %}
                     <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center"
-                         style="width:120px;height:120px;background:#e9ecef;
-                                border:3px solid #dee2e6;">
+                         style="width:120px;height:120px;background:#e9ecef;border:3px solid #dee2e6;">
                         <i class="fa fa-user" style="font-size:52px;color:#adb5bd;"></i>
                     </div>
                 {% endif %}
             </div>
-
-            <!-- Info -->
             <div class="col-md-9">
                 <table class="table table-borderless mb-0">
                     <tr>
@@ -39,9 +36,10 @@
                     </tr>
                     <tr>
                         <td class="text-muted">Email</td>
-                        <td>{{ request.user.email }}
+                        <td>
+                            {{ request.user.email }}
                             {% if request.user.email_verified %}
-                                <span class="badge badge-success ml-1">Verified</span>
+                            <span class="badge badge-success ml-1">Verified</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -59,21 +57,87 @@
     </div>
 </div>
 
-<!-- Quick actions — Change Password + Change Email -->
-<div class="row mt-3">
-    <div class="col-md-6">
-        <a href="{% url 'dashboard_change_password' %}" class="card text-center p-3 text-decoration-none"
+<!-- ── QUICK ACTIONS ─────────────────────────────────── -->
+<div class="row mb-3">
+    <div class="col-6">
+        <a href="{% url 'dashboard_change_password' %}"
+           class="card text-center p-3 text-decoration-none"
            style="border:1px solid #FF6B00;border-radius:8px;display:block;">
             <i class="fa fa-lock fa-2x mb-2" style="color:#FF6B00;"></i>
             <div style="color:#333;font-weight:600;">Change Password</div>
         </a>
     </div>
-    <div class="col-md-6">
-        <a href="{% url 'dashboard_change_email' %}" class="card text-center p-3 text-decoration-none"
+    <div class="col-6">
+        <a href="{% url 'dashboard_change_email' %}"
+           class="card text-center p-3 text-decoration-none"
            style="border:1px solid #FF6B00;border-radius:8px;display:block;">
             <i class="fa fa-envelope fa-2x mb-2" style="color:#FF6B00;"></i>
             <div style="color:#333;font-weight:600;">Change Email</div>
         </a>
     </div>
 </div>
+
+<!-- ── REFERRAL CARD ─────────────────────────────────── -->
+{% if referral_code %}
+    {% if referral_code.is_active %}
+    <div class="card" style="border-left:4px solid #FF6B00;border-radius:8px;">
+        <div class="card-body py-3 px-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <span class="font-weight-bold" style="color:#FF6B00;">
+                        <i class="fa fa-gift mr-1"></i>Refer &amp; Earn
+                    </span>
+                    <small class="text-muted ml-2">
+                        Your friend gets <strong>&#8377;{{ referral_code.referee_discount }}</strong> off,
+                        you get <strong>&#8377;{{ referral_code.referrer_reward }}</strong> in wallet.
+                    </small>
+                </div>
+                <small class="text-muted">{{ times_used }} used</small>
+            </div>
+            <div class="d-flex align-items-center" style="gap:8px;">
+                <div style="flex:1;background:#fff8f0;border:2px dashed #FF6B00;
+                            border-radius:6px;padding:8px 14px;font-size:20px;
+                            font-weight:700;letter-spacing:3px;color:#FF6B00;
+                            text-align:center;">
+                    {{ referral_code.code }}
+                </div>
+                <button onclick="copyCode('{{ referral_code.code }}')"
+                        id="copyCodeBtn"
+                        class="btn btn-sm font-weight-bold"
+                        style="background:#FF6B00;color:#fff;border-radius:6px;
+                               white-space:nowrap;padding:8px 16px;">
+                    <i class="fa fa-copy mr-1"></i>Copy
+                </button>
+                <a href="https://wa.me/?text=Hey!%20⌚%0A%0AUse%20my%20referral%20code%20*{{ referral_code.code }}*%0Aand%20get%20₹{{ referral_code.referee_discount }}%20OFF%20on%20your%20first%20order%20at%20*Orbit%20Watch%20Collection*!%0A%0A👉%20Register%20here:%20{{ referral_url|urlencode }}%0A%0ADon’t%20miss%20it!"
+                target="_blank"
+                class="btn btn-sm font-weight-bold"
+                style="background:#25D366;color:#fff;border-radius:6px;white-space:nowrap;padding:8px 14px;">
+                    <i class="fab fa-whatsapp mr-1"></i>Share
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-secondary d-flex align-items-center" style="border-radius:8px;">
+        <i class="fa fa-ban mr-2 text-muted"></i>
+        <span class="text-muted">Your referral code has been temporarily disabled by admin.</span>
+    </div>
+    {% endif %}
+{% endif %}
+
+<script>
+function copyCode(code) {
+    navigator.clipboard.writeText(code).then(() => {
+        const btn = document.getElementById('copyCodeBtn');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fa fa-check mr-1"></i>Copied!';
+        btn.style.background = '#28a745';
+        setTimeout(() => {
+            btn.innerHTML = orig;
+            btn.style.background = '#FF6B00';
+        }, 2000);
+    });
+}
+</script>
+
 {% endblock %}

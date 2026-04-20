@@ -1,0 +1,50 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Edit Referral Rewards{% endblock %}
+{% block page_title %}Edit Referral Rewards{% endblock %}
+{% block nav_offers %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-3" style="gap:10px;">
+    <a href="{% url 'admin_offer_list' %}?tab=referral"
+       class="btn-action" style="background:#f0f0f0;color:#545454;">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+    <h5 class="mb-0 font-weight-bold">Edit Referral Rewards</h5>
+</div>
+
+<div class="a-card" style="max-width:480px;">
+    <div class="a-card-body">
+        <div class="mb-4 p-3 rounded" style="background:#f8f9fa;">
+            <div style="font-weight:600;">{{ ref.user.get_full_name|default:ref.user.email }}</div>
+            <small class="text-muted">{{ ref.user.email }}</small><br>
+            <small>Code: <strong style="color:#3167eb;letter-spacing:2px;">{{ ref.code }}</strong>
+            &nbsp;·&nbsp; Used {{ ref.times_used }} time{{ ref.times_used|pluralize }}</small>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="a-form-group">
+                <label class="a-label">Friend Gets (₹) <span class="text-danger">*</span></label>
+                <input type="number" name="referee_discount" class="a-input"
+                       value="{{ ref.referee_discount }}" min="1" step="1" required>
+                <small class="text-muted">Wallet credit for new user on first order</small>
+            </div>
+            <div class="a-form-group">
+                <label class="a-label">Code Owner Earns (₹) <span class="text-danger">*</span></label>
+                <input type="number" name="referrer_reward" class="a-input"
+                       value="{{ ref.referrer_reward }}" min="1" step="1" required>
+                <small class="text-muted">Wallet reward for {{ ref.user.email }}</small>
+            </div>
+            <div class="d-flex mt-3" style="gap:10px;">
+                <button type="submit" class="btn-admin">
+                    <i class="fas fa-save mr-1"></i> Save Changes
+                </button>
+                <a href="{% url 'admin_offer_list' %}?tab=referral"
+                   class="btn-action" style="background:#f0f0f0;color:#545454;padding:8px 18px;">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

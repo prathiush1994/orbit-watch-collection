@@ -151,6 +151,8 @@ def _build_order_from_session(request, address, payment_obj, totals):
 
     return order
 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # APPLY COUPON  (AJAX — POST)
 # body: { code: "XYZ", grand_total: "1234.00" }
@@ -359,6 +361,26 @@ def place_order(request):
         updated_by=None,   # or request.user if available
         note=f"Order #{order.id}"
     )
+    # Credit referrer reward on first order
+    try:
+        ref_use = request.user.used_referral
+        if not ref_use.reward_given:
+            from offers.models import ReferralCode
+            ref_code = ref_use.referral_code
+            if ref_code.is_active:
+                from wallet.models import Wallet
+                wallet, _ = Wallet.objects.get_or_create(user=ref_code.user)
+                wallet.credit(
+                    amount=ref_code.referrer_reward,
+                    description=f'Referral reward — {request.user.email} placed first order',
+                    order=order,
+                )
+                ref_use.reward_given = True
+                ref_use.save(update_fields=['reward_given'])
+                ref_code.times_used += 1
+                ref_code.save(update_fields=['times_used'])
+    except Exception:
+        pass   # user has no referral, skip silently
     return redirect('checkout')
 
 
@@ -922,3 +944,293 @@ def download_invoice(request, order_number):
 
     except ImportError:
         return HttpResponse("ReportLab not installed", status=500)
+
+
+@login_required(login_url='login')
+def apply_referral(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request.'})
+
+    from offers.models import ReferralCode, ReferralUse
+
+    data        = json.loads(request.body)
+    code        = data.get('code', '').strip().upper()
+    grand_total = Decimal(str(data.get('grand_total', '0')))
+
+    # Already applied in this session?
+    if request.session.get('referral_code'):
+        return JsonResponse({
+            'success': False,
+            'message': 'A referral code is already applied. Remove it first.'
+        })
+
+    # Also block if coupon is applied (one discount type at a time is fine,
+    # but referral stacks with coupon — both can apply together)
+
+    # Fetch code
+    try:
+        ref_code = ReferralCode.objects.select_related('user').get(code=code)
+    except ReferralCode.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Invalid referral code.'})
+
+    # Must be active
+    if not ref_code.is_active:
+        return JsonResponse({'success': False, 'message': 'This referral code is no longer active.'})
+
+    # Cannot use your own code
+    if ref_code.user == request.user:
+        return JsonResponse({'success': False, 'message': "You can't use your own referral code."})
+
+    # Has this user ALREADY used any referral code before?
+    if ReferralUse.objects.filter(referee=request.user).exists():
+        return JsonResponse({
+            'success': False,
+            'message': 'Referral codes can only be used on your very first order.'
+        })
+
+    # Has this user already placed any orders? (first-order-only rule)
+    from orders.models import Order
+    if Order.objects.filter(user=request.user, is_ordered=True).exists():
+        return JsonResponse({
+            'success': False,
+            'message': 'Referral codes are for new customers only (first order).'
+        })
+
+    # Calculate discount — fixed ₹ amount from the code
+    discount   = min(ref_code.referee_discount, grand_total)
+    after_ref  = round(grand_total - discount, 2)
+
+    # Save in session
+    request.session['referral_code']     = ref_code.code
+    request.session['referral_id']       = ref_code.id
+    request.session['referral_discount'] = str(discount)
+
+    # Recalculate wallet if already applied
+    wallet_used = Decimal(request.session.get('wallet_used', '0'))
+    if wallet_used > 0:
+        wallet_used = min(wallet_used, after_ref)
+        request.session['wallet_used'] = str(wallet_used)
+
+    final = max(after_ref - wallet_used, Decimal('0'))
+
+    return JsonResponse({
+        'success'   : True,
+        'message'   : f'Referral code applied! You save ₹{discount} on this order.',
+        'discount'  : str(discount),
+        'after_ref' : str(after_ref),
+        'final'     : str(final),
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# REMOVE REFERRAL CODE  (AJAX — POST)
+# ─────────────────────────────────────────────────────────────────────────────
+@login_required(login_url='login')
+def remove_referral(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request.'})
+
+    data        = json.loads(request.body)
+    grand_total = Decimal(str(data.get('grand_total', '0')))
+
+    request.session.pop('referral_code', None)
+    request.session.pop('referral_id', None)
+    request.session.pop('referral_discount', None)
+
+    # Recalculate wallet
+    coupon_discount = Decimal(request.session.get('coupon_discount', '0'))
+    after_coupon    = round(grand_total - coupon_discount, 2)
+    wallet_used     = Decimal(request.session.get('wallet_used', '0'))
+    if wallet_used > 0:
+        wallet_used = min(wallet_used, after_coupon)
+        request.session['wallet_used'] = str(wallet_used)
+
+    final = max(after_coupon - wallet_used, Decimal('0'))
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Referral code removed.',
+        'final'  : str(final),
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UPDATED _compute_totals — paste this OVER the existing one in views.py
+# Adds referral_discount into the totals calculation
+# ─────────────────────────────────────────────────────────────────────────────
+def _compute_totals(cart_items, session):
+    subtotal    = sum(item.variant.price * item.quantity
+                      for item in cart_items if item.variant.stock > 0)
+    tax         = round(Decimal('0.18') * subtotal, 2)
+    grand_total = round(subtotal + tax, 2)
+
+    # Coupon
+    coupon_discount = Decimal(session.get('coupon_discount', '0'))
+    coupon_code     = session.get('coupon_code', '')
+    coupon_id       = session.get('coupon_id')
+    after_coupon    = round(grand_total - coupon_discount, 2)
+
+    # Referral (stacks on top of coupon)
+    referral_discount = Decimal(session.get('referral_discount', '0'))
+    referral_code     = session.get('referral_code', '')
+    referral_id       = session.get('referral_id')
+    after_referral    = round(after_coupon - referral_discount, 2)
+
+    # Wallet
+    wallet_used    = Decimal(session.get('wallet_used', '0'))
+    wallet_applied = session.get('wallet_applied', False)
+    final_total    = max(round(after_referral - wallet_used, 2), Decimal('0'))
+
+    return {
+        'subtotal'         : subtotal,
+        'tax'              : tax,
+        'grand_total'      : grand_total,
+        'coupon_discount'  : coupon_discount,
+        'coupon_code'      : coupon_code,
+        'coupon_id'        : coupon_id,
+        'after_coupon'     : after_coupon,
+        'referral_discount': referral_discount,
+        'referral_code'    : referral_code,
+        'referral_id'      : referral_id,
+        'after_referral'   : after_referral,
+        'wallet_used'      : wallet_used,
+        'wallet_applied'   : wallet_applied,
+        'final_total'      : final_total,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UPDATED _build_order_from_session — paste OVER existing in views.py
+# Adds ReferralUse creation and referrer wallet credit on first order
+# ─────────────────────────────────────────────────────────────────────────────
+def _build_order_from_session(request, address, payment_obj, totals):
+    from .models import Order, OrderProduct, Coupon, CouponUsage
+    from carts.models import CartItem
+    from carts.views import _get_or_create_cart
+    from wallet.models import Wallet
+
+    order = Order.objects.create(
+        user         = request.user,
+        payment      = payment_obj,
+        full_name    = address.full_name,
+        phone        = address.phone,
+        address_line = address.address_line,
+        city         = address.city,
+        state        = address.state,
+        pincode      = address.pincode,
+        address_type = address.address_type,
+        order_number = _generate_order_number(),
+        order_total  = totals['final_total'],
+        tax          = totals['tax'],
+        discount     = totals['coupon_discount'] + totals['referral_discount'],
+        coupon_code  = totals['coupon_code'],
+        wallet_used  = totals['wallet_used'],
+        is_ordered   = True,
+    )
+
+    # ── Coupon usage ──────────────────────────────────
+    if totals['coupon_id']:
+        try:
+            coupon_obj = Coupon.objects.get(id=totals['coupon_id'])
+            order.coupon = coupon_obj
+            order.save(update_fields=['coupon'])
+            usage, _ = CouponUsage.objects.get_or_create(coupon=coupon_obj, user=request.user)
+            usage.used_count += 1
+            usage.save()
+            coupon_obj.total_usage += 1
+            coupon_obj.save(update_fields=['total_usage'])
+        except Coupon.DoesNotExist:
+            pass
+
+    # ── Referral: lock it (one-time use) + reward referrer ──
+    if totals['referral_id']:
+        from offers.models import ReferralCode, ReferralUse
+        try:
+            ref_code = ReferralCode.objects.get(id=totals['referral_id'])
+
+            # Create ReferralUse to lock this code for this user (one-time)
+            ReferralUse.objects.get_or_create(
+                referral_code = ref_code,
+                referee       = request.user,
+                defaults      = {'reward_given': True},
+            )
+
+            # Credit the REFERRER's wallet immediately
+            referrer_wallet, _ = Wallet.objects.get_or_create(user=ref_code.user)
+            referrer_wallet.credit(
+                amount      = ref_code.referrer_reward,
+                description = f'Referral reward — {request.user.email} placed first order '
+                              f'using your code {ref_code.code}',
+                order       = order,
+            )
+
+            # Increment times_used
+            ref_code.times_used += 1
+            ref_code.save(update_fields=['times_used'])
+
+        except (ReferralCode.DoesNotExist, Exception):
+            pass  # never block order creation for referral errors
+
+    # ── Wallet debit ──────────────────────────────────
+    if totals['wallet_used'] > 0:
+        wallet, _ = Wallet.objects.get_or_create(user=request.user)
+        wallet.debit(
+            amount      = totals['wallet_used'],
+            description = f'Payment for Order #{order.order_number}',
+            order       = order,
+        )
+
+    # ── Order items + stock ───────────────────────────
+    cart = _get_or_create_cart(request)
+    cart_items = CartItem.objects.filter(
+        cart=cart, is_active=True
+    ).select_related('variant', 'variant__product')
+
+    for item in cart_items:
+        if item.variant.stock <= 0:
+            continue
+        OrderProduct.objects.create(
+            order         = order,
+            user          = request.user,
+            variant       = item.variant,
+            product_name  = item.variant.product.product_name,
+            color_name    = item.variant.color_name,
+            product_price = item.variant.price,
+            quantity      = item.quantity,
+            ordered       = True,
+        )
+        item.variant.stock -= item.quantity
+        item.variant.save(update_fields=['stock'])
+
+    cart_items.delete()
+
+    # ── Clear session ─────────────────────────────────
+    for key in ['coupon_code', 'coupon_id', 'coupon_discount',
+                'referral_code', 'referral_id', 'referral_discount',
+                'wallet_used', 'wallet_applied',
+                'pending_address_id', 'pending_razorpay_order_id']:
+        request.session.pop(key, None)
+
+    return order
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UPDATED checkout view — add referral context
+# Paste this OVER existing checkout() in views.py
+# ─────────────────────────────────────────────────────────────────────────────
+def checkout_context_additions(totals):
+    """Extra keys to add to checkout context."""
+    return {
+        'referral_discount': totals['referral_discount'],
+        'referral_code'    : totals['referral_code'],
+        'after_referral'   : totals['after_referral'],
+    }
+
+
+def _generate_order_number():
+    import random, string
+    from .models import Order
+    while True:
+        number = 'ORB' + ''.join(random.choices(string.digits, k=8))
+        if not Order.objects.filter(order_number=number).exists():
+            return number

@@ -26,9 +26,51 @@ def _otp_remaining(otp_created_at):
 
 # ── Profile ───────────────────────────────────────────────────────────────────
 
+
+
+
 @login_required(login_url='login')
 def profile(request):
-    return render(request, 'dashboard/profile.html')
+    """
+    Profile page — auto-creates referral code if user doesn't have one yet.
+    Passes referral_code to template so the share box can display it.
+    """
+    from offers.models import ReferralCode, ReferralUse
+    import random, string
+
+    user = request.user
+
+    # Auto-generate referral code on first profile visit
+    referral_code = None
+    try:
+        referral_code = user.referral_code
+    except Exception:
+        # User has no code yet — create one now
+        while True:
+            code = 'ORB' + ''.join(
+                random.choices(string.ascii_uppercase + string.digits, k=5)
+            )
+            if not ReferralCode.objects.filter(code=code).exists():
+                break
+        referral_code = ReferralCode.objects.create(
+            user             = user,
+            code             = code,
+            referee_discount = 100,   # ₹100 wallet credit for new user
+            referrer_reward  = 50,    # ₹50 wallet reward for referrer
+        )
+
+    # Stats: how many people used this code
+    times_used = ReferralCode.objects.filter(
+        user=user
+    ).values_list('times_used', flat=True).first() or 0
+
+    referral_url = f"{request.scheme}://{request.get_host()}/accounts/register/?ref={referral_code.token}"
+
+    return render(request, 'dashboard/profile.html', {
+        'referral_code': referral_code,
+        'referral_url' : referral_url,
+        'times_used'   : times_used,
+    })
 
 
 @login_required(login_url='login')

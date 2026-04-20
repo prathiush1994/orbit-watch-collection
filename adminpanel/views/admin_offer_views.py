@@ -2,20 +2,17 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
+from django.core.paginator import Paginator
 
 from offers.models import ProductOffer, CategoryOffer, ReferralCode
 
 
-# ─────────────────────────────────────────────────────────
-# SAFE IMPORTS — handle if store model field names differ
-# ─────────────────────────────────────────────────────────
 def _get_products():
     from store.models import Product
     try:
-        # Try is_available first (common field name)
         return Product.objects.filter(is_available=True).order_by('product_name')
     except Exception:
-        # Fallback: return all products
+        from store.models import Product
         return Product.objects.all().order_by('product_name')
 
 
@@ -24,29 +21,42 @@ def _get_categories():
     try:
         return Category.objects.filter(is_active=True).order_by('category_name')
     except Exception:
+        from store.models import Category
         return Category.objects.all().order_by('category_name')
 
 
 # ─────────────────────────────────────────────────────────
-# OFFER LIST  — dashboard showing all 3 types
+# OFFER LIST
 # ─────────────────────────────────────────────────────────
 @staff_member_required(login_url='admin_login')
 def admin_offer_list(request):
+    from accounts.models import Account
+    from django.db.models import Prefetch
+
     now             = timezone.now()
     product_offers  = ProductOffer.objects.select_related('product').order_by('-id')
     category_offers = CategoryOffer.objects.select_related('category').order_by('-id')
-    referral_codes  = ReferralCode.objects.select_related('user').order_by('-id')[:30]
+
+    all_users = Account.objects.filter(
+        is_staff=False, is_active=True
+    ).prefetch_related(
+        Prefetch('referral_code', queryset=ReferralCode.objects.all(), to_attr='_ref')
+    ).order_by('-date_joined')
+
+    paginator    = Paginator(all_users, 15)
+    ref_page_obj = paginator.get_page(request.GET.get('ref_page', 1))
 
     return render(request, 'adminpanel/admin_offer_list.html', {
         'product_offers' : product_offers,
         'category_offers': category_offers,
-        'referral_codes' : referral_codes,
+        'ref_page_obj'   : ref_page_obj,
         'now'            : now,
+        'active_tab'     : request.GET.get('tab', 'product'),
     })
 
 
 # ─────────────────────────────────────────────────────────
-# PRODUCT OFFER — ADD
+# PRODUCT OFFER
 # ─────────────────────────────────────────────────────────
 @staff_member_required(login_url='admin_login')
 def admin_product_offer_add(request):
@@ -60,38 +70,28 @@ def admin_product_offer_add(request):
         valid_from   = request.POST.get('valid_from', '').strip()
         valid_until  = request.POST.get('valid_until', '').strip() or None
 
-        # ── Validate ──────────────────────────────────────
         if not product_id:
             messages.error(request, 'Please select a product.')
             return render(request, 'adminpanel/admin_offer_product_form.html',
                           {'products': products, 'action': 'Add'})
-
         try:
             disc = float(discount_pct)
             if not (0 < disc <= 90):
                 raise ValueError
         except (ValueError, TypeError):
-            messages.error(request, 'Discount must be a number between 1 and 90.')
+            messages.error(request, 'Discount must be between 1 and 90.')
             return render(request, 'adminpanel/admin_offer_product_form.html',
                           {'products': products, 'action': 'Add'})
 
         product = get_object_or_404(Product, id=product_id)
-
         if ProductOffer.objects.filter(product=product).exists():
-            messages.error(
-                request,
-                f'"{product.product_name}" already has an offer. '
-                'Edit or delete it first.'
-            )
+            messages.error(request, f'"{product.product_name}" already has an offer. Edit it instead.')
             return render(request, 'adminpanel/admin_offer_product_form.html',
                           {'products': products, 'action': 'Add'})
 
         ProductOffer.objects.create(
-            product      = product,
-            discount_pct = disc,
-            is_active    = is_active,
-            valid_from   = valid_from or timezone.now(),
-            valid_until  = valid_until or None,
+            product=product, discount_pct=disc, is_active=is_active,
+            valid_from=valid_from or timezone.now(), valid_until=valid_until,
         )
         messages.success(request, f'Offer added for "{product.product_name}".')
         return redirect('admin_offer_list')
@@ -100,9 +100,6 @@ def admin_product_offer_add(request):
                   {'products': products, 'action': 'Add'})
 
 
-# ─────────────────────────────────────────────────────────
-# PRODUCT OFFER — EDIT
-# ─────────────────────────────────────────────────────────
 @staff_member_required(login_url='admin_login')
 def admin_product_offer_edit(request, offer_id):
     offer    = get_object_or_404(ProductOffer, id=offer_id)
@@ -113,7 +110,6 @@ def admin_product_offer_edit(request, offer_id):
         is_active    = request.POST.get('is_active') == 'on'
         valid_from   = request.POST.get('valid_from', '').strip()
         valid_until  = request.POST.get('valid_until', '').strip() or None
-
         try:
             disc = float(discount_pct)
             if not (0 < disc <= 90):
@@ -127,25 +123,21 @@ def admin_product_offer_edit(request, offer_id):
         offer.is_active    = is_active
         if valid_from:
             offer.valid_from = valid_from
-        offer.valid_until  = valid_until
+        offer.valid_until = valid_until
         offer.save()
-        messages.success(request, f'Product offer updated.')
+        messages.success(request, 'Product offer updated.')
         return redirect('admin_offer_list')
 
     return render(request, 'adminpanel/admin_offer_product_form.html',
                   {'offer': offer, 'products': products, 'action': 'Edit'})
 
 
-# ─────────────────────────────────────────────────────────
-# PRODUCT OFFER — TOGGLE + DELETE
-# ─────────────────────────────────────────────────────────
 @staff_member_required(login_url='admin_login')
 def admin_product_offer_toggle(request, offer_id):
     offer           = get_object_or_404(ProductOffer, id=offer_id)
     offer.is_active = not offer.is_active
     offer.save(update_fields=['is_active'])
-    messages.success(request,
-        f'Offer {"activated" if offer.is_active else "deactivated"}.')
+    messages.success(request, f'Offer {"activated" if offer.is_active else "deactivated"}.')
     return redirect('admin_offer_list')
 
 
@@ -153,14 +145,13 @@ def admin_product_offer_toggle(request, offer_id):
 def admin_product_offer_delete(request, offer_id):
     offer = get_object_or_404(ProductOffer, id=offer_id)
     if request.method == 'POST':
-        name = offer.product.product_name
         offer.delete()
-        messages.success(request, f'Offer for "{name}" deleted.')
+        messages.success(request, 'Product offer deleted.')
     return redirect('admin_offer_list')
 
 
 # ─────────────────────────────────────────────────────────
-# CATEGORY OFFER — ADD
+# CATEGORY OFFER
 # ─────────────────────────────────────────────────────────
 @staff_member_required(login_url='admin_login')
 def admin_category_offer_add(request):
@@ -178,7 +169,6 @@ def admin_category_offer_add(request):
             messages.error(request, 'Please select a category.')
             return render(request, 'adminpanel/admin_offer_category_form.html',
                           {'categories': categories, 'action': 'Add'})
-
         try:
             disc = float(discount_pct)
             if not (0 < disc <= 90):
@@ -189,31 +179,22 @@ def admin_category_offer_add(request):
                           {'categories': categories, 'action': 'Add'})
 
         category = get_object_or_404(Category, id=category_id)
-
         if CategoryOffer.objects.filter(category=category).exists():
-            messages.error(request,
-                f'"{category.category_name}" already has an offer. Edit it instead.')
+            messages.error(request, f'"{category.category_name}" already has an offer. Edit it instead.')
             return render(request, 'adminpanel/admin_offer_category_form.html',
                           {'categories': categories, 'action': 'Add'})
 
         CategoryOffer.objects.create(
-            category     = category,
-            discount_pct = disc,
-            is_active    = is_active,
-            valid_from   = valid_from or timezone.now(),
-            valid_until  = valid_until or None,
+            category=category, discount_pct=disc, is_active=is_active,
+            valid_from=valid_from or timezone.now(), valid_until=valid_until,
         )
-        messages.success(request,
-            f'Offer added for category "{category.category_name}".')
+        messages.success(request, f'Offer added for "{category.category_name}".')
         return redirect('admin_offer_list')
 
     return render(request, 'adminpanel/admin_offer_category_form.html',
                   {'categories': categories, 'action': 'Add'})
 
 
-# ─────────────────────────────────────────────────────────
-# CATEGORY OFFER — EDIT / TOGGLE / DELETE
-# ─────────────────────────────────────────────────────────
 @staff_member_required(login_url='admin_login')
 def admin_category_offer_edit(request, offer_id):
     offer      = get_object_or_404(CategoryOffer, id=offer_id)
@@ -224,7 +205,6 @@ def admin_category_offer_edit(request, offer_id):
         is_active    = request.POST.get('is_active') == 'on'
         valid_from   = request.POST.get('valid_from', '').strip()
         valid_until  = request.POST.get('valid_until', '').strip() or None
-
         try:
             disc = float(discount_pct)
             if not (0 < disc <= 90):
@@ -238,7 +218,7 @@ def admin_category_offer_edit(request, offer_id):
         offer.is_active    = is_active
         if valid_from:
             offer.valid_from = valid_from
-        offer.valid_until  = valid_until
+        offer.valid_until = valid_until
         offer.save()
         messages.success(request, 'Category offer updated.')
         return redirect('admin_offer_list')
@@ -252,8 +232,7 @@ def admin_category_offer_toggle(request, offer_id):
     offer           = get_object_or_404(CategoryOffer, id=offer_id)
     offer.is_active = not offer.is_active
     offer.save(update_fields=['is_active'])
-    messages.success(request,
-        f'Category offer {"activated" if offer.is_active else "deactivated"}.')
+    messages.success(request, f'Category offer {"activated" if offer.is_active else "deactivated"}.')
     return redirect('admin_offer_list')
 
 
@@ -261,41 +240,36 @@ def admin_category_offer_toggle(request, offer_id):
 def admin_category_offer_delete(request, offer_id):
     offer = get_object_or_404(CategoryOffer, id=offer_id)
     if request.method == 'POST':
-        name = offer.category.category_name
         offer.delete()
-        messages.success(request, f'Category offer for "{name}" deleted.')
+        messages.success(request, 'Category offer deleted.')
     return redirect('admin_offer_list')
 
 
 # ─────────────────────────────────────────────────────────
-# REFERRAL — generate code for a user
+# REFERRAL — GENERATE (separate page, no JS)
 # ─────────────────────────────────────────────────────────
 @staff_member_required(login_url='admin_login')
-def admin_referral_generate(request):
+def admin_referral_generate_page(request, user_id):
     from accounts.models import Account
-    import random, string
+    user = get_object_or_404(Account, id=user_id, is_staff=False)
+
+    if ReferralCode.objects.filter(user=user).exists():
+        messages.warning(request, f'{user.email} already has a referral code.')
+        return redirect('admin_offer_list')
 
     if request.method == 'POST':
-        user_id          = request.POST.get('user_id', '').strip()
+        import random, string
         referee_discount = request.POST.get('referee_discount', '100').strip()
         referrer_reward  = request.POST.get('referrer_reward', '50').strip()
 
-        if not user_id:
-            messages.error(request, 'Enter a valid user ID.')
-            return redirect('admin_offer_list')
-
         try:
-            user = Account.objects.get(id=user_id)
-        except (Account.DoesNotExist, ValueError):
-            messages.error(request, f'No user found with ID {user_id}.')
-            return redirect('admin_offer_list')
+            float(referee_discount)
+            float(referrer_reward)
+        except ValueError:
+            messages.error(request, 'Invalid reward amounts.')
+            return render(request, 'adminpanel/admin_referral_generate_form.html',
+                          {'target_user': user})
 
-        if ReferralCode.objects.filter(user=user).exists():
-            messages.warning(request,
-                f'{user.email} already has a referral code.')
-            return redirect('admin_offer_list')
-
-        # Generate unique 8-char code
         while True:
             code = 'ORB' + ''.join(
                 random.choices(string.ascii_uppercase + string.digits, k=5)
@@ -304,12 +278,47 @@ def admin_referral_generate(request):
                 break
 
         ReferralCode.objects.create(
-            user             = user,
-            code             = code,
-            referee_discount = referee_discount,
-            referrer_reward  = referrer_reward,
+            user=user, code=code,
+            referee_discount=referee_discount,
+            referrer_reward=referrer_reward,
         )
-        messages.success(request,
-            f'Referral code {code} created for {user.email}.')
+        messages.success(request, f'Code {code} generated for {user.email}.')
+        return redirect('admin_offer_list')
 
+    return render(request, 'adminpanel/admin_referral_generate_form.html',
+                  {'target_user': user})
+
+
+# ─────────────────────────────────────────────────────────
+# REFERRAL — EDIT (separate page, no JS)
+# ─────────────────────────────────────────────────────────
+@staff_member_required(login_url='admin_login')
+def admin_referral_edit(request, ref_id):
+    ref = get_object_or_404(ReferralCode, id=ref_id)
+
+    if request.method == 'POST':
+        referee_discount = request.POST.get('referee_discount', '').strip()
+        referrer_reward  = request.POST.get('referrer_reward', '').strip()
+        try:
+            ref.referee_discount = float(referee_discount)
+            ref.referrer_reward  = float(referrer_reward)
+            ref.save(update_fields=['referee_discount', 'referrer_reward'])
+            messages.success(request, f'Referral rewards updated for {ref.user.email}.')
+            return redirect('admin_offer_list')
+        except (ValueError, TypeError):
+            messages.error(request, 'Invalid reward amounts.')
+
+    return render(request, 'adminpanel/admin_referral_edit_form.html', {'ref': ref})
+
+
+# ─────────────────────────────────────────────────────────
+# REFERRAL — TOGGLE (simple GET, no JS)
+# ─────────────────────────────────────────────────────────
+@staff_member_required(login_url='admin_login')
+def admin_referral_toggle(request, ref_id):
+    ref           = get_object_or_404(ReferralCode, id=ref_id)
+    ref.is_active = not ref.is_active
+    ref.save(update_fields=['is_active'])
+    messages.success(request,
+        f'Referral code for {ref.user.email} {"activated" if ref.is_active else "deactivated"}.')
     return redirect('admin_offer_list')

@@ -1,0 +1,52 @@
+{% extends 'adminpanel/base_admin.html' %}
+{% block title %}Generate Referral Code{% endblock %}
+{% block page_title %}Generate Referral Code{% endblock %}
+{% block nav_offers %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-3" style="gap:10px;">
+    <a href="{% url 'admin_offer_list' %}?tab=referral"
+       class="btn-action" style="background:#f0f0f0;color:#545454;">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+    <h5 class="mb-0 font-weight-bold">Generate Referral Code</h5>
+</div>
+
+<div class="a-card" style="max-width:480px;">
+    <div class="a-card-body">
+        <div class="mb-4 p-3 rounded" style="background:#f8f9fa;">
+            <div style="font-weight:600;">{{ target_user.get_full_name|default:target_user.email }}</div>
+            <small class="text-muted">{{ target_user.email }}</small>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="a-form-group">
+                <label class="a-label">Friend Gets (₹) <span class="text-danger">*</span></label>
+                <input type="number" name="referee_discount" class="a-input"
+                       value="500" min="1" step="1" required>
+                <small class="text-muted">
+                    Wallet credit added to the new user's wallet on their first order
+                </small>
+            </div>
+            <div class="a-form-group">
+                <label class="a-label">Code Owner Earns (₹) <span class="text-danger">*</span></label>
+                <input type="number" name="referrer_reward" class="a-input"
+                       value="50" min="1" step="1" required>
+                <small class="text-muted">
+                    Wallet reward credited to {{ target_user.email }} after friend's first order
+                </small>
+            </div>
+            <div class="d-flex mt-3" style="gap:10px;">
+                <button type="submit" class="btn-admin">
+                    <i class="fas fa-plus mr-1"></i> Generate Code
+                </button>
+                <a href="{% url 'admin_offer_list' %}?tab=referral"
+                   class="btn-action" style="background:#f0f0f0;color:#545454;padding:8px 18px;">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
