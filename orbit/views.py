@@ -1,27 +1,30 @@
 from django.shortcuts import render
 from store.models import ProductVariant
+from offers.utils import annotate_variants_with_offers
 
 
 def home(request):
-    # is_available is the correct field name (not is_active)
-    men = ProductVariant.objects.filter(
+    men = list(ProductVariant.objects.filter(
         product__category__slug='men',
         is_available=True
-    ).select_related('product').order_by('-price')[:6]
+    ).select_related('product').prefetch_related('product__category').order_by('-created_at')[:11])
 
-    women = ProductVariant.objects.filter(
+    women = list(ProductVariant.objects.filter(
         product__category__slug='women',
         is_available=True
-    ).select_related('product').order_by('-price')[:6]
+    ).select_related('product').prefetch_related('product__category').order_by('-created_at')[:11])
 
-    kids = ProductVariant.objects.filter(
+    kids = list(ProductVariant.objects.filter(
         product__category__slug='kids',
         is_available=True
-    ).select_related('product').order_by('-price')[:6]
+    ).select_related('product').prefetch_related('product__category').order_by('-created_at')[:11])
 
-    context = {
-        'men_products'  : men,
+    annotate_variants_with_offers(men)
+    annotate_variants_with_offers(women)
+    annotate_variants_with_offers(kids)
+
+    return render(request, 'home.html', {
+        'men_products': men,
         'women_products': women,
-        'kids_products' : kids,
-    }
-    return render(request, 'home.html', context)
+        'kids_products': kids,
+    })

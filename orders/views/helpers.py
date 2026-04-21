@@ -28,6 +28,7 @@ def _razorpay_client():
     return razorpay.Client(
         auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
     )
+
 def _build_order_from_session(request, address, payment_obj, totals):
 
     order = Order.objects.create(
@@ -111,47 +112,6 @@ def checkout_context_additions(totals):
         'referral_discount': totals['referral_discount'],
         'referral_code'    : totals['referral_code'],
         'after_referral'   : totals['after_referral'],
-    }
-
-
-def _compute_totals(cart_items, session):
-    subtotal    = sum(item.variant.price * item.quantity
-                      for item in cart_items if item.variant.stock > 0)
-    tax         = round(Decimal('0.18') * subtotal, 2)
-    grand_total = round(subtotal + tax, 2)
-
-    # Coupon
-    coupon_discount = Decimal(session.get('coupon_discount', '0'))
-    coupon_code     = session.get('coupon_code', '')
-    coupon_id       = session.get('coupon_id')
-    after_coupon    = round(grand_total - coupon_discount, 2)
-
-    # Referral (stacks on top of coupon)
-    referral_discount = Decimal(session.get('referral_discount', '0'))
-    referral_code     = session.get('referral_code', '')
-    referral_id       = session.get('referral_id')
-    after_referral    = round(after_coupon - referral_discount, 2)
-
-    # Wallet
-    wallet_used    = Decimal(session.get('wallet_used', '0'))
-    wallet_applied = session.get('wallet_applied', False)
-    final_total    = max(round(after_referral - wallet_used, 2), Decimal('0'))
-
-    return {
-        'subtotal'         : subtotal,
-        'tax'              : tax,
-        'grand_total'      : grand_total,
-        'coupon_discount'  : coupon_discount,
-        'coupon_code'      : coupon_code,
-        'coupon_id'        : coupon_id,
-        'after_coupon'     : after_coupon,
-        'referral_discount': referral_discount,
-        'referral_code'    : referral_code,
-        'referral_id'      : referral_id,
-        'after_referral'   : after_referral,
-        'wallet_used'      : wallet_used,
-        'wallet_applied'   : wallet_applied,
-        'final_total'      : final_total,
     }
 
 def _build_order_from_session(request, address, payment_obj, totals):
@@ -259,4 +219,59 @@ def _build_order_from_session(request, address, payment_obj, totals):
 
     return order
 
+def _compute_totals(cart_items, session):
+    """
+    Compute order totals server-side.
+    Order of deductions:
+      1. Offer discount   (per-item, baked into subtotal)
+      2. Coupon discount  (% or fixed off subtotal+tax)
+      3. Referral discount
+      4. Wallet
+    """
+    from offers.utils import get_applicable_offer, apply_discount
 
+    subtotal = Decimal('0')
+    for item in cart_items:
+        if item.variant.stock <= 0:
+            continue
+        # Use discounted price if offer exists
+        try:
+            pct, _, _ = get_applicable_offer(item.variant.product)
+            ep = apply_discount(item.variant.price, pct)
+        except Exception:
+            ep = item.variant.price
+        subtotal += ep * item.quantity
+
+    tax         = round(Decimal('0.18') * subtotal, 2)
+    grand_total = round(subtotal + tax, 2)
+
+    coupon_discount   = Decimal(session.get('coupon_discount', '0'))
+    coupon_code       = session.get('coupon_code', '')
+    coupon_id         = session.get('coupon_id')
+    after_coupon      = round(grand_total - coupon_discount, 2)
+
+    referral_discount = Decimal(session.get('referral_discount', '0'))
+    referral_code     = session.get('referral_code', '')
+    referral_id       = session.get('referral_id')
+    after_referral    = round(after_coupon - referral_discount, 2)
+
+    wallet_used       = Decimal(session.get('wallet_used', '0'))
+    wallet_applied    = session.get('wallet_applied', False)
+    final_total       = max(round(after_referral - wallet_used, 2), Decimal('0'))
+
+    return {
+        'subtotal'         : subtotal,
+        'tax'              : tax,
+        'grand_total'      : grand_total,
+        'coupon_discount'  : coupon_discount,
+        'coupon_code'      : coupon_code,
+        'coupon_id'        : coupon_id,
+        'after_coupon'     : after_coupon,
+        'referral_discount': referral_discount,
+        'referral_code'    : referral_code,
+        'referral_id'      : referral_id,
+        'after_referral'   : after_referral,
+        'wallet_used'      : wallet_used,
+        'wallet_applied'   : wallet_applied,
+        'final_total'      : final_total,
+    }

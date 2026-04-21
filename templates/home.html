@@ -2,8 +2,6 @@
 {% load static %}
 
 {% block content %}
-
-<!-- ========================= BANNER ========================= -->
 <section class="section-intro padding-y-sm">
 <div class="container">
     <div class="intro-banner-wrap">
@@ -12,113 +10,126 @@
 </div>
 </section>
 
-<!-- ========================= PRODUCT SECTIONS ========================= -->
-<section class="section-name padding-y">
-<div class="container">   {# ← same container as banner — keeps equal left/right padding #}
+<div class="container mt-3">
 
-    <!-- Men Watches -->
-    <header class="section-heading">
-        <a href="/store/men/" class="btn btn-outline-primary float-right">Show more</a>
-        <h3 class="section-title">Men Watches</h3>
-    </header>
-    <div class="row">
-        {% for variant in men_products %}
-        <div class="col-md-3">
-            <div class="card card-product-grid">
-                <a href="{{ variant.get_url }}" class="img-wrap">
-                    {% if variant.primary_image %}
-                        <img src="{{ variant.primary_image.url }}" alt="{{ variant }}">
-                    {% endif %}
-                </a>
-                <figcaption class="info-wrap">
-                    <div class="fix-height">
-                        <div class="price-wrap mt-2">
-                            <span class="price">₹ {{ variant.price }}</span>
-                        </div>
-                        <a href="{{ variant.get_url }}" class="title">
-                            {{ variant.product.product_name }}
-                            <small class="text-muted d-block">{{ variant.color_name }}</small>
-                        </a>
-                    </div>
-                </figcaption>
-            </div>
-        </div>
-        {% empty %}
-        <div class="col-12">
-            <p class="text-muted">No men watches available yet.</p>
-        </div>
-        {% endfor %}
+  <!-- ================= MEN ================= -->
+  <div class="section-block">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5>Men’s</h5>
     </div>
 
-    <!-- Women Watches -->
-    <header class="section-heading mt-5">
-        <a href="/store/women/" class="btn btn-outline-primary float-right">Show more</a>
-        <h3 class="section-title">Women Watches</h3>
-    </header>
-    <div class="row">
-        {% for variant in women_products %}
-        <div class="col-md-3">
-            <div class="card card-product-grid">
-                <a href="{{ variant.get_url }}" class="img-wrap">
-                    {% if variant.primary_image %}
-                        <img src="{{ variant.primary_image.url }}" alt="{{ variant }}">
-                    {% endif %}
-                </a>
-                <figcaption class="info-wrap">
-                    <div class="fix-height">
-                        <div class="price-wrap mt-2">
-                            <span class="price">₹ {{ variant.price }}</span>
-                        </div>
-                        <a href="{{ variant.get_url }}" class="title">
-                            {{ variant.product.product_name }}
-                            <small class="text-muted d-block">{{ variant.color_name }}</small>
-                        </a>
-                    </div>
-                </figcaption>
-            </div>
-        </div>
-        {% empty %}
-        <div class="col-12">
-            <p class="text-muted">No women watches available yet.</p>
+    <div class="scroll-wrapper">
+      <button class="scroll-btn left" onclick="scrollRow(this, -1)">‹</button>
+
+      <div class="scroll-row">
+        {% for product in men_products|slice:":11" %}
+        <div class="card-item">
+            <a href="{{ product.get_url }}">
+                {% if product.primary_image %}
+                <img src="{{ product.primary_image.url }}" alt="{{ product }}">
+                {% endif %}
+                <div class="card-body">
+                <p class="title">
+                    {{ product.product.product_name }}
+                </p>
+                <p class="price">
+                    ₹ {{ product.price }}
+                </p>
+                <small class="text-muted">
+                    {{ product.color_name }}
+                </small>
+                </div>
+            </a>
         </div>
         {% endfor %}
+      </div>
+
+      <button class="scroll-btn right" onclick="scrollRow(this, 1)">›</button>
+    </div>
+  </div>
+
+  <!-- ================= WOMEN ================= -->
+  <div class="section-block">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5>Women’s</h5>
     </div>
 
-    <!-- Kids Watches -->
-    <header class="section-heading mt-5">
-        <a href="/store/kids/" class="btn btn-outline-primary float-right">Show more</a>
-        <h3 class="section-title">Kids Watches</h3>
-    </header>
-    <div class="row">
-        {% for variant in kids_products %}
-        <div class="col-md-3">
-            <div class="card card-product-grid">
-                <a href="{{ variant.get_url }}" class="img-wrap">
-                    {% if variant.primary_image %}
-                        <img src="{{ variant.primary_image.url }}" alt="{{ variant }}">
-                    {% endif %}
-                </a>
-                <figcaption class="info-wrap">
-                    <div class="fix-height">
-                        <div class="price-wrap mt-2">
-                            <span class="price">₹ {{ variant.price }}</span>
-                        </div>
-                        <a href="{{ variant.get_url }}" class="title">
-                            {{ variant.product.product_name }}
-                            <small class="text-muted d-block">{{ variant.color_name }}</small>
-                        </a>
-                    </div>
-                </figcaption>
-            </div>
-        </div>
-        {% empty %}
-        <div class="col-12">
-            <p class="text-muted">No kids watches available yet.</p>
+    <div class="scroll-wrapper">
+      <button class="scroll-btn left" onclick="scrollRow(this, -1)">‹</button>
+
+      <div class="scroll-row">
+        {% for product in women_products|slice:":8" %}
+        <div class="card-item">
+            <a href="{{ product.get_url }}">
+                {% if product.primary_image %}
+                <img src="{{ product.primary_image.url }}" alt="{{ product }}">
+                {% endif %}
+                <div class="card-body">
+                <p class="title">
+                    {{ product.product.product_name }}
+                </p>
+                <p class="price">
+                    ₹ {{ product.price }}
+                </p>
+                <small class="text-muted">
+                    {{ product.color_name }}
+                </small>
+                </div>
+            </a>
         </div>
         {% endfor %}
+      </div>
+
+      <button class="scroll-btn right" onclick="scrollRow(this, 1)">›</button>
+    </div>
+  </div>
+
+  <!-- ================= KIDS ================= -->
+  <div class="section-block">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5>Kids</h5>
     </div>
 
-</div>{# /container #}
-</section>
+    <div class="scroll-wrapper">
+      <button class="scroll-btn left" onclick="scrollRow(this, -1)">‹</button>
+
+      <div class="scroll-row">
+        {% for product in kids_products|slice:":8" %}
+        <div class="card-item">
+            <a href="{{ product.get_url }}">
+                {% if product.primary_image %}
+                <img src="{{ product.primary_image.url }}" alt="{{ product }}">
+                {% endif %}
+                <div class="card-body">
+                <p class="title">
+                    {{ product.product.product_name }}
+                </p>
+                <p class="price">
+                    ₹ {{ product.price }}
+                </p>
+                <small class="text-muted">
+                    {{ product.color_name }}
+                </small>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+      </div>
+
+      <button class="scroll-btn right" onclick="scrollRow(this, 1)">›</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function scrollRow(btn, dir) {
+  const container = btn.parentElement.querySelector('.scroll-row');
+  container.scrollBy({
+    left: dir * 200,
+    behavior: 'smooth'
+  });
+}
+</script>
 
 {% endblock %}

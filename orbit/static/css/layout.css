@@ -1,0 +1,36 @@
+/* =========================
+   NAVBAR RESPONSIVE
+========================= */
+
+
+.header-main {
+  position: relative;
+  padding: 1rem 0;
+}
+
+.brand-wrap .logo {
+  margin-right: 7px;
+  max-height: 42px;
+  display: inline-block;
+  width: auto;
+}
+
+.widget-header {
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+  margin-left: 8px;
+}
+
+.widget-header div {
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.widget-header a {
+  color: #343a40;
+}
+
+.widget-header a:hover {
+  color: #3167eb;
+}

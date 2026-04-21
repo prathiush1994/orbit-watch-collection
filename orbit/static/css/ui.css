@@ -1,15 +1,4 @@
-@charset "UTF-8";
-/* ==== BASE STYLES ====*/
-/* ==================== GLOBAL STYLES ======================= */
-@import url("https://rsms.me/inter/inter.css");
-html {
-  font-family: "Inter", sans-serif;
-  font-size: 15px;
-}
 
-/* ========================
-INCLUDE STYLES AND COMPONENTS
-===================== */
 /* ================== HELPERS  =================== */
 a:hover {
   text-decoration: none;
@@ -422,21 +411,9 @@ p:last-child {
   color: #212529;
 }
 
-.header-main {
-  position: relative;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-}
 
-.brand-wrap .logo,
-.navbar-brand .logo {
-  margin-right: 7px;
-  max-height: 42px;        /* keeps navbar height */
-  display: inline-block;
-  width: auto;
-  transform: scale(1.4);  /* increases logo size visually */
-  transform-origin: left center;
-}
+
+
 
 .navbar-main .nav-link {
   font-weight: 500;
@@ -446,23 +423,9 @@ p:last-child {
   color: #666;
 }
 
-.widget-header {
-  display: inline-block;
-  vertical-align: middle;
-  position: relative;
-  margin-left: 8px !important;
-}
-.widget-header div {
-    white-space: nowrap;
-    font-size: 13px;
-}
 
-.widget-header a {
-  color: #343a40;
-}
-.widget-header a:hover {
-  color: #3167eb;
-}
+
+
 .widget-header i {
   color: #969696;
 }
@@ -472,14 +435,11 @@ p:last-child {
 .widget-header .title {
   display: block;
 }
-.widget-header .notify {
-  position: absolute;
-  top: -3px;
-  right: -10px;
-}
+
 .widget-header:hover i {
   color: #3167eb;
 }
+
 
 /* desktop only */
 /* desktop only .end */
@@ -1426,10 +1386,7 @@ a[class*=card]:hover .title {
 /*# sourceMappingURL=ui.css.map */
 
 
-.icon {
-    width: 40px;
-    height: 40px;
-}
+
 .icon i {
     color: gray;
 }

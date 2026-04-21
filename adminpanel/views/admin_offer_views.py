@@ -17,12 +17,12 @@ def _get_products():
 
 
 def _get_categories():
-    from store.models import Category
-    try:
-        return Category.objects.filter(is_active=True).order_by('category_name')
-    except Exception:
-        from store.models import Category
-        return Category.objects.all().order_by('category_name')
+    """Only return categories where offers are allowed."""
+    from category.models import Category
+    return Category.objects.filter(
+        status='active',
+        is_offer_applicable=True
+    ).order_by('category_name')
 
 
 # ─────────────────────────────────────────────────────────
@@ -85,7 +85,8 @@ def admin_product_offer_add(request):
 
         product = get_object_or_404(Product, id=product_id)
         if ProductOffer.objects.filter(product=product).exists():
-            messages.error(request, f'"{product.product_name}" already has an offer. Edit it instead.')
+            messages.error(request,
+                f'"{product.product_name}" already has an offer. Edit it instead.')
             return render(request, 'adminpanel/admin_offer_product_form.html',
                           {'products': products, 'action': 'Add'})
 
@@ -151,12 +152,11 @@ def admin_product_offer_delete(request, offer_id):
 
 
 # ─────────────────────────────────────────────────────────
-# CATEGORY OFFER
+# CATEGORY OFFER  — restricted to is_offer_applicable=True
 # ─────────────────────────────────────────────────────────
 @staff_member_required(login_url='admin_login')
 def admin_category_offer_add(request):
-    from store.models import Category
-    categories = _get_categories()
+    categories = _get_categories()   # already filtered to is_offer_applicable=True
 
     if request.method == 'POST':
         category_id  = request.POST.get('category_id', '').strip()
@@ -178,9 +178,20 @@ def admin_category_offer_add(request):
             return render(request, 'adminpanel/admin_offer_category_form.html',
                           {'categories': categories, 'action': 'Add'})
 
-        category = get_object_or_404(Category, id=category_id)
+        from category.models import Category as Cat
+        category = get_object_or_404(Cat, id=category_id)
+
+        # ── Double-check on server side ───────────────────────────────────────
+        if not category.is_offer_applicable:
+            messages.error(request,
+                f'"{category.category_name}" does not support offers '
+                '(navigation category).')
+            return render(request, 'adminpanel/admin_offer_category_form.html',
+                          {'categories': categories, 'action': 'Add'})
+
         if CategoryOffer.objects.filter(category=category).exists():
-            messages.error(request, f'"{category.category_name}" already has an offer. Edit it instead.')
+            messages.error(request,
+                f'"{category.category_name}" already has an offer. Edit it instead.')
             return render(request, 'adminpanel/admin_offer_category_form.html',
                           {'categories': categories, 'action': 'Add'})
 
@@ -232,7 +243,8 @@ def admin_category_offer_toggle(request, offer_id):
     offer           = get_object_or_404(CategoryOffer, id=offer_id)
     offer.is_active = not offer.is_active
     offer.save(update_fields=['is_active'])
-    messages.success(request, f'Category offer {"activated" if offer.is_active else "deactivated"}.')
+    messages.success(request,
+        f'Category offer {"activated" if offer.is_active else "deactivated"}.')
     return redirect('admin_offer_list')
 
 
@@ -243,4 +255,3 @@ def admin_category_offer_delete(request, offer_id):
         offer.delete()
         messages.success(request, 'Category offer deleted.')
     return redirect('admin_offer_list')
-

@@ -28,5 +28,5 @@ urlpatterns = [
     path('inventory/', include('inventory.urls')),
     # allauth
     path('auth/', include('allauth.urls')),
-
+    path('reviews/', include('reviews.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
