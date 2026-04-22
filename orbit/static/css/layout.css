@@ -1,25 +1,22 @@
 /* =========================
    NAVBAR
 ========================= */
-
 .header-main {
   position: relative;
   min-height: 80px;
   padding: 1rem 0;
 }
-
-/* LOGO */
+.navbar {
+  margin-bottom: 20px;
+}
 .brand-wrap {
   display: flex;
   align-items: center;
 }
-
 .brand-wrap .logo {
   max-height: 55px;
   width: auto;
 }
-
-/* USER */
 .widget-header {
   display: flex;
   flex-direction: column;
@@ -50,20 +47,15 @@
 .widget-header a:hover {
   color: #3167eb;
 }
-
-/* ICON */
 .icon-xs {
   width: 32px;
   height: 32px;
   font-size: 16px;
 }
-
 .icon {
   width: 40px;
   height: 40px;
 }
-
-/* BADGE (ONLY ONE VERSION) */
 .notify {
   position: absolute;
   top: -5px;
@@ -74,59 +66,47 @@
   background: #fa3434;
   color: #fff;
 }
-
-/* NAV TEXT */
 .nav-text {
   font-size: 13px;
   color: #333;
   text-decoration: none;
 }
-
 /* =========================
    MOBILE MENU
 ========================= */
-
 .mobile-menu {
   list-style: none;
   padding: 0;
   margin: 0;
 }
-
 .mobile-menu li {
   padding: 12px 16px;
   border-bottom: 1px solid #eee;
 }
-
 .mobile-menu li a {
   text-decoration: none;
   color: #333;
   font-size: 14px;
 }
-
 .menu-title {
   font-weight: 600;
   font-size: 12px;
   color: #888;
   background: #f8f9fa;
 }
-
 .divider {
   height: 8px;
   background: #f1f1f1;
 }
-
 /* =========================
    SEARCH
 ========================= */
-
 .search-wrapper {
   position: relative;
 }
-
 .search-input {
   width: 60%;
 }
-
 .search-suggestions {
   display: none;
   position: absolute;
@@ -142,32 +122,25 @@
   z-index: 9999;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-
 .search-suggestions li {
   padding: 10px 16px;
   cursor: pointer;
   font-size: 0.9rem;
 }
-
 .search-suggestions li:hover {
   background: #f4f6f8;
 }
-
-/* HAMBURGER */
 .navbar-toggler {
   border: none;
   font-size: 20px;
   background: none;
 }
-
 /* =========================
-   store RESPONSIVE
+   store 
 ========================= */
-
 .no-bullets li::before {
   display: none !important;
 }
-
 .no-bullets {
   padding-left: 0;
 }
@@ -179,21 +152,17 @@
 .list-menu li::marker {
   display: none !important;
 }
-
 .list-menu li::before {
   content: none !important;
 }
-
 .icon-control {
   float: none !important;
 }
-
 .card-product-grid .img-wrap img {
   width: 100%;
   height: 150px;
   object-fit: contain;
 }
-
 .filter-group ul li::before {
   content: none !important;
 }
@@ -209,15 +178,61 @@ a[aria-expanded="true"] .toggle-icon {
   margin: 10px 0;
 }
 /* =========================
-   footer RESPONSIVE
+   footer 
 ========================= */
-
-/* FOOTER FIX */
 .section-footer {
   font-size: 13px;
 }
-
-/* remove weird gap */
 main {
   padding-bottom: 10px;
 }
+/* =========================
+   CART 
+========================= */
+.img-sm {
+  width: 80px;
+  height: auto;
+}
+.table-shopping-cart td {
+  vertical-align: middle;
+}
+.price-wrap var {
+  display: block;
+}
+.dlist-align {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.dlist-align dt {
+  margin: 0;
+  color: #555;
+}
+.dlist-align dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+.card-body hr {
+  margin: 12px 0;
+}
+.card-body .dlist-align:last-child dd {
+  font-size: 18px;
+  font-weight: 700;
+}
+.section-content {
+  margin-top: 20px;
+}
+.table-shopping-cart tbody tr {
+  border-bottom: 1px solid #eee;
+}
+
+.table-shopping-cart tbody tr:last-child {
+  border-bottom: none;
+}
+
+
+
+
+
+

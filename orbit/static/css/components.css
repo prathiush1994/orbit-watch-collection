@@ -235,3 +235,32 @@
   z-index: 2;
   white-space: nowrap;
 }
+
+
+
+/* =========================
+   cart RESPONSIVE
+========================= */
+
+.dlist-align {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.dlist-align dt {
+  margin: 0;
+  color: #555;
+}
+
+.dlist-align dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+
+
+
+
+

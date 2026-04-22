@@ -8,11 +8,7 @@
 <section class="section-content padding-y">
   <div class="container">
     <!-- MOBILE FILTER BUTTON -->
-    <button
-      class="btn btn-primary d-md-none mb-3"
-      data-toggle="collapse"
-      data-target="#mobileFilter"
-    >
+    <button class="btn btn-primary d-md-none mb-3" data-toggle="collapse" data-target="#mobileFilter">
       Filter
     </button>
     <div class="row">
@@ -27,12 +23,8 @@
             <!-- CATEGORY -->
             <article class="filter-group">
               <header class="card-header p-0">
-                <a
-                  data-toggle="collapse"
-                  href="#collapse_cat"
-                  class="d-flex justify-content-between align-items-center p-3 text-dark"
-                  style="text-decoration: none"
-                >
+                <a data-toggle="collapse" href="#collapse_cat"
+                  class="d-flex justify-content-between align-items-center p-3 text-dark" style="text-decoration: none">
                   <h6 class="title mb-0">Categories</h6>
                   <i class="icon-control fa fa-chevron-down toggle-icon"></i>
                 </a>
@@ -44,23 +36,10 @@
                     {% for category in all_categories %}
                     <li>
                       <label class="d-flex align-items-center" style="gap: 8px; cursor: pointer">
-                        <input
-                          type="checkbox"
-                          name="category"
-                          value="{{ category.slug }}"
-                          {%
-                          if
-                          category.slug
-                          in
-                          active_categories
-                          %}
-                          checked
-                          {%
-                          endif
-                          %}
-                          onchange="this.form.submit()"
-                        />
-                        {{ category.category_name }}
+                        <input type="checkbox" name="category" 
+                        value="{{ category.slug }}" onchange="this.form.submit()"
+                          {% if category.slug in active_categories_set %}checked{% endif %}>
+                        <span>{{ category.category_name }}</span>
                       </label>
                     </li>
                     {% endfor %}
@@ -72,12 +51,8 @@
             <!-- BRAND -->
             <article class="filter-group">
               <header class="card-header p-0">
-                <a
-                  data-toggle="collapse"
-                  href="#collapse_brand"
-                  class="d-flex justify-content-between align-items-center p-3 text-dark"
-                  style="text-decoration: none"
-                >
+                <a data-toggle="collapse" href="#collapse_brand"
+                  class="d-flex justify-content-between align-items-center p-3 text-dark" style="text-decoration: none">
                   <h6 class="title mb-0">Brand</h6>
                   <i class="icon-control fa fa-chevron-down toggle-icon"></i>
                 </a>
@@ -89,21 +64,10 @@
                     {% for brand in all_brands %}
                     <li>
                       <label class="d-flex align-items-center" style="gap: 8px; cursor: pointer">
-                        <input
-                          type="checkbox"
-                          name="brand"
-                          value="{{ brand.slug }}"
-                          {%
-                          if
-                          brand.slug
-                          in
-                          active_brands
-                          %}checked{%
-                          endif
-                          %}
-                          onchange="this.form.submit()"
-                        />
-                        {{ brand.brand_name }}
+                        <input type="checkbox" name="brand" 
+                        value="{{ brand.slug }}" onchange="this.form.submit()" 
+                        {% if brand.slug in active_brands_set %}checked{% endif %}>
+                        <span>{{ brand.brand_name }}</span>
                       </label>
                     </li>
                     {% endfor %}
@@ -115,12 +79,8 @@
             <!-- PRICE -->
             <article class="filter-group">
               <header class="card-header p-0">
-                <a
-                  data-toggle="collapse"
-                  href="#collapse_price"
-                  class="d-flex justify-content-between align-items-center p-3 text-dark"
-                  style="text-decoration: none"
-                >
+                <a data-toggle="collapse" href="#collapse_price"
+                  class="d-flex justify-content-between align-items-center p-3 text-dark" style="text-decoration: none">
                   <h6 class="title mb-0">Price</h6>
                   <i class="icon-control fa fa-chevron-down toggle-icon"></i>
                 </a>
@@ -131,22 +91,14 @@
                   <div class="form-row">
                     <div class="form-group col-6">
                       <label>Min ₹</label>
-                      <input
-                        type="number"
-                        name="min_price"
-                        class="form-control form-control-sm"
-                        value="{{ active_min_price }}"
-                      />
+                      <input type="number" name="min_price" class="form-control form-control-sm"
+                        value="{{ active_min_price }}" />
                     </div>
 
                     <div class="form-group col-6">
                       <label>Max ₹</label>
-                      <input
-                        type="number"
-                        name="max_price"
-                        class="form-control form-control-sm"
-                        value="{{ active_max_price }}"
-                      />
+                      <input type="number" name="max_price" class="form-control form-control-sm"
+                        value="{{ active_max_price }}" />
                     </div>
                   </div>
 
@@ -155,15 +107,12 @@
               </div>
             </article>
             <hr class="filter-divider" />
+
             <!-- SORT -->
             <article class="filter-group">
               <header class="card-header p-0">
-                <a
-                  data-toggle="collapse"
-                  href="#collapse_sort"
-                  class="d-flex justify-content-between align-items-center p-3 text-dark"
-                  style="text-decoration: none"
-                >
+                <a data-toggle="collapse" href="#collapse_sort"
+                  class="d-flex justify-content-between align-items-center p-3 text-dark" style="text-decoration: none">
                   <h6 class="title mb-0">Sort By</h6>
                   <i class="icon-control fa fa-chevron-down toggle-icon"></i>
                 </a>
@@ -171,54 +120,41 @@
 
               <div class="filter-content collapse show" id="collapse_sort">
                 <div class="card-body">
-                  <div class="form-check">
-                    <label class="d-flex align-items-center" style="gap: 8px; cursor: pointer">
-                      <input
-                        class="form-check-input"
-                        type="radio"
-                        name="sort"
-                        value="price_asc"
-                        {%
-                        if
-                        active_sort=""
-                        ="price_asc"
-                        %}checked{%
-                        endif
-                        %}
-                        onchange="this.form.submit()"
-                      />
-                      Low → High
-                    </label>
-                  </div>
 
-                  <div class="form-check">
-                    <label class="d-flex align-items-center" style="gap: 8px; cursor: pointer">
-                      <input
-                        class="form-check-input"
-                        type="radio"
-                        name="sort"
-                        value="price_desc"
-                        {%
-                        if
-                        active_sort=""
-                        ="price_desc"
-                        %}checked{%
-                        endif
-                        %}
-                        onchange="this.form.submit()"
-                      />
-                      High → Low
-                    </label>
-                  </div>
+                <div class="form-check">
+                  <label class="d-flex align-items-center" style="gap: 8px; cursor: pointer">
+                    <input type="radio"
+                          name="sort"
+                          value="price_asc"
+                          onchange="this.form.submit()"
+                          {% if active_sort == "price_asc" %}checked{% endif %}>
+                    <span>Low → High</span>
+                  </label>
+                </div>
+
+                <div class="form-check">
+                  <label class="d-flex align-items-center" style="gap: 8px; cursor: pointer">
+                    <input type="radio"
+                          name="sort"
+                          value="price_desc"
+                          onchange="this.form.submit()"
+                          {% if active_sort == "price_desc" %}checked{% endif %}>
+                    <span>High → Low</span>
+                  </label>
+                </div>
+
                 </div>
               </div>
             </article>
+
             <hr class="filter-divider" />
+
             <div class="card-body pt-0">
               <a href="{% url 'store' %}" class="btn btn-outline-secondary btn-sm w-100">
                 Reset Filters
               </a>
             </div>
+
           </form>
         </div>
       </aside>
@@ -265,32 +201,21 @@
                   {% endif %}
                 </div>
 
-                <!-- BUTTONS -->
-                <div class="mt-auto">
-                  {% if variant.is_in_stock %}
-                  <div class="d-flex gap-1">
-                    <a href="{{ variant.get_url }}" class="btn btn-primary btn-sm w-50">View</a>
+                <div class="d-flex gap-1">
+                  <a href="{{ variant.get_url }}" class="btn btn-primary btn-sm w-50">View</a>
 
-                    {% if user.is_authenticated %}
-                    <a
-                      href="{% url 'toggle_wishlist' variant.id %}"
-                      class="btn btn-sm w-50 {% if variant.id in wishlist_ids %}btn-danger{% else %}btn-outline-primary{% endif %}"
-                    >
-                      ♥
-                    </a>
-                    {% else %}
-                    <a
-                      href="{% url 'login' %}?next={{ request.path }}"
-                      class="btn btn-outline-primary btn-sm w-50"
-                    >
-                      ♥
-                    </a>
-                    {% endif %}
-                  </div>
+                  {% if variant.id in cart_variant_ids %}
+                  <button class="btn btn-secondary btn-sm w-50" disabled>In Cart</button>
                   {% else %}
-                  <button class="btn btn-secondary btn-sm w-100" disabled>Out of Stock</button>
+                  <!-- Wishlist -->
+                  <a href="{% url 'toggle_wishlist' variant.id %}?next={{ request.get_full_path }}"
+                     class="btn btn-sm w-50 
+                     {% if variant.id in wishlist_ids %}btn-danger{% else %}btn-outline-primary{% endif %}">
+                    ♥
+                  </a>
                   {% endif %}
                 </div>
+
               </figcaption>
             </figure>
           </div>

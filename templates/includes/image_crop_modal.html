@@ -1,71 +1,129 @@
-{% comment %}
-  ── Reusable Image Crop Modal ──────────────────────────────────────────────
-  Usage: {% include 'adminpanel/includes/image_crop_modal.html' %}
+{% comment %} ── Reusable Image Crop Modal ────────────────────────────────────────────── Usage: {%
+include 'adminpanel/includes/image_crop_modal.html' %} How to trigger from any form: 1. Add a hidden
+input:
+<input type="hidden" name="logo_image" id="croppedLogoImage" />
+2. Add a file input that calls openCropModal():
+<input
+  type="file"
+  accept="image/*"
+  onchange="openCropModal(event, 'croppedLogoImage', 'logoPreview', 1)"
+/>
+— last arg is aspect ratio (1 = square, 16/9, etc.) 3. Add an optional preview img:
+<img id="logoPreview" />
 
-  How to trigger from any form:
-    1. Add a hidden input:
-         <input type="hidden" name="logo_image"   id="croppedLogoImage">
-    2. Add a file input that calls openCropModal():
-         <input type="file" accept="image/*"
-                onchange="openCropModal(event, 'croppedLogoImage', 'logoPreview', 1)">
-         — last arg is aspect ratio (1 = square, 16/9, etc.)
-    3. Add an optional preview img:
-         <img id="logoPreview">
-
-  The modal crops and writes a base64 DataURL into the hidden input.
-  Your view reads it with request.POST.get('logo_image') and decodes it.
-  ──────────────────────────────────────────────────────────────────────────
-{% endcomment %}
+The modal crops and writes a base64 DataURL into the hidden input. Your view reads it with
+request.POST.get('logo_image') and decodes it.
+────────────────────────────────────────────────────────────────────────── {% endcomment %}
 
 <!-- Cropper.js CDN -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css"
+/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 
 <style>
   .crop-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.55); z-index: 2000;
-    align-items: center; justify-content: center;
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
   }
-  .crop-overlay.show { display: flex; }
+  .crop-overlay.show {
+    display: flex;
+  }
   .crop-box {
-    background: #fff; border-radius: 0.5rem;
-    width: 520px; max-width: 96vw;
-    box-shadow: 0 12px 48px rgba(0,0,0,0.22);
+    background: #fff;
+    border-radius: 0.5rem;
+    width: 520px;
+    max-width: 96vw;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.22);
     overflow: hidden;
   }
   .crop-header {
-    padding: 14px 20px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
-  .crop-header-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .crop-header-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
   .crop-close {
-    width: 28px; height: 28px; border-radius: 50%;
-    background: #f1f5f9; border: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; color: var(--text-2);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-2);
   }
   .crop-area {
-    max-height: 360px; overflow: hidden; background: #1e293b;
-    display: flex; align-items: center; justify-content: center;
+    max-height: 360px;
+    overflow: hidden;
+    background: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .crop-area img { max-width: 100%; max-height: 360px; display: block; }
+  .crop-area img {
+    max-width: 100%;
+    max-height: 360px;
+    display: block;
+  }
   .crop-footer {
-    padding: 12px 20px; border-top: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
   }
-  .crop-hint { font-size: 12px; color: var(--text-muted); }
-  .crop-actions { display: flex; gap: 8px; }
+  .crop-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .crop-actions {
+    display: flex;
+    gap: 8px;
+  }
   .btn-crop-cancel {
-    padding: 7px 18px; border: 1px solid var(--border); border-radius: 0.25rem;
-    background: #fff; font-size: 13px; font-weight: 500; cursor: pointer;
-    font-family: inherit; color: var(--text-2);
+    padding: 7px 18px;
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text-2);
   }
   .btn-crop-confirm {
-    padding: 7px 18px; border: none; border-radius: 0.25rem;
-    background: var(--blue); color: #fff; font-size: 13px; font-weight: 500;
-    cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px;
+    padding: 7px 18px;
+    border: none;
+    border-radius: 0.25rem;
+    background: var(--blue);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
-  .btn-crop-confirm:hover { background: var(--blue-dark); }
+  .btn-crop-confirm:hover {
+    background: var(--blue-dark);
+  }
 </style>
 
 <!-- The Modal -->
@@ -73,31 +131,53 @@
   <div class="crop-box">
     <div class="crop-header">
       <div class="crop-header-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             width="15" height="15" style="vertical-align:-2px;margin-right:6px;color:var(--blue);">
-          <polyline points="6 2 3 2 3 22 21 22 21 19"/>
-          <polyline points="21 9 21 2 14 2"/>
-          <line x1="3" y1="8" x2="14" y2="8"/>
-          <line x1="16" y1="22" x2="16" y2="11"/>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          width="15"
+          height="15"
+          style="vertical-align: -2px; margin-right: 6px; color: var(--blue)"
+        >
+          <polyline points="6 2 3 2 3 22 21 22 21 19" />
+          <polyline points="21 9 21 2 14 2" />
+          <line x1="3" y1="8" x2="14" y2="8" />
+          <line x1="16" y1="22" x2="16" y2="11" />
         </svg>
         Crop Image
       </div>
       <button class="crop-close" onclick="closeCropModal()" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          width="13"
+          height="13"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
       </button>
     </div>
     <div class="crop-area">
-      <img id="cropImage" src="" alt="Crop">
+      <img id="cropImage" src="" alt="Crop" />
     </div>
     <div class="crop-footer">
       <span class="crop-hint">Drag to reposition · Scroll to zoom</span>
       <div class="crop-actions">
         <button type="button" class="btn-crop-cancel" onclick="closeCropModal()">Cancel</button>
         <button type="button" class="btn-crop-confirm" onclick="confirmCrop()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-            <polyline points="20 6 9 17 4 12"/>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            width="13"
+            height="13"
+          >
+            <polyline points="20 6 9 17 4 12" />
           </svg>
           Use This Crop
         </button>
@@ -107,80 +187,86 @@
 </div>
 
 <script>
-(function () {
-  let cropper       = null;
-  let _hiddenInput  = null;   // id of hidden input to write base64 into
-  let _previewImg   = null;   // id of <img> to show preview (optional)
-  let _aspectRatio  = 1;
+  (function () {
+    let cropper = null;
+    let _hiddenInput = null; // id of hidden input to write base64 into
+    let _previewImg = null; // id of <img> to show preview (optional)
+    let _aspectRatio = 1;
 
-  // Called by file <input onchange="openCropModal(event, 'hiddenId', 'previewId', ratio)">
-  window.openCropModal = function (event, hiddenInputId, previewImgId, aspectRatio) {
-    const file = event.target.files[0];
-    if (!file) return;
+    // Called by file <input onchange="openCropModal(event, 'hiddenId', 'previewId', ratio)">
+    window.openCropModal = function (event, hiddenInputId, previewImgId, aspectRatio) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-    // Reset the file input so the same file can be re-chosen
-    event.target.value = '';
+      // Reset the file input so the same file can be re-chosen
+      event.target.value = "";
 
-    _hiddenInput  = hiddenInputId;
-    _previewImg   = previewImgId || null;
-    _aspectRatio  = aspectRatio  || 1;
+      _hiddenInput = hiddenInputId;
+      _previewImg = previewImgId || null;
+      _aspectRatio = aspectRatio || 1;
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const img = document.getElementById('cropImage');
-      img.src   = e.target.result;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = document.getElementById("cropImage");
+        img.src = e.target.result;
 
-      document.getElementById('imageCropOverlay').classList.add('show');
+        document.getElementById("imageCropOverlay").classList.add("show");
 
-      // Destroy previous cropper instance
-      if (cropper) { cropper.destroy(); cropper = null; }
+        // Destroy previous cropper instance
+        if (cropper) {
+          cropper.destroy();
+          cropper = null;
+        }
 
-      // Init Cropper.js after image loads
-      img.onload = function () {
-        cropper = new Cropper(img, {
-          aspectRatio  : _aspectRatio,
-          viewMode     : 1,
-          dragMode     : 'move',
-          autoCropArea : 0.85,
-          responsive   : true,
-          background   : false,
-        });
+        // Init Cropper.js after image loads
+        img.onload = function () {
+          cropper = new Cropper(img, {
+            aspectRatio: _aspectRatio,
+            viewMode: 1,
+            dragMode: "move",
+            autoCropArea: 0.85,
+            responsive: true,
+            background: false,
+          });
+        };
       };
+      reader.readAsDataURL(file);
     };
-    reader.readAsDataURL(file);
-  };
 
-  window.confirmCrop = function () {
-    if (!cropper) return;
+    window.confirmCrop = function () {
+      if (!cropper) return;
 
-    // Get cropped canvas — max 600px wide for logo
-    const canvas = cropper.getCroppedCanvas({ width: 600, height: 600 });
-    const base64 = canvas.toDataURL('image/jpeg', 0.9);
+      // Get cropped canvas — max 600px wide for logo
+      const canvas = cropper.getCroppedCanvas({ width: 600, height: 600 });
+      const base64 = canvas.toDataURL("image/jpeg", 0.9);
 
-    // Write into hidden input
-    const hidden = document.getElementById(_hiddenInput);
-    if (hidden) hidden.value = base64;
+      // Write into hidden input
+      const hidden = document.getElementById(_hiddenInput);
+      if (hidden) hidden.value = base64;
 
-    // Update preview image if provided
-    if (_previewImg) {
-      const prev = document.getElementById(_previewImg);
-      if (prev) {
-        prev.src   = base64;
-        prev.style.display = 'block';
+      // Update preview image if provided
+      if (_previewImg) {
+        const prev = document.getElementById(_previewImg);
+        if (prev) {
+          prev.src = base64;
+          prev.style.display = "block";
+        }
       }
-    }
 
-    closeCropModal();
-  };
+      closeCropModal();
+    };
 
-  window.closeCropModal = function () {
-    document.getElementById('imageCropOverlay').classList.remove('show');
-    if (cropper) { cropper.destroy(); cropper = null; }
-  };
+    window.closeCropModal = function () {
+      document.getElementById("imageCropOverlay").classList.remove("show");
+      if (cropper) {
+        cropper.destroy();
+        cropper = null;
+      }
+    };
 
-  // Close on backdrop click
-  document.getElementById('imageCropOverlay').addEventListener('click', function (e) {
-    if (e.target === this) closeCropModal();
-  });
-})();
+    // Close on backdrop click
+    document.getElementById("imageCropOverlay").addEventListener("click", function (e) {
+      if (e.target === this) closeCropModal();
+    });
+  })();
 </script>

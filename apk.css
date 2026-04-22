@@ -80,15 +80,6 @@ Delete ENTIRE blocks:
 
 ⸻
 
-🔴 1. All icon sizing (unused)
-
-.icon-xs, .icon-sm, .icon-md, .icon-lg
-
-⸻
-
-🔴 2. All image sizing presets
-
-.img-xs, .img-sm, .img-md, .img-lg
 
 ⸻
 
@@ -194,29 +185,3 @@ Delete ENTIRE blocks:
 .itemlist
 .tag
 .notify
-
-⸻
-
-⚠️ IMPORTANT RESULT
-
-After cleaning:
-
-✔ No dot issue
-✔ No layout override bugs
-✔ No spacing conflicts
-✔ Your 4 CSS files fully control UI
-✔ Faster load
-
-⸻
-
-✅ FINAL RECOMMENDATION
-
-Best approach:
-
-👉 Delete 80–90% of ui.css
-👉 Keep only the minimal blocks above
-
-⸻
-
-If you want next step:
-I can merge everything into one clean production CSS (optimized).
