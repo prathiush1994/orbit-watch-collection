@@ -5,7 +5,6 @@ from .views import _cart_id
 def cart_counter(request):
     cart_count = 0
 
-    # Skip admin paths
     if "admin" in request.path:
         return {}
 

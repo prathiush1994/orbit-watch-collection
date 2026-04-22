@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import Payment, Order, OrderProduct, Coupon, CouponUsage
 
-# ───────────────────────── PAYMENT ─────────────────────────
+
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_display = (
@@ -17,7 +17,6 @@ class PaymentAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
 
 
-# ───────────────────────── ORDER PRODUCT (INLINE) ─────────────────────────
 class OrderProductInline(admin.TabularInline):
     model = OrderProduct
     extra = 0
@@ -29,7 +28,6 @@ class OrderProductInline(admin.TabularInline):
     )
 
 
-# ───────────────────────── ORDER ─────────────────────────
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
@@ -57,7 +55,6 @@ class OrderAdmin(admin.ModelAdmin):
     )
 
 
-# ───────────────────────── ORDER PRODUCT ─────────────────────────
 @admin.register(OrderProduct)
 class OrderProductAdmin(admin.ModelAdmin):
     list_display = (

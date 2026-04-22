@@ -7,15 +7,15 @@ def generate_otp():
     return str(random.randint(100000, 999999))
 
 
-def send_otp_email(email, otp, purpose='register'):
+def send_otp_email(email, otp, purpose="register"):
     subjects = {
-        'register':        'Verify Your Email – Orbit Watch Collection',
-        'forgot':          'Reset Your Password – Orbit Watch Collection',
-        'login':           'Your Login OTP – Orbit Watch Collection',
-        'change_password': 'Change Password OTP – Orbit Watch Collection',
-        'delete_account':  'Account Deletion OTP – Orbit Watch Collection',
+        "register": "Verify Your Email – Orbit Watch Collection",
+        "forgot": "Reset Your Password – Orbit Watch Collection",
+        "login": "Your Login OTP – Orbit Watch Collection",
+        "change_password": "Change Password OTP – Orbit Watch Collection",
+        "delete_account": "Account Deletion OTP – Orbit Watch Collection",
     }
-    subject = subjects.get(purpose, 'OTP Code – Orbit Watch Collection')
+    subject = subjects.get(purpose, "OTP Code – Orbit Watch Collection")
 
     message = (
         f"Hello,\n\n"
@@ -58,7 +58,7 @@ def send_otp_email(email, otp, purpose='register'):
 
 
 def send_welcome_email(email, name):
-    subject = 'Welcome to Orbit Watch Collection!'
+    subject = "Welcome to Orbit Watch Collection!"
     message = (
         f"Hello {name},\n\n"
         f"Welcome to Orbit Watch Collection! Your account is now active.\n\n"

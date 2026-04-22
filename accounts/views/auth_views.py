@@ -98,7 +98,7 @@ def verify_login_otp(request):
             user.save()
             if not request.session.session_key:
                 request.session.create()
-            old_session_key= request.session.session_key
+            old_session_key = request.session.session_key
             auth.login(
                 request, user, backend="django.contrib.auth.backends.ModelBackend"
             )
@@ -124,7 +124,7 @@ def verify_login_otp(request):
     )
 
 
-# ── Resend Login OTP 
+# ── Resend Login OTP
 def resend_login_otp(request):
     user_id = request.session.get("login_user_id")
     if not user_id:

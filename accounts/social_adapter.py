@@ -27,8 +27,8 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
         if sociallogin.is_existing:
             return
         try:
-            email = sociallogin.account.extra_data.get('email', '')
-            user  = Account.objects.get(email=email)
+            email = sociallogin.account.extra_data.get("email", "")
+            user = Account.objects.get(email=email)
             sociallogin.connect(request, user)
         except Account.DoesNotExist:
             pass
@@ -36,14 +36,14 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
     def save_user(self, request, sociallogin, form=None):
         user = super().save_user(request, sociallogin, form)
 
-        data                = sociallogin.account.extra_data
-        user.first_name     = data.get('given_name', '')
-        user.last_name      = data.get('family_name', '')
+        data = sociallogin.account.extra_data
+        user.first_name = data.get("given_name", "")
+        user.last_name = data.get("family_name", "")
         user.email_verified = True
-        user.is_active      = True
-        user.otp            = None
+        user.is_active = True
+        user.otp = None
         user.otp_created_at = None
-        user.otp_purpose    = None
+        user.otp_purpose = None
         user.set_unusable_password()
         user.save()
         return user
@@ -53,7 +53,7 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
         # and merge session wishlist → user wishlist
         _merge_cart_on_login(request)
         _merge_wishlist_on_login(request)
-        return '/'
+        return "/"
 
 
 def _merge_cart_on_login(request):
@@ -86,14 +86,14 @@ def _merge_cart_on_login(request):
         session_cart.delete()
 
     except Exception:
-        pass   # Never break login because of a cart error
+        pass  # Never break login because of a cart error
 
 
 def _merge_wishlist_on_login(request):
     try:
         from wishlist.models import Wishlist
 
-        pending = request.session.pop('pending_wishlist', [])
+        pending = request.session.pop("pending_wishlist", [])
         for variant_id in pending:
             Wishlist.objects.get_or_create(
                 user=request.user,
@@ -101,4 +101,4 @@ def _merge_wishlist_on_login(request):
             )
 
     except Exception:
-        pass   # Never break login because of a wishlist error
+        pass  # Never break login because of a wishlist error

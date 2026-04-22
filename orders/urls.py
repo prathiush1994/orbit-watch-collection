@@ -2,37 +2,38 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-
     # Checkout
-    path('checkout/',                             views.checkout,          name='checkout'),
-    path('place-order/',                          views.place_order,       name='place_order'),
-    
+    path("checkout/", views.checkout, name="checkout"),
+    path("place-order/", views.place_order, name="place_order"),
     # Order management
-    path('my-orders/',                            views.my_orders,         name='my_orders'),
-    path('detail/<str:order_number>/',            views.order_detail,      name='order_detail'),
-    
+    path("my-orders/", views.my_orders, name="my_orders"),
+    path("detail/<str:order_number>/", views.order_detail, name="order_detail"),
     # Whole-order cancel / return
-    path('cancel/<str:order_number>/',            views.cancel_order,      name='cancel_order'),
-    path('return/<str:order_number>/',            views.return_order,      name='return_order'),
-    
+    path("cancel/<str:order_number>/", views.cancel_order, name="cancel_order"),
+    path("return/<str:order_number>/", views.return_order, name="return_order"),
     # Item-level cancel / return  ← NEW
-    path('cancel/<str:order_number>/item/<int:item_id>/', views.cancel_item, name='cancel_item'),
-    path('return/<str:order_number>/item/<int:item_id>/', views.return_item, name='return_item'),
-
-    path('invoice/<str:order_number>/',           views.download_invoice,  name='download_invoice'),
-
+    path(
+        "cancel/<str:order_number>/item/<int:item_id>/",
+        views.cancel_item,
+        name="cancel_item",
+    ),
+    path(
+        "return/<str:order_number>/item/<int:item_id>/",
+        views.return_item,
+        name="return_item",
+    ),
+    path(
+        "invoice/<str:order_number>/", views.download_invoice, name="download_invoice"
+    ),
     # Coupon (AJAX)
-    path('apply-coupon/',                        views.apply_coupon,    name='apply_coupon'),
-    path('remove-coupon/',                       views.remove_coupon,   name='remove_coupon'),
-
+    path("apply-coupon/", views.apply_coupon, name="apply_coupon"),
+    path("remove-coupon/", views.remove_coupon, name="remove_coupon"),
     # Result pages
-    path('complete/<str:order_number>/',       views.order_complete,     name='order_complete'),
-    path('success/<str:order_number>/',        views.payment_success,    name='payment_success'),
-    path('failed/',                            views.payment_failed,     name='payment_failed'),
-
+    path("complete/<str:order_number>/", views.order_complete, name="order_complete"),
+    path("success/<str:order_number>/", views.payment_success, name="payment_success"),
+    path("failed/", views.payment_failed, name="payment_failed"),
     # Razorpay callback
-    path('razorpay/callback/',                 views.razorpay_callback,  name='razorpay_callback'),
-
-    path('apply-referral/',  views.apply_referral,  name='apply_referral'),
-    path('remove-referral/', views.remove_referral, name='remove_referral'),
+    path("razorpay/callback/", views.razorpay_callback, name="razorpay_callback"),
+    path("apply-referral/", views.apply_referral, name="apply_referral"),
+    path("remove-referral/", views.remove_referral, name="remove_referral"),
 ]

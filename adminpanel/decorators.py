@@ -3,7 +3,6 @@ from functools import wraps
 
 
 def admin_required(view_func):
-    """Allow access only to superadmin or staff users."""
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
