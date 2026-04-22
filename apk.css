@@ -1,0 +1,222 @@
+
+
+
+
+
+
+✅ KEEP (only if used in your current pages)
+
+Keep only these blocks:
+
+1. Basic helpers (safe)
+
+a:hover { text-decoration: none; }
+.img-wrap { text-align: center; display: block; }
+.img-wrap img { max-width: 100%; }
+.price-wrap { letter-spacing: -0.7px; }
+figure { margin-bottom: 0; }
+
+⸻
+
+2. Sidebar (you ARE using this)
+
+.filter-group {
+  border-bottom: 1px solid #e4e4e4;
+}
+.filter-group .card-header {
+  border-bottom: 0;
+}
+.filter-group:last-child {
+  border-bottom: 0;
+}
+.card-header .title {
+  margin-bottom: 0;
+  line-height: 1.5;
+}
+.icon-control {
+  font-size: 80%;
+}
+
+⸻
+
+3. Product base (only minimal)
+
+.card-product-grid {
+  margin-bottom: 20px;
+}
+.card-product-grid .img-wrap {
+  border-radius: 0.2rem 0.2rem 0 0;
+}
+.card-product-grid .info-wrap {
+  padding: 12px;
+}
+.price {
+  font-weight: 600;
+}
+.price-old {
+  color: #969696;
+  font-size: 85%;
+}
+
+⸻
+
+4. Footer (you are using)
+
+.section-footer ul li {
+  margin-bottom: 5px;
+}
+.section-footer ul a:hover {
+  color: #3167eb;
+}
+.footer-bottom {
+  padding: 20px 0;
+}
+
+⸻
+
+❌ REMOVE (this is causing your problems)
+
+Delete ENTIRE blocks:
+
+⸻
+
+🔴 1. All icon sizing (unused)
+
+.icon-xs, .icon-sm, .icon-md, .icon-lg
+
+⸻
+
+🔴 2. All image sizing presets
+
+.img-xs, .img-sm, .img-md, .img-lg
+
+⸻
+
+🔴 3. Position helpers (conflicts layout)
+
+.center-xy
+.center-x
+.center-y
+.relative
+.absolute
+
+⸻
+
+🔴 4. ALL spacing helpers (you use Bootstrap now)
+
+.padding-*
+
+⸻
+
+🔴 5. ALL hover effects
+
+.hover-*
+
+⸻
+
+🔴 6. ALL background utilities
+
+.bg*
+.bg-gradient*
+.bg-pattern
+.bg-img
+
+⸻
+
+🔴 7. ALL list styles (THIS caused your dot issue)
+
+.list-icon
+.list-bullet
+.list-dots   ❗ MAIN BUG
+.list-check
+.list-normal
+
+⸻
+
+🔴 8. ALL advanced UI (not used)
+
+.overlay-gradient
+.card-banner
+.rating-stars
+.tracking-wrap
+.input-spinner
+.checkbox-btn
+.btn-check
+.js-check
+
+⸻
+
+🔴 9. UNUSED product styles
+
+.card-product-list
+.card-sm
+.card-lg
+
+⸻
+
+🔴 10. Slider / banner (not used)
+
+.slider-banner-*
+
+⸻
+
+🔴 11. Social buttons
+
+.btn-facebook
+.btn-instagram
+.btn-google
+...
+
+⸻
+
+🔴 12. Menu system (not used)
+
+.menu-category
+
+⸻
+
+🔴 13. Gallery (not used)
+
+.gallery-wrap
+
+⸻
+
+🔴 14. Form helpers (not needed)
+
+.form-noborder
+.form-inline input[type=number]
+
+⸻
+
+🔴 15. Misc unused
+
+.itemside
+.itemlist
+.tag
+.notify
+
+⸻
+
+⚠️ IMPORTANT RESULT
+
+After cleaning:
+
+✔ No dot issue
+✔ No layout override bugs
+✔ No spacing conflicts
+✔ Your 4 CSS files fully control UI
+✔ Faster load
+
+⸻
+
+✅ FINAL RECOMMENDATION
+
+Best approach:
+
+👉 Delete 80–90% of ui.css
+👉 Keep only the minimal blocks above
+
+⸻
+
+If you want next step:
+I can merge everything into one clean production CSS (optimized).

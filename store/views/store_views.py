@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q, Min, Max
 from django.core.paginator import Paginator
+
 from store.models import ProductVariant
 from category.models import Category
 from brands.models import Brand
@@ -19,27 +20,28 @@ def store(request, category_slug=None):
     sort           = request.GET.get('sort', '')
 
     # ── Base queryset ─────────────────────────────────────────────────────────
+    base_qs_kwargs = dict(
+        product__brand__status='active',
+        is_available=True,
+        stock__gt=0,
+    )
     if category_slug:
         category_obj = get_object_or_404(Category, slug=category_slug, status='active')
         variants = ProductVariant.objects.filter(
-            product__category=category_obj,
-            product__brand__status='active',
-            is_available=True,
-            stock__gt=0
-        ).select_related('product', 'product__brand').prefetch_related(
-            'product__category'
+            product__category=category_obj, **base_qs_kwargs
         )
         if not category_slugs:
             category_slugs = [category_slug]
     else:
         variants = ProductVariant.objects.filter(
-            product__brand__status='active',
-            product__category__status='active',
-            is_available=True,
-            stock__gt=0
-        ).select_related('product', 'product__brand').prefetch_related(
-            'product__category'
+            product__category__status='active', **base_qs_kwargs
         ).distinct()
+
+    variants = variants.select_related('product', 'product__brand').prefetch_related(
+        'product__category',
+        'product__offer',           # prefetch ProductOffer reverse relation
+        'product__category__offer', # prefetch CategoryOffer reverse relation
+    )
 
     # ── Filters ───────────────────────────────────────────────────────────────
     if category_slugs:
@@ -61,7 +63,6 @@ def store(request, category_slug=None):
             Q(color_name__icontains=keyword)
         ).distinct()
 
-    # ── Sort ──────────────────────────────────────────────────────────────────
     if sort == 'price_asc':
         variants = variants.order_by('price')
     elif sort == 'price_desc':
@@ -71,46 +72,42 @@ def store(request, category_slug=None):
 
     # ── Pagination ────────────────────────────────────────────────────────────
     paginator      = Paginator(variants, 15)
-    page           = request.GET.get('page')
-    paged_variants = paginator.get_page(page)
+    paged_variants = paginator.get_page(request.GET.get('page'))
 
-    # ── Annotate with offers (batch — no N+1) ────────────────────────────────
+    # ── Annotate with offers (2 DB queries for entire page) ───────────────────
     annotate_variants_with_offers(list(paged_variants.object_list))
 
     # ── Cart & Wishlist IDs ───────────────────────────────────────────────────
     cart     = _get_or_create_cart(request)
-    cart_ids = set(
-        CartItem.objects.filter(cart=cart, is_active=True)
-        .values_list('variant_id', flat=True)
-    )
+    cart_ids = set(CartItem.objects.filter(
+        cart=cart, is_active=True
+    ).values_list('variant_id', flat=True))
+
     wishlist_ids = set()
     if request.user.is_authenticated:
-        wishlist_ids = set(
-            Wishlist.objects.filter(user=request.user)
-            .values_list('variant_id', flat=True)
-        )
+        wishlist_ids = set(Wishlist.objects.filter(
+            user=request.user
+        ).values_list('variant_id', flat=True))
 
     # ── Sidebar data ──────────────────────────────────────────────────────────
     all_categories = Category.objects.filter(status='active')
     all_brands     = Brand.objects.filter(
-        status='active',
-        product__variants__is_available=True
+        status='active', product__variants__is_available=True
     ).distinct()
 
     price_bounds = ProductVariant.objects.filter(
         product__brand__status='active',
         product__category__status='active',
-        is_available=True,
-        stock__gt=0
+        is_available=True, stock__gt=0
     ).aggregate(min=Min('price'), max=Max('price'))
 
-    context = {
-        'products'       : paged_variants,
-        'product_count'  : variants.count(),
-        'all_categories' : all_categories,
-        'all_brands'     : all_brands,
-        'price_min_bound': price_bounds['min'] or 0,
-        'price_max_bound': price_bounds['max'] or 100000,
+    return render(request, 'store/store.html', {
+        'products'         : paged_variants,
+        'product_count'    : variants.count(),
+        'all_categories'   : all_categories,
+        'all_brands'       : all_brands,
+        'price_min_bound'  : price_bounds['min'] or 0,
+        'price_max_bound'  : price_bounds['max'] or 100000,
         'active_categories': category_slugs,
         'active_brands'    : brand_slugs,
         'active_min_price' : min_price,
@@ -119,5 +116,4 @@ def store(request, category_slug=None):
         'keyword'          : keyword,
         'cart_ids'         : cart_ids,
         'wishlist_ids'     : wishlist_ids,
-    }
-    return render(request, 'store/store.html', context)
+    })

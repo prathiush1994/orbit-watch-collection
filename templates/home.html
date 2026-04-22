@@ -1,17 +1,14 @@
-{% extends 'base.html' %}
-{% load static %}
+{% extends 'base.html' %} {% load static %} {% block content %}
 
-{% block content %}
 <section class="section-intro padding-y-sm">
-<div class="container">
+  <div class="container">
     <div class="intro-banner-wrap">
-        <img src="{% static 'images/banners/banner.png' %}" class="img-fluid rounded">
+      <img src="{% static 'images/banners/banner.png' %}" class="img-fluid rounded" />
     </div>
-</div>
+  </div>
 </section>
 
 <div class="container mt-3">
-
   <!-- ================= MEN ================= -->
   <div class="section-block">
     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -22,25 +19,37 @@
       <button class="scroll-btn left" onclick="scrollRow(this, -1)">‹</button>
 
       <div class="scroll-row">
-        {% for product in men_products|slice:":11" %}
-        <div class="card-item">
-            <a href="{{ product.get_url }}">
-                {% if product.primary_image %}
-                <img src="{{ product.primary_image.url }}" alt="{{ product }}">
-                {% endif %}
-                <div class="card-body">
-                <p class="title">
-                    {{ product.product.product_name }}
-                </p>
-                <p class="price">
-                    ₹ {{ product.price }}
-                </p>
-                <small class="text-muted">
-                    {{ product.color_name }}
-                </small>
-                </div>
-            </a>
-        </div>
+        {% for variant in men_products|slice:":11" %}
+<div class="card-item">
+
+  <div class="img-box">   <!-- ADD THIS -->
+
+    <a href="{{ variant.get_url }}">
+      {% if variant.primary_image %}
+      <img src="{{ variant.primary_image.url }}" />
+      {% endif %}
+
+      {% if variant.has_offer %}
+      <span class="offer-badge">{{ variant.offer_label }}</span>
+      {% endif %}
+    </a>
+
+  </div>
+
+  <div class="card-body">
+    <p class="title">{{ variant.product.product_name }}</p>
+
+    <p class="price">
+      {% if variant.has_offer %}
+      <span class="text-danger">₹ {{ variant.effective_price }}</span>
+      <small><del>₹ {{ variant.original_price }}</del></small>
+      {% else %}
+      ₹ {{ variant.price }}
+      {% endif %}
+    </p>
+  </div>
+
+</div>
         {% endfor %}
       </div>
 
@@ -58,24 +67,26 @@
       <button class="scroll-btn left" onclick="scrollRow(this, -1)">‹</button>
 
       <div class="scroll-row">
-        {% for product in women_products|slice:":8" %}
+        {% for variant in women_products|slice:":8" %}
         <div class="card-item">
-            <a href="{{ product.get_url }}">
-                {% if product.primary_image %}
-                <img src="{{ product.primary_image.url }}" alt="{{ product }}">
-                {% endif %}
-                <div class="card-body">
-                <p class="title">
-                    {{ product.product.product_name }}
-                </p>
-                <p class="price">
-                    ₹ {{ product.price }}
-                </p>
-                <small class="text-muted">
-                    {{ product.color_name }}
-                </small>
-                </div>
-            </a>
+          <a href="{{ variant.get_url }}" class="position-relative">
+            {% if variant.primary_image %}
+            <img src="{{ variant.primary_image.url }}" />
+            {% endif %} {% if variant.has_offer %}
+            <span class="offer-badge">{{ variant.offer_label }}</span>
+            {% endif %}
+
+            <div class="card-body">
+              <p class="title">{{ variant.product.product_name }}</p>
+
+              <p class="price">
+                {% if variant.has_offer %}
+                <span class="text-danger">₹ {{ variant.effective_price }}</span>
+                <small><del>₹ {{ variant.original_price }}</del></small>
+                {% else %} ₹ {{ variant.price }} {% endif %}
+              </p>
+            </div>
+          </a>
         </div>
         {% endfor %}
       </div>
@@ -94,24 +105,26 @@
       <button class="scroll-btn left" onclick="scrollRow(this, -1)">‹</button>
 
       <div class="scroll-row">
-        {% for product in kids_products|slice:":8" %}
+        {% for variant in kids_products|slice:":8" %}
         <div class="card-item">
-            <a href="{{ product.get_url }}">
-                {% if product.primary_image %}
-                <img src="{{ product.primary_image.url }}" alt="{{ product }}">
-                {% endif %}
-                <div class="card-body">
-                <p class="title">
-                    {{ product.product.product_name }}
-                </p>
-                <p class="price">
-                    ₹ {{ product.price }}
-                </p>
-                <small class="text-muted">
-                    {{ product.color_name }}
-                </small>
-                </div>
-            </a>
+          <a href="{{ variant.get_url }}" class="position-relative">
+            {% if variant.primary_image %}
+            <img src="{{ variant.primary_image.url }}" />
+            {% endif %} {% if variant.has_offer %}
+            <span class="offer-badge">{{ variant.offer_label }}</span>
+            {% endif %}
+
+            <div class="card-body">
+              <p class="title">{{ variant.product.product_name }}</p>
+
+              <p class="price">
+                {% if variant.has_offer %}
+                <span class="text-danger">₹ {{ variant.effective_price }}</span>
+                <small><del>₹ {{ variant.original_price }}</del></small>
+                {% else %} ₹ {{ variant.price }} {% endif %}
+              </p>
+            </div>
+          </a>
         </div>
         {% endfor %}
       </div>
@@ -119,17 +132,16 @@
       <button class="scroll-btn right" onclick="scrollRow(this, 1)">›</button>
     </div>
   </div>
-
 </div>
 
 <script>
-function scrollRow(btn, dir) {
-  const container = btn.parentElement.querySelector('.scroll-row');
-  container.scrollBy({
-    left: dir * 200,
-    behavior: 'smooth'
-  });
-}
+  function scrollRow(btn, dir) {
+    const container = btn.parentElement.querySelector(".scroll-row");
+    container.scrollBy({
+      left: dir * 200,
+      behavior: "smooth",
+    });
+  }
 </script>
 
 {% endblock %}

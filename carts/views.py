@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+
 from store.models import ProductVariant
 from .models import Cart, CartItem
 
@@ -8,9 +9,10 @@ CART_MAX_TOTAL  = 10
 PRODUCT_MAX_QTY = 3
 
 
-# ─────────────────────────────────────────────────────────
-# SESSION / CART HELPERS
-# ─────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────────────────────────────────────
+
 def _cart_id(request):
     if not request.session.session_key:
         request.session.create()
@@ -20,73 +22,77 @@ def _cart_id(request):
 def _get_or_create_cart(request):
     if request.user.is_authenticated:
         cart, _ = Cart.objects.get_or_create(user=request.user)
-        return cart
     else:
-        cart_id = _cart_id(request)
-        cart, _ = Cart.objects.get_or_create(cart_id=cart_id)
-        return cart
+        cart, _ = Cart.objects.get_or_create(cart_id=_cart_id(request))
+    return cart
 
 
-def _get_effective_price(variant):
+def _effective_price(variant):
     """
-    Returns the discounted price for a variant (or original if no offer).
-    Keeps the offer logic in one place.
+    Return the discounted price for a variant using the offer system.
+    Falls back to variant.price if no offer exists.
     """
     from offers.utils import get_applicable_offer, apply_discount
     try:
-        pct, _, _ = get_applicable_offer(variant.product)
-        return apply_discount(variant.price, pct), pct
+        pct, _ = get_applicable_offer(variant.product)
+        return apply_discount(variant.price, pct)
     except Exception:
-        return variant.price, 0
+        from decimal import Decimal
+        return Decimal(str(variant.price))
 
 
-# ─────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 # CART PAGE
-# ─────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+
 def cart(request):
     cart_obj = _get_or_create_cart(request)
 
-    cart_items = CartItem.objects.filter(
-        cart=cart_obj,
-        is_active=True,
+    cart_items = list(CartItem.objects.filter(
+        cart=cart_obj, is_active=True
     ).select_related(
         'variant', 'variant__product', 'variant__product__brand'
-    ).prefetch_related('variant__product__category')
+    ).prefetch_related(
+        'variant__product__category',
+        'variant__product__offer',
+        'variant__product__category__offer',
+    ))
 
-    # Annotate items with offer data (batch)
-    items_list = list(cart_items)
+    # Annotate each variant with offer data (batch — 2 DB queries)
     from offers.utils import annotate_variants_with_offers
-    annotate_variants_with_offers([item.variant for item in items_list])
+    annotate_variants_with_offers([item.variant for item in cart_items])
 
     total           = 0
     quantity        = 0
     has_unavailable = False
 
-    for item in items_list:
+    for item in cart_items:
         if item.variant.stock <= 0:
             has_unavailable = True
             continue
         # Use effective_price (discounted) for totals
-        total    += item.variant.effective_price * item.quantity
+        item.discounted_subtotal = item.variant.effective_price * item.quantity
+        total    += item.discounted_subtotal
         quantity += item.quantity
 
-    tax         = round((18 * total) / 100, 2)
-    grand_total = round(total + tax, 2)
+    from decimal import Decimal
+    tax         = round(Decimal('0.18') * Decimal(str(total)), 2)
+    grand_total = round(Decimal(str(total)) + tax, 2)
 
-    context = {
-        'cart_items'     : items_list,
+    return render(request, 'store/cart.html', {
+        'cart_items'     : cart_items,
         'total'          : total,
         'quantity'       : quantity,
         'tax'            : tax,
         'grand_total'    : grand_total,
         'has_unavailable': has_unavailable,
-    }
-    return render(request, 'store/cart.html', context)
+    })
 
 
-# ─────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 # ADD TO CART
-# ─────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+
 def add_cart(request, variant_id):
     variant = get_object_or_404(ProductVariant, id=variant_id)
 
@@ -97,14 +103,14 @@ def add_cart(request, variant_id):
     cart       = _get_or_create_cart(request)
     cart_items = CartItem.objects.filter(cart=cart, is_active=True)
 
-    total_qty = sum(item.quantity for item in cart_items)
+    total_qty = sum(i.quantity for i in cart_items)
     if total_qty >= CART_MAX_TOTAL:
         messages.error(request, 'Maximum 10 items allowed in cart.')
         return redirect(request.META.get('HTTP_REFERER', 'store'))
 
     same_product_qty = sum(
-        item.quantity for item in cart_items
-        if item.variant.product_id == variant.product_id
+        i.quantity for i in cart_items
+        if i.variant.product_id == variant.product_id
     )
     if same_product_qty >= PRODUCT_MAX_QTY:
         messages.error(request, 'Max 3 of the same product allowed.')
@@ -123,9 +129,10 @@ def add_cart(request, variant_id):
     return redirect(request.META.get('HTTP_REFERER', 'store'))
 
 
-# ─────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 # INCREMENT / DECREMENT / REMOVE
-# ─────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+
 def increment_cart(request, variant_id):
     cart      = _get_or_create_cart(request)
     cart_item = get_object_or_404(CartItem, cart=cart, variant_id=variant_id)
@@ -180,6 +187,10 @@ def remove_cart(request, variant_id):
     return redirect('cart')
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# MERGE CART (on login)
+# ─────────────────────────────────────────────────────────────────────────────
+
 def merge_cart(request):
     if not request.user.is_authenticated:
         return
@@ -211,8 +222,7 @@ def merge_cart(request):
                 user_item.quantity += allowed_qty
             else:
                 allowed_qty = min(
-                    item.quantity, PRODUCT_MAX_QTY,
-                    CART_MAX_TOTAL - existing_total
+                    item.quantity, PRODUCT_MAX_QTY, CART_MAX_TOTAL - existing_total
                 )
                 if allowed_qty <= 0:
                     continue

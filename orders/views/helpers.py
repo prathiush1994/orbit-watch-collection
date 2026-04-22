@@ -221,44 +221,44 @@ def _build_order_from_session(request, address, payment_obj, totals):
 
 def _compute_totals(cart_items, session):
     """
-    Compute order totals server-side.
-    Order of deductions:
-      1. Offer discount   (per-item, baked into subtotal)
-      2. Coupon discount  (% or fixed off subtotal+tax)
-      3. Referral discount
-      4. Wallet
+    Re-computes all totals server-side from cart items and session.
+    Uses offer-discounted prices for subtotal.
+    Returns a dict with all price breakdown values.
     """
     from offers.utils import get_applicable_offer, apply_discount
-
+ 
+    # ── 1. Subtotal using effective (offer-discounted) price ──────────────────
     subtotal = Decimal('0')
     for item in cart_items:
         if item.variant.stock <= 0:
             continue
-        # Use discounted price if offer exists
         try:
-            pct, _, _ = get_applicable_offer(item.variant.product)
+            pct, _ = get_applicable_offer(item.variant.product)
             ep = apply_discount(item.variant.price, pct)
         except Exception:
-            ep = item.variant.price
+            ep = Decimal(str(item.variant.price))
         subtotal += ep * item.quantity
-
+ 
     tax         = round(Decimal('0.18') * subtotal, 2)
     grand_total = round(subtotal + tax, 2)
-
-    coupon_discount   = Decimal(session.get('coupon_discount', '0'))
-    coupon_code       = session.get('coupon_code', '')
-    coupon_id         = session.get('coupon_id')
-    after_coupon      = round(grand_total - coupon_discount, 2)
-
-    referral_discount = Decimal(session.get('referral_discount', '0'))
+ 
+    # ── 2. Coupon ─────────────────────────────────────────────────────────────
+    coupon_discount = Decimal(str(session.get('coupon_discount', '0')))
+    coupon_code     = session.get('coupon_code', '')
+    coupon_id       = session.get('coupon_id')
+    after_coupon    = max(round(grand_total - coupon_discount, 2), Decimal('0'))
+ 
+    # ── 3. Referral ───────────────────────────────────────────────────────────
+    referral_discount = Decimal(str(session.get('referral_discount', '0')))
     referral_code     = session.get('referral_code', '')
     referral_id       = session.get('referral_id')
-    after_referral    = round(after_coupon - referral_discount, 2)
-
-    wallet_used       = Decimal(session.get('wallet_used', '0'))
-    wallet_applied    = session.get('wallet_applied', False)
-    final_total       = max(round(after_referral - wallet_used, 2), Decimal('0'))
-
+    after_referral    = max(round(after_coupon - referral_discount, 2), Decimal('0'))
+ 
+    # ── 4. Wallet ─────────────────────────────────────────────────────────────
+    wallet_used    = Decimal(str(session.get('wallet_used', '0')))
+    wallet_applied = session.get('wallet_applied', False)
+    final_total    = max(round(after_referral - wallet_used, 2), Decimal('0'))
+ 
     return {
         'subtotal'         : subtotal,
         'tax'              : tax,

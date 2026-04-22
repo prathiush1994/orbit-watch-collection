@@ -80,3 +80,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
     }
 });
+
+
+// STAR PICKER
+var starInputs = document.querySelectorAll('#starPicker input[type="radio"]');
+var ratingField = document.getElementById('id_rating');
+var ratingError = document.getElementById('ratingError');
+
+starInputs.forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        if (ratingField) ratingField.value = this.value;
+        if (ratingError) ratingError.style.display = 'none';
+    });
+});
+
+var reviewForm = document.querySelector('.write-review-box form');
+if (reviewForm) {
+    reviewForm.addEventListener('submit', function(e) {
+        if (!ratingField || !ratingField.value) {
+            e.preventDefault();
+            if (ratingError) ratingError.style.display = 'block';
+        }
+    });
+}

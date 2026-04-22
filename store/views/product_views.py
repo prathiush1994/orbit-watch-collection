@@ -5,7 +5,7 @@ from store.models import ProductVariant
 from carts.models import CartItem
 from carts.views import _get_or_create_cart
 from wishlist.models import Wishlist
-from offers.utils import get_applicable_offer, apply_discount
+from offers.utils import get_offer_context
 from reviews.models import Review
 from reviews.forms import ReviewForm
 from reviews.views import _user_has_purchased
@@ -32,16 +32,14 @@ def product_detail(request, category_slug, variant_slug):
     all_variants   = variant.get_all_variants()
 
     # ── Offer ─────────────────────────────────────────────────────────────────
-    offer_pct, offer_label, offer_type = get_applicable_offer(variant.product)
-    effective_price = apply_discount(variant.price, offer_pct)
-    has_offer       = offer_pct > 0
+    # get_offer_context returns a ready-made dict:
+    #   has_offer, offer_pct, offer_type, effective_price, original_price, savings
+    offer_ctx = get_offer_context(variant.product, variant.price)
 
-    # ── Annotate all_variants with offer info too (for swatch prices) ─────────
+    # ── Annotate all_variants with offer info (for swatch prices) ─────────────
     from offers.utils import annotate_variants_with_offers
     all_variants_list = list(all_variants)
     annotate_variants_with_offers(all_variants_list)
-
-    savings = variant.price - effective_price
 
     # ── Cart ──────────────────────────────────────────────────────────────────
     cart    = _get_or_create_cart(request)
@@ -63,17 +61,16 @@ def product_detail(request, category_slug, variant_slug):
     avg_rating   = round(review_stats['avg'] or 0, 1)
     review_count = reviews.count()
 
-    # Star breakdown (5 → 1)
+    # Star breakdown 5 -> 1
     star_breakdown = {}
     for star in range(5, 0, -1):
         count = reviews.filter(rating=star).count()
         pct   = int((count / review_count * 100)) if review_count else 0
         star_breakdown[star] = {'count': count, 'pct': pct}
 
-    # Current user state for reviews
-    user_review       = None
-    can_review        = False
-    already_reviewed  = False
+    user_review      = None
+    can_review       = False
+    already_reviewed = False
 
     if request.user.is_authenticated:
         user_review      = reviews.filter(user=request.user).first()
@@ -92,13 +89,12 @@ def product_detail(request, category_slug, variant_slug):
         'all_variants'   : all_variants_list,
         'in_cart'        : in_cart,
         'in_wishlist'    : in_wishlist,
-        # Offer context
-        'offer_pct'      : offer_pct,
-        'offer_label'    : offer_label,
-        'offer_type'     : offer_type,
-        'effective_price': effective_price,
-        'has_offer'      : has_offer,
-        'savings'        : savings,
+        # Offer context unpacked from get_offer_context dict
+        'has_offer'      : offer_ctx['has_offer'],
+        'offer_pct'      : offer_ctx['offer_pct'],
+        'offer_type'     : offer_ctx['offer_type'],
+        'effective_price': offer_ctx['effective_price'],
+        'savings'        : offer_ctx['savings'],
         # Review context
         'reviews'        : reviews,
         'avg_rating'     : avg_rating,

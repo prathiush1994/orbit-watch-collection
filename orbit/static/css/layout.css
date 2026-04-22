@@ -1,36 +1,223 @@
 /* =========================
-   NAVBAR RESPONSIVE
+   NAVBAR
 ========================= */
-
 
 .header-main {
   position: relative;
+  min-height: 80px;
   padding: 1rem 0;
 }
 
+/* LOGO */
+.brand-wrap {
+  display: flex;
+  align-items: center;
+}
+
 .brand-wrap .logo {
-  margin-right: 7px;
-  max-height: 42px;
-  display: inline-block;
+  max-height: 55px;
   width: auto;
 }
 
+/* USER */
 .widget-header {
-  display: inline-block;
-  vertical-align: middle;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   position: relative;
-  margin-left: 8px;
 }
-
-.widget-header div {
-  white-space: nowrap;
-  font-size: 13px;
+.nav-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 15px;
+  flex-wrap: nowrap;     
+  white-space: nowrap; 
+  flex-shrink: 0; 
 }
-
+.nav-right form {
+  max-width: 220px;
+  flex-shrink: 1;
+}
+.widget-header small {
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap; /* prevents breaking */
+}
 .widget-header a {
   color: #343a40;
 }
-
 .widget-header a:hover {
   color: #3167eb;
+}
+
+/* ICON */
+.icon-xs {
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+}
+
+/* BADGE (ONLY ONE VERSION) */
+.notify {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 50px;
+  background: #fa3434;
+  color: #fff;
+}
+
+/* NAV TEXT */
+.nav-text {
+  font-size: 13px;
+  color: #333;
+  text-decoration: none;
+}
+
+/* =========================
+   MOBILE MENU
+========================= */
+
+.mobile-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mobile-menu li {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.mobile-menu li a {
+  text-decoration: none;
+  color: #333;
+  font-size: 14px;
+}
+
+.menu-title {
+  font-weight: 600;
+  font-size: 12px;
+  color: #888;
+  background: #f8f9fa;
+}
+
+.divider {
+  height: 8px;
+  background: #f1f1f1;
+}
+
+/* =========================
+   SEARCH
+========================= */
+
+.search-wrapper {
+  position: relative;
+}
+
+.search-input {
+  width: 60%;
+}
+
+.search-suggestions {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 0 0 6px 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.search-suggestions li {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.search-suggestions li:hover {
+  background: #f4f6f8;
+}
+
+/* HAMBURGER */
+.navbar-toggler {
+  border: none;
+  font-size: 20px;
+  background: none;
+}
+
+/* =========================
+   store RESPONSIVE
+========================= */
+
+.no-bullets li::before {
+  display: none !important;
+}
+
+.no-bullets {
+  padding-left: 0;
+}
+.list-menu {
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin: 0 !important;
+}
+.list-menu li::marker {
+  display: none !important;
+}
+
+.list-menu li::before {
+  content: none !important;
+}
+
+.icon-control {
+  float: none !important;
+}
+
+.card-product-grid .img-wrap img {
+  width: 100%;
+  height: 150px;
+  object-fit: contain;
+}
+
+.filter-group ul li::before {
+  content: none !important;
+}
+.toggle-icon {
+  transition: transform 0.3s ease;
+}
+a[aria-expanded="true"] .toggle-icon {
+  transform: rotate(180deg);
+}
+.filter-divider {
+  border: none;
+  border-top: 1px solid #e5e5e5;
+  margin: 10px 0;
+}
+/* =========================
+   footer RESPONSIVE
+========================= */
+
+/* FOOTER FIX */
+.section-footer {
+  font-size: 13px;
+}
+
+/* remove weird gap */
+main {
+  padding-bottom: 10px;
 }

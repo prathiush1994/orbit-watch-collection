@@ -1,209 +1,205 @@
 """
-from decimal import Decimal
-
-
-def get_best_offer_price(variant):
-    ----------#####
-    Returns (effective_price, discount_pct, offer_label) for a variant.
-    Applies the LARGEST discount between product offer and category offer.
-    If no offer → returns original price, 0, ''.
-    ----------#####
-    base_price = Decimal(str(variant.price))
-    product    = variant.product
-
-    product_pct  = Decimal('0')
-    category_pct = Decimal('0')
-
-    # Product-level offer
-    try:
-        po = product.offer
-        if po.is_valid():
-            product_pct = po.discount_pct
-    except Exception:
-        pass
-
-    # Category-level offer
-    try:
-        co = product.category.offer
-        if co.is_valid():
-            category_pct = co.discount_pct
-    except Exception:
-        pass
-
-    best_pct = max(product_pct, category_pct)
-
-    if best_pct <= 0:
-        return base_price, Decimal('0'), ''
-
-    discounted = round(base_price - (base_price * best_pct / 100), 2)
-    label      = f'{best_pct}% off'
-    return discounted, best_pct, label
-"""
-"""
 offers/utils.py
 ===============
-Core offer logic. Import from views and templates.
+Single source of offer logic for the entire project.
 
-Rules (from spec):
-  1. ProductOffer takes priority over CategoryOffer completely.
-  2. CategoryOffer only applies if the category has is_offer_applicable=True.
-  3. Offer must be active and within valid date range.
-  4. Discounts apply BEFORE coupons and wallet at checkout.
+Priority rule (mandatory):
+  ProductOffer > CategoryOffer — never mix.
+  CategoryOffer only applies if category.is_offer_applicable = True.
+
+Validity rule:
+  is_active = True  AND  valid_from <= now  AND  (valid_until is None OR valid_until >= now)
 """
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from django.utils import timezone
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SINGLE VARIANT  — used in product detail page
+# LOW-LEVEL HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
 
-def get_applicable_offer(product):
-    """
-    Returns (discount_pct, offer_label, offer_type) for a product.
-      - discount_pct : Decimal  (0 if no offer)
-      - offer_label  : str      e.g. '15% OFF'  or ''
-      - offer_type   : str      'product' | 'category' | ''
-
-    Expects product to have .offer and .category pre-fetched or accessible.
-    """
+def _is_offer_valid(offer):
+    """Return True if the offer passes all validity checks."""
     now = timezone.now()
-
-    # ── 1. Check ProductOffer ─────────────────────────────────────────────────
-    try:
-        po = product.offer
-        if (po.is_active
-                and po.valid_from <= now
-                and (po.valid_until is None or po.valid_until >= now)):
-            pct = Decimal(str(po.discount_pct))
-            return pct, f'{pct:g}% OFF', 'product'
-    except Exception:
-        pass   # no ProductOffer
-
-    # ── 2. Check CategoryOffer (any applicable category) ─────────────────────
-    for cat in product.category.all():
-        if not cat.is_offer_applicable:
-            continue
-        try:
-            co = cat.offer
-            if (co.is_active
-                    and co.valid_from <= now
-                    and (co.valid_until is None or co.valid_until >= now)):
-                pct = Decimal(str(co.discount_pct))
-                return pct, f'{pct:g}% OFF', 'category'
-        except Exception:
-            continue
-
-    return Decimal('0'), '', ''
+    return (
+        offer.is_active
+        and offer.valid_from <= now
+        and (offer.valid_until is None or offer.valid_until >= now)
+    )
 
 
 def apply_discount(price, discount_pct):
-    """Returns discounted price given original price and discount %."""
+    """Return discounted price as Decimal, rounded to 2 dp."""
     price        = Decimal(str(price))
     discount_pct = Decimal(str(discount_pct))
     if discount_pct <= 0:
         return price
-    return round(price * (1 - discount_pct / 100), 2)
+    discounted = price * (1 - discount_pct / 100)
+    return discounted.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# BATCH  — annotate a queryset of variants without N+1 queries
-# Use this in store/home views when showing a LIST of products.
+# SINGLE PRODUCT — used in Product Detail view
+# ─────────────────────────────────────────────────────────────────────────────
+
+def get_applicable_offer(product):
+    """
+    Returns (discount_pct: Decimal, offer_type: str) for a product.
+
+    discount_pct — 0 if no offer
+    offer_type   — 'product' | 'category' | ''
+
+    Uses prefetched/cached relations; safe to call N times without extra queries
+    as long as product.category is prefetch_related in the view.
+    """
+    # ── 1. ProductOffer wins ──────────────────────────────────────────────────
+    try:
+        po = product.offer   # reverse OneToOne from offers.ProductOffer
+        if _is_offer_valid(po):
+            return Decimal(str(po.discount_pct)), 'product'
+    except Exception:
+        pass
+
+    # ── 2. CategoryOffer (any applicable category) ───────────────────────────
+    try:
+        cats = product.category.all()
+    except Exception:
+        cats = []
+
+    for cat in cats:
+        if not getattr(cat, 'is_offer_applicable', True):
+            continue
+        try:
+            co = cat.offer   # reverse OneToOne from offers.CategoryOffer
+            if _is_offer_valid(co):
+                return Decimal(str(co.discount_pct)), 'category'
+        except Exception:
+            continue
+
+    return Decimal('0'), ''
+
+
+def get_offer_context(product, price):
+    """
+    Convenience wrapper that returns a dict ready to unpack into a template context.
+    Keys:  has_offer, offer_pct, offer_type, effective_price, original_price, savings
+    """
+    pct, offer_type = get_applicable_offer(product)
+    has_offer       = pct > 0
+    original        = Decimal(str(price))
+    effective       = apply_discount(price, pct) if has_offer else original
+    savings         = (original - effective).quantize(Decimal('0.01')) if has_offer else Decimal('0')
+    return {
+        'has_offer'      : has_offer,
+        'offer_pct'      : int(pct) if pct == int(pct) else pct,
+        'offer_type'     : offer_type,
+        'effective_price': effective,
+        'original_price' : original,
+        'savings'        : savings,
+        
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BATCH — annotate a list of ProductVariant objects (no N+1)
+# Used in Home, Store, Cart, Checkout views.
 # ─────────────────────────────────────────────────────────────────────────────
 
 def annotate_variants_with_offers(variants):
     """
-    Takes a list/queryset of ProductVariant objects and attaches offer info
-    to each variant in-memory.  No extra per-item DB queries.
+    Takes a list/queryset of ProductVariant objects.
+    Attaches to each variant in-memory:
+        .has_offer        bool
+        .offer_pct        Decimal (0 if none)
+        .offer_type       str 'product'|'category'|''
+        .offer_label      str e.g. '20% OFF'
+        .effective_price  Decimal  (discounted or original)
+        .original_price   Decimal  (always original)
+        .savings          Decimal
 
-    After this call each variant has:
-        variant.offer_pct       : Decimal (0 if none)
-        variant.offer_label     : str     ('' if none)
-        variant.offer_type      : str     'product'|'category'|''
-        variant.effective_price : Decimal (discounted or original)
-        variant.original_price  : Decimal (always original)
+    Performs exactly 2 DB queries for the entire batch (one ProductOffer query,
+    one CategoryOffer query) — no per-variant queries.
 
-    How to use:
-        variants = list(ProductVariant.objects.select_related(...).prefetch_related(...))
-        annotate_variants_with_offers(variants)
-        # now each variant has the above attributes
+    The queryset must already have `product__category` prefetched.
     """
     now = timezone.now()
 
-    # Collect all product IDs and category IDs from this batch
-    product_ids  = {v.product_id for v in variants}
+    # Collect product IDs
+    product_ids = {v.product_id for v in variants}
+    if not product_ids:
+        return variants
 
-    # ── Fetch all ProductOffers for this batch in ONE query ───────────────────
+    # ── Fetch all valid ProductOffers for this batch ──────────────────────────
     from offers.models import ProductOffer
-    product_offers = {
-        po.product_id: po
-        for po in ProductOffer.objects.filter(
-            product_id__in=product_ids,
-            is_active=True,
-            valid_from__lte=now,
-        ).filter(
-            # valid_until null OR >= now
-            valid_until__isnull=True
-        ) | ProductOffer.objects.filter(
-            product_id__in=product_ids,
-            is_active=True,
-            valid_from__lte=now,
-            valid_until__gte=now,
-        )
-    }
+    valid_po = ProductOffer.objects.filter(
+        product_id__in=product_ids,
+        is_active=True,
+        valid_from__lte=now,
+    ).filter(
+        # valid_until null OR >= now  (Django ORM can't do OR with field=None cleanly;
+        # use two querysets merged)
+        valid_until__isnull=True
+    ) | ProductOffer.objects.filter(
+        product_id__in=product_ids,
+        is_active=True,
+        valid_from__lte=now,
+        valid_until__gte=now,
+    )
+    # product_id → discount_pct
+    product_offer_map = {po.product_id: Decimal(str(po.discount_pct)) for po in valid_po}
 
-    # ── Fetch all CategoryOffers in ONE query ─────────────────────────────────
-    # We need the category → offer mapping
+    # ── Fetch all valid CategoryOffers ────────────────────────────────────────
     from offers.models import CategoryOffer
-    category_offers = {
-        co.category_id: co
-        for co in CategoryOffer.objects.filter(
-            is_active=True,
-            valid_from__lte=now,
-            category__is_offer_applicable=True,
-        ).filter(
-            valid_until__isnull=True
-        ) | CategoryOffer.objects.filter(
-            is_active=True,
-            valid_from__lte=now,
-            valid_until__gte=now,
-            category__is_offer_applicable=True,
-        ).select_related('category')
-    }
+    valid_co = CategoryOffer.objects.filter(
+        is_active=True,
+        valid_from__lte=now,
+        category__is_offer_applicable=True,
+    ).filter(
+        valid_until__isnull=True
+    ).select_related('category') | CategoryOffer.objects.filter(
+        is_active=True,
+        valid_from__lte=now,
+        valid_until__gte=now,
+        category__is_offer_applicable=True,
+    ).select_related('category')
+    # category_id → discount_pct
+    category_offer_map = {co.category_id: Decimal(str(co.discount_pct)) for co in valid_co}
 
     # ── Annotate each variant ─────────────────────────────────────────────────
     for variant in variants:
+        pid = variant.product_id
         pct        = Decimal('0')
-        label      = ''
         offer_type = ''
 
-        # ProductOffer wins
-        po = product_offers.get(variant.product_id)
-        if po:
-            pct        = Decimal(str(po.discount_pct))
-            label      = f'{pct:g}% OFF'
+        if pid in product_offer_map:
+            # ProductOffer wins
+            pct        = product_offer_map[pid]
             offer_type = 'product'
         else:
-            # Try category offers — variant's product can have multiple categories
-            # We pre-fetch categories in the view queryset
+            # Try CategoryOffer
             try:
                 cats = variant.product.category.all()
             except Exception:
                 cats = []
             for cat in cats:
-                if not cat.is_offer_applicable:
+                if not getattr(cat, 'is_offer_applicable', True):
                     continue
-                co = category_offers.get(cat.id)
-                if co:
-                    pct        = Decimal(str(co.discount_pct))
-                    label      = f'{pct:g}% OFF'
+                if cat.id in category_offer_map:
+                    pct        = category_offer_map[cat.id]
                     offer_type = 'category'
                     break
 
-        variant.offer_pct       = pct
-        variant.offer_label     = label
+        has_offer         = pct > 0
+        original          = Decimal(str(variant.price))
+        effective         = apply_discount(original, pct) if has_offer else original
+        savings           = (original - effective).quantize(Decimal('0.01'))
+
+        variant.has_offer       = has_offer
+        variant.offer_pct       = int(pct) if pct == int(pct) else pct
         variant.offer_type      = offer_type
-        variant.original_price  = Decimal(str(variant.price))
-        variant.effective_price = apply_discount(variant.price, pct)
+        variant.offer_label     = f'{int(pct)}% OFF' if has_offer else ''
+        variant.effective_price = effective
+        variant.original_price  = original
+        variant.savings         = savings
 
     return variants

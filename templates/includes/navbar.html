@@ -1,268 +1,223 @@
 {% load static %}
 
-{% load static %}
-
 <header class="section-header border-bottom">
   <div class="container">
-
-    <!-- ===== MOBILE TOP BAR ===== -->
-    <div class="d-flex justify-content-between align-items-center d-md-none py-2">
-
+    <!-- ================= MOBILE ================= -->
+    <div class="d-flex align-items-center justify-content-between d-lg-none py-2">
       <!-- Logo -->
       <a href="{% url 'home' %}" class="brand-wrap">
-        <img class="logo" src="{% static 'images/orbitlogo01.png' %}">
+        <img class="logo" src="{% static 'images/orbitlogo01.png' %}" />
       </a>
-
-      <!-- Right side: Cart + Hamburger -->
-      <div class="d-flex align-items-center">
-
-        <!-- Cart -->
-        <a href="{% url 'cart' %}" class="widget-header mr-2">
-          <div class="icon icon-xs rounded-circle border d-flex align-items-center justify-content-center">
-            <i class="fa fa-shopping-cart"></i>
-          </div>
-          {% if cart_count > 0 %}
-            <span class="badge badge-pill badge-danger notify">{{ cart_count }}</span>
-          {% endif %}
-        </a>
-
-        <!-- Hamburger -->
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mobileMenu">
-          ☰
-        </button>
-
-      </div>
+      
+      <!-- Hamburger -->
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mobileMenu">
+        ☰
+      </button>
     </div>
 
-    <!-- ===== MOBILE COLLAPSIBLE MENU ===== -->
-    <div class="collapse d-md-none" id="mobileMenu">
-
-      <!-- Category -->
-      <div class="mb-2">
-        <div class="dropdown">
-          <button class="btn btn-primary dropdown-toggle w-100" data-toggle="dropdown">
-            <i class="fa fa-bars"></i> All category
-          </button>
-          <div class="dropdown-menu w-100">
-            <a class="dropdown-item" href="{% url 'store' %}">All Products</a>
-            {% for category in links %}
-              <a class="dropdown-item" href="{{ category.get_url }}">{{ category.category_name }}</a>
-            {% endfor %}
+    <!-- Mobile Search -->
+    <div class="d-lg-none mb-2">
+      <form action="{% url 'store' %}" method="GET">
+        <div class="input-group">
+          <input type="text" name="q" class="form-control" placeholder="Search..." />
+          <div class="input-group-append">
+            <button class="btn btn-primary">
+              <i class="fa fa-search"></i>
+            </button>
           </div>
         </div>
-      </div>
-
-      <!-- Store -->
-      <div class="mb-2">
-        <a href="{% url 'store' %}" class="btn btn-outline-primary w-100">Store</a>
-      </div>
-
-      <!-- Search -->
-      <div class="mb-2">
-        <form action="{% url 'store' %}" method="GET">
-          <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="Search...">
-            <div class="input-group-append">
-              <button class="btn btn-primary" type="submit">
-                <i class="fa fa-search"></i>
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-
-      <!-- Wishlist -->
-      <div class="mb-2">
-        <a href="{% url 'wishlist' %}" class="btn btn-light w-100">
-          <i class="fa fa-heart"></i> Wishlist
-        </a>
-      </div>
-
-      <!-- User -->
-      <div class="mb-2 text-center">
-        {% if user.id is None %}
-          <a href="{% url 'login' %}">Login</a> |
-          <a href="{% url 'register' %}">Register</a>
-        {% else %}
-          <a href="{% url 'dashboard_profile' %}">Dashboard</a> |
-          <a href="{% url 'logout' %}">Logout</a>
-        {% endif %}
-      </div>
-
+      </form>
     </div>
 
-    <!-- ===== DESKTOP NAVBAR ===== -->
-    <div class="row align-items-center d-none d-md-flex py-2">
+    <!-- ================= MOBILE MENU ================= -->
+    <div class="collapse d-lg-none" id="mobileMenu">
+      <ul class="mobile-menu">
+        {% if user.id is None %}
+        <li class="menu-title">My Account</li>
+        <li><a href="{% url 'login' %}">Login</a></li>
+        <li><a href="{% url 'register' %}">Register</a></li>
+        {% else %}
+        <li class="menu-title">Hello {{ user.first_name }}</li>
+        <li><a href="{% url 'dashboard_profile' %}">Dashboard</a></li>
+        <li><a href="{% url 'logout' %}">Logout</a></li>
+        {% endif %}
 
-      <!-- Logo -->
-      <div class="col-md-3">
-        <a href="{% url 'home' %}" class="brand-wrap">
-          <img class="logo" src="{% static 'images/orbitlogo01.png' %}">
-        </a>
-      </div>
+        <li><a href="{% url 'wishlist' %}">Wishlist</a></li>
+        <li><a href="{% url 'cart' %}">Cart</a></li>
 
-      <!-- Category -->
-      <div class="col-md-auto">
-        <div class="dropdown">
-          <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-            <i class="fa fa-bars"></i> All category
-          </button>
-          <div class="dropdown-menu">
-            <a class="dropdown-item" href="{% url 'store' %}">All Products</a>
-            {% for category in links %}
-              <a class="dropdown-item" href="{{ category.get_url }}">{{ category.category_name }}</a>
-            {% endfor %}
-          </div>
+        <li class="divider"></li>
+
+        <li class="menu-title">Categories</li>
+        {% for category in links %}
+        <li><a href="{{ category.get_url }}">{{ category.category_name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- ================= DESKTOP ================= -->
+<div class="row align-items-center d-none d-lg-flex py-2">
+
+  <!-- LEFT: LOGO -->
+  <div class="col-lg-3">
+    <a href="{% url 'home' %}" class="brand-wrap">
+      <img class="logo" src="{% static 'images/orbitlogo01.png' %}" />
+    </a>
+  </div>
+
+  <!-- RIGHT: EVERYTHING -->
+  <div class="col-lg-9 nav-right">
+
+
+
+    <!-- CATEGORY -->
+    <div>
+      <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+        <i class="fa fa-bars"></i> All category
+      </button>
+    </div>
+
+    <!-- STORE -->
+    <a href="{% url 'store' %}" class="btn btn-outline-primary">Store</a>
+
+    <!-- SEARCH -->
+    <form action="{% url 'store' %}" method="GET" style="min-width:250px;">
+      <div class="input-group">
+        <input type="text" id="searchInput" name="q" class="form-control" placeholder="Search..." />
+        <div class="input-group-append">
+          <button class="btn btn-primary"><i class="fa fa-search"></i></button>
         </div>
       </div>
+    </form>
 
-      <!-- Store -->
-      <div class="col-md-auto">
-        <a href="{% url 'store' %}" class="btn btn-outline-primary">Store</a>
+    <!-- USER -->
+    {% if user.id is None %}
+    <div class="widget-header text-center">
+      <small class="text-muted">Welcome guest!</small>
+      <div>
+        <a href="{% url 'login' %}">Login</a> |
+        <a href="{% url 'register' %}">Register</a>
       </div>
-
-      <!-- Search -->
-      <div class="col-md">
-        <form action="{% url 'store' %}" method="GET">
-          <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="Search...">
-            <div class="input-group-append">
-              <button class="btn btn-primary" type="submit">
-                <i class="fa fa-search"></i>
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-
-      <!-- User + Cart + Wishlist -->
-      <div class="col-md-auto d-flex align-items-center">
-
-        {% if user.id is None %}
-          <div class="widget-header mr-3">
-            <a href="{% url 'login' %}">Login</a> |
-            <a href="{% url 'register' %}">Register</a>
-          </div>
-        {% else %}
-          <div class="widget-header mr-3">
-            <a href="{% url 'dashboard_profile' %}">Dashboard</a> |
-            <a href="{% url 'logout' %}">Logout</a>
-          </div>
-        {% endif %}
-
-        <!-- Cart -->
-        <a href="{% url 'cart' %}" class="widget-header mr-2">
-          <div class="icon icon-xs border rounded-circle d-flex align-items-center justify-content-center">
-            <i class="fa fa-shopping-cart"></i>
-          </div>
-          {% if cart_count > 0 %}
-            <span class="badge badge-danger notify">{{ cart_count }}</span>
-          {% endif %}
-        </a>
-
-        <!-- Wishlist -->
-        <a href="{% url 'wishlist' %}" class="widget-header">
-          <div class="icon icon-xs border rounded-circle d-flex align-items-center justify-content-center">
-            <i class="fa fa-heart"></i>
-          </div>
-          {% if wishlist_count > 0 %}
-            <span class="badge badge-danger notify">{{ wishlist_count }}</span>
-          {% endif %}
-        </a>
-
-      </div>
-
     </div>
+    {% else %}
+    <div class="widget-header text-center">
+      <small class="text-muted">Welcome {{ user.first_name }}</small>
+      <div>
+        <a href="{% url 'dashboard_profile' %}">Dashboard</a> |
+        <a href="{% url 'logout' %}">Logout</a>
+      </div>
+    </div>
+    {% endif %}
 
+    <!-- CART -->
+    <a href="{% url 'cart' %}" class="widget-header position-relative">
+      <div class="icon icon-xs border rounded-circle d-flex align-items-center justify-content-center">
+        <i class="fa fa-shopping-cart"></i>
+      </div>
+      {% if cart_count > 0 %}
+      <span class="notify">{{ cart_count }}</span>
+      {% endif %}
+    </a>
+
+    <!-- WISHLIST -->
+    <a href="{% url 'wishlist' %}" class="widget-header position-relative">
+      <div class="icon icon-xs border rounded-circle d-flex align-items-center justify-content-center">
+        <i class="fa fa-heart"></i>
+      </div>
+      {% if wishlist_count > 0 %}
+      <span class="notify">{{ wishlist_count }}</span>
+      {% endif %}
+    </a>
+
+  </div>
+</div>
   </div>
 </header>
 
-
 <script>
-(function () {
-    var input       = document.getElementById('searchInput');
-    var clearBtn    = document.getElementById('clearSearch');
-    var suggestions = document.getElementById('searchSuggestions');
+  (function () {
+    var input = document.getElementById("searchInput");
+    var clearBtn = document.getElementById("clearSearch");
+    var suggestions = document.getElementById("searchSuggestions");
     var debounce;
 
     if (!input) return;
 
     // ── Show/hide clear button based on input value ────────────────────
     function updateClearBtn() {
-        clearBtn.style.display = input.value.length > 0 ? 'block' : 'none';
+      clearBtn.style.display = input.value.length > 0 ? "block" : "none";
     }
 
     // Show clear button if input already has text on load
     updateClearBtn();
 
     // Clear button click — empties input, hides suggestions
-    clearBtn.addEventListener('click', function () {
-        input.value = '';
-        updateClearBtn();
-        hideSuggestions();
-        input.focus();
+    clearBtn.addEventListener("click", function () {
+      input.value = "";
+      updateClearBtn();
+      hideSuggestions();
+      input.focus();
     });
 
-
     // ── Live suggestions ───────────────────────────────────────────────
-    input.addEventListener('input', function () {
-        updateClearBtn();
-        clearTimeout(debounce);
-        var q = input.value.trim();
+    input.addEventListener("input", function () {
+      updateClearBtn();
+      clearTimeout(debounce);
+      var q = input.value.trim();
 
-        if (q.length < 2) {
-            hideSuggestions();
-            return;
-        }
+      if (q.length < 2) {
+        hideSuggestions();
+        return;
+      }
 
-        // Debounce — wait 250ms after user stops typing before fetching
-        debounce = setTimeout(function () {
-            fetch('/store/search-suggestions/?q=' + encodeURIComponent(q))
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    showSuggestions(data.suggestions);
-                });
-        }, 250);
+      // Debounce — wait 250ms after user stops typing before fetching
+      debounce = setTimeout(function () {
+        fetch("/store/search-suggestions/?q=" + encodeURIComponent(q))
+          .then(function (res) {
+            return res.json();
+          })
+          .then(function (data) {
+            showSuggestions(data.suggestions);
+          });
+      }, 250);
     });
 
     function showSuggestions(items) {
-        suggestions.innerHTML = '';
-        if (items.length === 0) {
-            hideSuggestions();
-            return;
-        }
-        items.forEach(function (item) {
-            var li = document.createElement('li');
-            li.textContent = item;
-            li.style.cssText = 'padding: 10px 16px; cursor: pointer; font-size: 0.9rem;';
-            li.addEventListener('mouseenter', function () {
-                li.style.background = '#f4f6f8';
-            });
-            li.addEventListener('mouseleave', function () {
-                li.style.background = '';
-            });
-            // Clicking a suggestion fills the input and submits the form
-            li.addEventListener('click', function () {
-                input.value = item;
-                hideSuggestions();
-                document.getElementById('searchForm').submit();
-            });
-            suggestions.appendChild(li);
+      suggestions.innerHTML = "";
+      if (items.length === 0) {
+        hideSuggestions();
+        return;
+      }
+      items.forEach(function (item) {
+        var li = document.createElement("li");
+        li.textContent = item;
+        li.style.cssText = "padding: 10px 16px; cursor: pointer; font-size: 0.9rem;";
+        li.addEventListener("mouseenter", function () {
+          li.style.background = "#f4f6f8";
         });
-        suggestions.style.display = 'block';
+        li.addEventListener("mouseleave", function () {
+          li.style.background = "";
+        });
+        // Clicking a suggestion fills the input and submits the form
+        li.addEventListener("click", function () {
+          input.value = item;
+          hideSuggestions();
+          document.getElementById("searchForm").submit();
+        });
+        suggestions.appendChild(li);
+      });
+      suggestions.style.display = "block";
     }
 
     function hideSuggestions() {
-        suggestions.style.display = 'none';
-        suggestions.innerHTML = '';
+      suggestions.style.display = "none";
+      suggestions.innerHTML = "";
     }
 
     // Hide suggestions when clicking outside the search area
-    document.addEventListener('click', function (e) {
-        if (!e.target.closest('#searchForm')) {
-            hideSuggestions();
-        }
+    document.addEventListener("click", function (e) {
+      if (!e.target.closest("#searchForm")) {
+        hideSuggestions();
+      }
     });
-
-})();
+  })();
 </script>

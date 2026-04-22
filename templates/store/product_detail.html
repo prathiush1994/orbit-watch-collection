@@ -25,7 +25,19 @@
 .price-final { font-size:1.6rem; font-weight:700; color:#dc3545; }
 .price-original { font-size:1.1rem; color:#aaa; text-decoration:line-through; margin-left:8px; }
 .price-no-offer { font-size:1.6rem; font-weight:700; color:#111; }
-.offer-badge { display:inline-block; background:#dc3545; color:#fff; font-size:0.78rem; font-weight:700; border-radius:4px; padding:2px 8px; margin-left:8px; vertical-align:middle; }
+.product-price {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.product-price .offer-badge {
+  position: static !important;
+  display: inline-block;
+  margin-left: 6px;
+}
+
 .product-description { font-size:0.9rem; color:#444; line-height:1.75; margin-bottom:0; }
 .section-divider { border:none; border-top:1px solid #eee; margin:22px 0; }
 .swatch-label { font-size:0.95rem; font-weight:600; color:#222; margin-bottom:12px; }

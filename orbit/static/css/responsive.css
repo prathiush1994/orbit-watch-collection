@@ -2,57 +2,66 @@
    NAVBAR RESPONSIVE
 ========================= */
 
-@media (max-width: 768px) {
+/* TABLET FIX (770px – 991px) */
+@media (max-width: 991px) {
 
-  .header-main .row {
-    flex-wrap: wrap;
-    gap: 10px;
+  .section-header .row {
+    flex-direction: column;
+    align-items: center;
   }
 
-  .header-main .col-lg,
-  .header-main .col-md,
-  .header-main .col-sm,
-  .header-main .col,
-  .header-main .col-auto {
-    flex: 0 0 100%;
-    max-width: 100%;
+  .section-header .col-lg-3,
+  .section-header .col-lg-9 {
+    width: 100%;
     text-align: center;
   }
 
-  .brand-wrap .logo {
-    transform: none;
-    max-height: 35px;
-  }
-
-  .search-wrapper {
+  .section-header form {
     width: 100%;
+    margin-top: 10px;
   }
 
-  .search-wrapper .form-control {
-    width: 100%;
+  .section-header .widget-header {
+    margin-top: 8px;
   }
-
-  .header-main .d-flex {
-    flex-wrap: wrap;
-    justify-content: center !important;
-    gap: 8px;
-  }
-
-  .widget-header {
-    text-align: center;
-  }
-
 }
-
+@media (max-width: 1100px) {
+  .widget-header small {
+    display: none;
+  }
+}
+@media (max-width: 770px) {
+  .desktop-navbar {
+    display: none !important;
+  }
+  .mobile-navbar {
+    display: block !important;
+  }
+}
 
 /* =========================
     HOME RESPONSIVE
 ========================= */
 
 @media (max-width: 768px) {
-
   .scroll-btn {
     display: none;
   }
+}
+@media (min-width: 992px) {
+  .card-item img {
+    height: 200px;
+  }
+}
+/* =========================
+   store RESPONSIVE
+========================= */
 
+.pagination {
+  flex-wrap: wrap;
+}
+@media (max-width: 768px) {
+  #mobileFilter {
+    margin-bottom: 15px;
+  }
 }

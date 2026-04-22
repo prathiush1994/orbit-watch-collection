@@ -1,13 +1,14 @@
 /* =========================
-   NAVBAR RESPONSIVE
+   NAVBAR
 ========================= */
+
 .notify {
   position: absolute;
   top: -4px;
   right: -10px;
-  padding: 0.25em 0.6em;
-  font-size: 12px;
-  border-radius: 3rem;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 50px;
   color: #fff;
   background-color: #fa3434;
 }
@@ -15,7 +16,6 @@
 .icon-xs {
   width: 32px;
   height: 32px;
-  line-height: 32px !important;
   font-size: 16px;
 }
 
@@ -24,6 +24,7 @@
   height: 40px;
 }
 
+/* SEARCH */
 .search-wrapper {
   position: relative;
 }
@@ -58,12 +59,12 @@
   background: #f4f6f8;
 }
 
+/* HAMBURGER */
 .navbar-toggler {
   border: none;
   font-size: 20px;
   background: none;
 }
-
 
 /* =========================
     HOME RESPONSIVE
@@ -90,7 +91,8 @@
 }
 
 .card-item {
-  min-width: 130px;   
+  position: relative;
+  min-width: 130px;
   flex: 0 0 auto;
   border: 1px solid #eee;
   border-radius: 6px;
@@ -101,7 +103,7 @@
 
 .card-item img {
   width: 100%;
-  height: 140px;
+  height: 160px;
   object-fit: contain;
   background: #fff;
   padding: 5px;
@@ -139,4 +141,97 @@
 
 .scroll-btn.right {
   right: -10px;
+}
+
+.offer-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: #dc3545;
+  color: #fff;
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: 10px;
+  z-index: 2;
+}
+
+/* =========================
+   store RESPONSIVE
+========================= */
+
+.row {
+  row-gap: 12px;
+}
+
+.card-product-grid {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 240px;
+  /* reduced */
+  margin-bottom: 0;
+  /* remove extra bottom gap */
+}
+
+.card-product-grid .img-wrap {
+  height: 150px;
+  /* slightly smaller */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-product-grid .info-wrap {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  /* controls spacing between title/price/button */
+}
+
+.card-product-grid .title {
+  font-size: 13px;
+  line-height: 1.2;
+  height: 32px;
+  overflow: hidden;
+  margin: 0;
+}
+
+.card-product-grid .price-wrap {
+  margin: 0;
+  /* remove extra gap */
+  height: auto;
+}
+
+.card-product-grid .info-wrap>div:last-child {
+  margin-top: 4px;
+  /* very small gap from price */
+}
+
+.card-product-grid .btn {
+  font-size: 11px;
+  padding: 4px;
+}
+
+.card-product-grid .d-flex {
+  gap: 4px;
+}
+
+.card-product-grid .btn-primary {
+  flex: 2;
+}
+
+.card-product-grid .btn-outline-primary,
+.card-product-grid .btn-danger {
+  flex: 1;
+}
+
+.offer-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 10px;
+  padding: 4px 8px;
+  z-index: 2;
+  white-space: nowrap;
 }

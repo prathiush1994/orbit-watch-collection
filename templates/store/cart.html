@@ -36,7 +36,7 @@
             <tr class="small text-uppercase">
                 <th>Product</th>
                 <th width="150">Quantity</th>
-                <th width="150">Price</th>
+                <th width="160">Price</th>
                 <th class="text-right" width="120"></th>
             </tr>
             </thead>
@@ -60,13 +60,13 @@
                                 Color: {{ cart_item.variant.color_name }}<br>
                                 Brand: {{ cart_item.variant.product.brand }}
                             </p>
-                            {% if cart_item.variant.offer_label %}
+                            {% if cart_item.variant.has_offer %}
                             <span class="badge badge-danger" style="font-size:10px;">
                                 {{ cart_item.variant.offer_label }}
                             </span>
                             {% endif %}
                             {% if cart_item.variant.stock <= 0 %}
-                            <span class="badge badge-danger">Out of Stock</span>
+                            <span class="badge badge-secondary">Out of Stock</span>
                             {% endif %}
                         </figcaption>
                     </figure>
@@ -76,40 +76,38 @@
                 <td>
                     <div class="d-flex align-items-center">
                         {% if cart_item.variant.stock > 0 %}
-                        <a href="{% url 'decrement_cart' cart_item.variant.id %}"
-                           class="btn btn-light btn-sm">-</a>
+                        <a href="{% url 'decrement_cart' cart_item.variant.id %}" class="btn btn-light btn-sm">-</a>
                         {% else %}
                         <button class="btn btn-light btn-sm" disabled>-</button>
                         {% endif %}
 
                         <input type="text" value="{{ cart_item.quantity }}"
-                               class="form-control text-center mx-2"
-                               style="width:50px;" readonly>
+                               class="form-control text-center mx-2" style="width:50px;" readonly>
 
                         {% if cart_item.variant.stock > 0 %}
-                        <a href="{% url 'increment_cart' cart_item.variant.id %}"
-                           class="btn btn-light btn-sm">+</a>
+                        <a href="{% url 'increment_cart' cart_item.variant.id %}" class="btn btn-light btn-sm">+</a>
                         {% else %}
                         <button class="btn btn-light btn-sm" disabled>+</button>
                         {% endif %}
                     </div>
                 </td>
 
-                <!-- Price (effective — discounted) -->
+                <!-- Price — show discounted if offer applies -->
                 <td>
                     <div class="price-wrap">
-                        {% if cart_item.variant.offer_pct > 0 %}
-                        <var class="price text-danger">
-                            &#8377;{{ cart_item.variant.effective_price|floatformat:2 }}
-                            <small style="font-size:11px;"> each</small>
+                        {% if cart_item.variant.has_offer %}
+                        <var class="price text-danger" style="font-weight:700;">
+                            &#8377;{{ cart_item.variant.effective_price }}
+                            <small class="text-muted" style="font-size:11px;font-weight:400;"> each</small>
                         </var>
                         <small class="text-muted d-block">
                             <del>&#8377;{{ cart_item.variant.original_price }}</del>
-                            &nbsp;{{ cart_item.variant.offer_label }}
                         </small>
+                        <small class="text-danger">Subtotal: &#8377;{{ cart_item.discounted_subtotal }}</small>
                         {% else %}
                         <var class="price">&#8377;{{ cart_item.variant.price }}</var>
-                        <small class="text-muted">&#8377;{{ cart_item.variant.price }} each</small>
+                        <small class="text-muted d-block">&#8377;{{ cart_item.variant.price }} each</small>
+                        <small class="text-muted">Subtotal: &#8377;{{ cart_item.discounted_subtotal }}</small>
                         {% endif %}
                     </div>
                 </td>
@@ -132,7 +130,7 @@
         <div class="card">
             <div class="card-body">
                 <dl class="dlist-align">
-                    <dt>Subtotal:</dt>
+                    <dt>Subtotal (after offers):</dt>
                     <dd class="text-right">&#8377;{{ total }}</dd>
                 </dl>
                 <dl class="dlist-align">
@@ -145,22 +143,13 @@
                 </dl>
                 <hr>
                 {% if has_unavailable %}
-                <button class="btn btn-secondary btn-block" disabled>
-                    Checkout unavailable
-                </button>
+                <button class="btn btn-secondary btn-block" disabled>Checkout unavailable</button>
                 {% elif user.is_authenticated %}
-                <a href="{% url 'checkout' %}" class="btn btn-primary btn-block">
-                    Checkout
-                </a>
+                <a href="{% url 'checkout' %}" class="btn btn-primary btn-block">Checkout</a>
                 {% else %}
-                <a href="{% url 'login' %}?next=checkout"
-                   class="btn btn-primary btn-block">
-                    Login to Checkout
-                </a>
+                <a href="{% url 'login' %}?next=checkout" class="btn btn-primary btn-block">Login to Checkout</a>
                 {% endif %}
-                <a href="{% url 'store' %}" class="btn btn-light btn-block mt-2">
-                    Continue Shopping
-                </a>
+                <a href="{% url 'store' %}" class="btn btn-light btn-block mt-2">Continue Shopping</a>
             </div>
         </div>
         </aside>

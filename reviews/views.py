@@ -4,16 +4,20 @@ from django.contrib import messages
 from django.db.models import Avg
 
 from store.models import ProductVariant
-from orders.models import Order, OrderProduct         
+from orders.models import OrderProduct
 from .models import Review
 from .forms import ReviewForm
 
 
 def _user_has_purchased(user, variant):
+    """
+    Returns True if the user has at least one Delivered order
+    that contains this variant.
+    """
     return OrderProduct.objects.filter(
-        user=user,
+        order__user=user,
+        order__status='Delivered',
         variant=variant,
-        order__status='Delivered'
     ).exists()
 
 
