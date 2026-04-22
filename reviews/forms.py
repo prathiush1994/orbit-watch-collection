@@ -9,28 +9,32 @@ class ReviewForm(forms.ModelForm):
     )
 
     class Meta:
-        model  = Review
-        fields = ['rating', 'title', 'body']
+        model = Review
+        fields = ["rating", "title", "body"]
         widgets = {
-            'title': forms.TextInput(attrs={
-                'class'      : 'form-control',
-                'placeholder': 'Summary (optional)',
-                'maxlength'  : '120',
-            }),
-            'body': forms.Textarea(attrs={
-                'class'      : 'form-control',
-                'placeholder': 'Share your experience with this product…',
-                'rows'       : 4,
-                'maxlength'  : '1000',
-            }),
+            "title": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Summary (optional)",
+                    "maxlength": "120",
+                }
+            ),
+            "body": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Share your experience with this product…",
+                    "rows": 4,
+                    "maxlength": "1000",
+                }
+            ),
         }
         labels = {
-            'title': 'Review Title',
-            'body' : 'Your Review',
+            "title": "Review Title",
+            "body": "Your Review",
         }
 
     def clean_rating(self):
-        rating = int(self.cleaned_data['rating'])
+        rating = int(self.cleaned_data["rating"])
         if not 1 <= rating <= 5:
             raise forms.ValidationError("Rating must be between 1 and 5.")
         return rating

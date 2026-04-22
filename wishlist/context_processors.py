@@ -1,4 +1,4 @@
-from .models import Wishlist, WishlistItem
+from .models import WishlistItem
 from .views import _get_or_create_wishlist
 
 
@@ -8,9 +8,7 @@ def wishlist_counter(request):
     try:
         wishlist = _get_or_create_wishlist(request)
 
-        wishlist_count = WishlistItem.objects.filter(
-            wishlist=wishlist
-        ).count()
+        wishlist_count = WishlistItem.objects.filter(wishlist=wishlist).count()
 
     except Exception:
         wishlist_count = 0

@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.messages import get_messages
 from carts.models import CartItem
 from store.models import ProductVariant
 from .models import Cart
-
 
 CART_MAX_TOTAL = 10
 PRODUCT_MAX_QTY = 3
@@ -15,42 +15,39 @@ def _cart_id(request):
     return request.session.session_key
 
 
+def clear_messages(request):
+    storage = get_messages(request)
+    for _ in storage:
+        pass
+
+
 def _get_or_create_cart(request):
     if request.user.is_authenticated:
         user_cart, _ = Cart.objects.get_or_create(user=request.user)
-
-        session_key = _cart_id(request)  
-
+        session_key = _cart_id(request)
         # prevent repeated merge
         if not request.session.get("cart_merged", False):
             session_cart = Cart.objects.filter(cart_id=session_key).first()
-
             if session_cart and session_cart.user is None:
                 _merge_carts(user_cart, session_cart)
                 request.session["cart_merged"] = True
-
         return user_cart
-
     return Cart.objects.get_or_create(cart_id=_cart_id(request))[0]
 
 
 def _merge_carts(user_cart, session_cart):
     if session_cart == user_cart:
         return  # safety
-
     existing_total = sum(
         i.quantity for i in CartItem.objects.filter(cart=user_cart, is_active=True)
     )
-
     for item in CartItem.objects.filter(cart=session_cart, is_active=True):
         if existing_total >= CART_MAX_TOTAL:
             break
-
         user_item, created = CartItem.objects.get_or_create(
             cart=user_cart,
             variant=item.variant,
         )
-
         if not created:
             allowed_qty = min(
                 PRODUCT_MAX_QTY - user_item.quantity,
@@ -69,10 +66,8 @@ def _merge_carts(user_cart, session_cart):
             if allowed_qty <= 0:
                 continue
             user_item.quantity = allowed_qty
-
         user_item.save()
         existing_total += allowed_qty
-
     session_cart.delete()
 
 
@@ -90,7 +85,6 @@ def _effective_price(variant):
 
 def cart(request):
     cart_obj = _get_or_create_cart(request)
-
     cart_items = list(
         CartItem.objects.filter(cart=cart_obj, is_active=True)
         .select_related("variant", "variant__product", "variant__product__brand")
@@ -139,6 +133,7 @@ def cart(request):
 
 
 def add_cart(request, variant_id):
+    clear_messages(request)
     variant = get_object_or_404(ProductVariant, id=variant_id)
 
     if variant.stock <= 0:
@@ -169,7 +164,7 @@ def add_cart(request, variant_id):
         cart_item.save()
     except CartItem.DoesNotExist:
         CartItem.objects.create(cart=cart, variant=variant, quantity=1)
-
+    messages.success(request, "Item added to cart.")
     return redirect(request.META.get("HTTP_REFERER", "store"))
 
 
@@ -226,5 +221,3 @@ def remove_cart(request, variant_id):
         cart_item.quantity -= 1
         cart_item.save()
     return redirect("cart")
-
- 

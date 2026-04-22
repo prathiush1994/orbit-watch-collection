@@ -5,94 +5,62 @@ from brands.models import Brand
 
 
 class Product(models.Model):
-    """
-    Represents the watch model/group only.
-    Example: 'Titan Celestor'
-
-    This is NOT the sellable item. ProductVariant is.
-    This holds shared data: name, description, category, brand.
-    """
     product_name = models.CharField(max_length=250, unique=True)
-    slug         = models.SlugField(max_length=250, unique=True)
-    description  = models.TextField(max_length=1500)
-    category     = models.ManyToManyField(Category)
-    brand        = models.ForeignKey(
-        Brand,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
-    created_at   = models.DateTimeField(auto_now_add=True)
-    updated_at   = models.DateTimeField(auto_now=True)
+    slug = models.SlugField(max_length=250, unique=True)
+    description = models.TextField(max_length=1500)
+    category = models.ManyToManyField(Category)
+    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name        = 'Product'
-        verbose_name_plural = 'Products'
+        verbose_name = "Product"
+        verbose_name_plural = "Products"
 
     def __str__(self):
         return self.product_name
 
     def get_variants(self):
-        """Return all available variants for this product."""
         return self.variants.filter(is_available=True)
 
 
 class ProductVariant(models.Model):
-    """
-    The actual sellable item.
-    Example: 'Titan Celestor – Red'
-
-    Each color version is a separate row.
-    Stock, price, images are all per-variant.
-    """
-    product      = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        related_name='variants'
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="variants"
     )
-    color_name   = models.CharField(
-        max_length=100,
-        help_text="e.g. Red, Navy Blue, Black"
+    color_name = models.CharField(
+        max_length=100, help_text="e.g. Red, Navy Blue, Black"
     )
-    color_code   = models.CharField(
-        max_length=20,
-        blank=True,
-        help_text="Optional hex code e.g. #FF0000"
+    color_code = models.CharField(
+        max_length=20, blank=True, help_text="Optional hex code e.g. #FF0000"
     )
-    price        = models.IntegerField(
-        help_text="Price for this specific variant"
-    )
-    stock        = models.IntegerField(default=0)
+    price = models.IntegerField(help_text="Price for this specific variant")
+    stock = models.IntegerField(default=0)
     is_available = models.BooleanField(default=True)
-    slug         = models.SlugField(
-        max_length=250,
-        unique=True,
-        help_text="e.g. titan-celestor-red"
+    slug = models.SlugField(
+        max_length=250, unique=True, help_text="e.g. titan-celestor-red"
     )
     primary_image = models.ImageField(
-        upload_to='photos/variants',
+        upload_to="photos/variants",
         null=True,
         blank=True,
-        help_text="Front view image of this color variant"
+        help_text="Front view image of this color variant",
     )
 
-    # ── Description override ──────────────────────────────────────────────
-    # Leave blank → uses the base product description (80% of cases).
-    # Fill this only when this variant's description differs (20% of cases).
     description_override = models.TextField(
         max_length=1500,
         blank=True,
         help_text="Leave blank to use the base product description. "
-                  "Only fill this if this variant needs a different description."
+        "Only fill this if this variant needs a different description.",
     )
 
-    created_at   = models.DateTimeField(auto_now_add=True)
-    updated_at   = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name        = 'Product Variant'
-        verbose_name_plural = 'Product Variants'
-        unique_together     = ('product', 'color_name')
+        verbose_name = "Product Variant"
+        verbose_name_plural = "Product Variants"
+        unique_together = ("product", "color_name")
 
     def __str__(self):
         return f"{self.product.product_name} \u2013 {self.color_name}"
@@ -101,8 +69,8 @@ class ProductVariant(models.Model):
         """URL for this variant's detail page."""
         category = self.product.category.first()
         if category:
-            return reverse('product_detail', args=[category.slug, self.slug])
-        return reverse('product_detail', args=['uncategorized', self.slug])
+            return reverse("product_detail", args=[category.slug, self.slug])
+        return reverse("product_detail", args=["uncategorized", self.slug])
 
     def get_description(self):
         """
@@ -115,9 +83,7 @@ class ProductVariant(models.Model):
 
     def get_other_variants(self):
         """All OTHER variants of the same product (for color selector)."""
-        return self.product.variants.filter(
-            is_available=True
-        ).exclude(pk=self.pk)
+        return self.product.variants.filter(is_available=True).exclude(pk=self.pk)
 
     def get_all_variants(self):
         """ALL variants of the same product including self (for swatches)."""
@@ -132,24 +98,22 @@ class ProductVariant(models.Model):
         except Exception:
             return self.stock > 0
 
+
 class VariantImage(models.Model):
 
-    variant  = models.ForeignKey(
-        ProductVariant,
-        on_delete=models.CASCADE,
-        related_name='images'
+    variant = models.ForeignKey(
+        ProductVariant, on_delete=models.CASCADE, related_name="images"
     )
-    image    = models.ImageField(upload_to='photos/variant_gallery')
+    image = models.ImageField(upload_to="photos/variant_gallery")
     alt_text = models.CharField(max_length=255, blank=True)
-    order    = models.PositiveIntegerField(
-        default=0,
-        help_text="Lower number = shown first in the gallery"
+    order = models.PositiveIntegerField(
+        default=0, help_text="Lower number = shown first in the gallery"
     )
 
     class Meta:
-        ordering            = ['order', 'id']
-        verbose_name        = 'Variant Image'
-        verbose_name_plural = 'Variant Images'
+        ordering = ["order", "id"]
+        verbose_name = "Variant Image"
+        verbose_name_plural = "Variant Images"
 
     def __str__(self):
         return f"{self.variant} | image {self.order}"

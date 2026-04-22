@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-
 from store.models import ProductVariant
 from .models import Wishlist, WishlistItem
 from carts.models import CartItem
@@ -43,15 +42,15 @@ def wishlist(request):
     )
     cart = _get_or_create_cart(request)
     cart_variant_ids = set(
-        CartItem.objects.filter(cart=cart, is_active=True)
-        .values_list("variant_id", flat=True)
+        CartItem.objects.filter(cart=cart, is_active=True).values_list(
+            "variant_id", flat=True
+        )
     )
     for item in items:
         item.in_cart = item.variant_id in cart_variant_ids
         item.out_of_stock = item.variant.stock <= 0
         item.unavailable = not item.variant.is_available or (
-            item.variant.product.brand
-            and item.variant.product.brand.status != "active"
+            item.variant.product.brand and item.variant.product.brand.status != "active"
         )
     return render(request, "store/wishlist.html", {"wishlist_items": items})
 
@@ -75,10 +74,7 @@ def toggle_wishlist(request, variant_id):
 def remove_wishlist(request, variant_id):
     variant = get_object_or_404(ProductVariant, id=variant_id)
     wishlist = _get_or_create_wishlist(request)
-    WishlistItem.objects.filter(
-        wishlist=wishlist,
-        variant=variant
-    ).delete()
+    WishlistItem.objects.filter(wishlist=wishlist, variant=variant).delete()
     messages.success(request, "Removed from wishlist.")
     return redirect("wishlist")
 
@@ -107,8 +103,7 @@ def add_to_cart_from_wishlist(request, variant_id):
         return err("You can only have 10 items in your cart at a time.")
 
     same_product_qty = sum(
-        ci.quantity for ci in cart_items
-        if ci.variant.product_id == variant.product_id
+        ci.quantity for ci in cart_items if ci.variant.product_id == variant.product_id
     )
 
     if same_product_qty >= PRODUCT_MAX_QTY:
@@ -128,15 +123,10 @@ def add_to_cart_from_wishlist(request, variant_id):
 
     wishlist = _get_or_create_wishlist(request)
 
-    WishlistItem.objects.filter(
-        wishlist=wishlist,
-        variant=variant
-    ).delete()
+    WishlistItem.objects.filter(wishlist=wishlist, variant=variant).delete()
 
     messages.success(
         request,
-        f'"{variant.product.product_name}" moved to your cart.'
+        f'"{variant.product.product_name}" moved to your cart.',
     )
-
-    return redirect("cart")
-
+    return redirect("wishlist")

@@ -52,29 +52,35 @@ def product_detail(request, category_slug, variant_slug):
         wishlist=wishlist, variant=variant
     ).exists()
 
-    # ── Reviews
-    reviews = Review.objects.filter(variant=variant).select_related("user")
+    # ── REVIEWS ──
+    reviews = Review.objects.filter(
+        variant__product=variant.product
+    ).select_related('user').order_by('-created_at')
 
-    review_stats = reviews.aggregate(avg=Avg("rating"))
-    avg_rating = round(review_stats["avg"] or 0, 1)
     review_count = reviews.count()
 
-    # Star breakdown 5 -> 1
+    avg_rating = reviews.aggregate(avg=Avg('rating'))['avg'] or 0
+    avg_rating = round(avg_rating, 1)
+
+    # Star breakdown
     star_breakdown = {}
     for star in range(5, 0, -1):
         count = reviews.filter(rating=star).count()
         pct = int((count / review_count * 100)) if review_count else 0
         star_breakdown[star] = {"count": count, "pct": pct}
 
+    # User logic
     user_review = None
-    can_review = False
     already_reviewed = False
+    can_review = False
 
     if request.user.is_authenticated:
         user_review = reviews.filter(user=request.user).first()
         already_reviewed = user_review is not None
         can_review = not already_reviewed and _user_has_purchased(request.user, variant)
-    review_form = ReviewForm() if can_review else None
+
+    review_form = ReviewForm()
+
     return render(
         request,
         "store/product_detail.html",
