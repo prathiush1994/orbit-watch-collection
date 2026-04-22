@@ -3,423 +3,457 @@
 
 {% block content %}
 <section class="section-content padding-y bg">
-<div class="container">
+    <div class="container">
 
-<h3 class="mb-4 font-weight-bold">Checkout</h3>
+        <h3 class="mb-4 font-weight-bold">Checkout</h3>
 
-{% if messages %}
-{% for message in messages %}
-<div class="alert alert-{{ message.tags }}">{{ message }}</div>
-{% endfor %}
-{% endif %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
 
-<form method="POST" action="{% url 'place_order' %}" id="checkoutForm">
-{% csrf_token %}
-<div class="row">
+        <form method="POST" action="{% url 'place_order' %}" id="checkoutForm">
+            {% csrf_token %}
+            <div class="row">
 
-<!-- ══ LEFT — Address + Payment ══ -->
-<div class="col-lg-6">
+                <!-- ══ LEFT — Address + Payment ══ -->
+                <div class="col-lg-6">
 
-    <h5 class="font-weight-bold mb-3">Delivery Address</h5>
+                    <h5 class="font-weight-bold mb-3">Delivery Address</h5>
 
-    {% if addresses %}
-    {% for address in addresses %}
-    <div class="border rounded p-3 mb-3"
-         style="{% if address.is_default %}border-color:#3167eb!important;background:#f8f9ff;{% endif %}">
-        <div class="d-flex justify-content-between align-items-start">
-            <div class="d-flex align-items-start">
-                <input type="radio" name="address_id" value="{{ address.id }}"
-                       class="mt-1 mr-3"
-                       {% if address.is_default %}checked{% endif %} required>
-                <div>
-                    <strong>{{ address.full_name }}</strong>
-                    {% if address.is_default %}
-                    <span class="badge badge-primary ml-2" style="font-size:10px;">Default</span>
+                    {% if addresses %}
+                    {% for address in addresses %}
+                    <div class="border rounded p-3 mb-3"
+                        style="{% if address.is_default %}
+                        border-color:#3167eb!important;background:#f8f9ff;{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="d-flex align-items-start">
+                                <input type="radio" name="address_id" value="{{ address.id }}" class="mt-1 mr-3" 
+                                {% if address.is_default %} checked {% endif %} required>
+                                <div>
+                                    <strong>{{ address.full_name }}</strong>
+                                    {% if address.is_default %}
+                                    <span class="badge badge-primary ml-2" style="font-size:10px;">Default</span>
+                                    {% endif %}
+                                    <p class="mb-0 text-muted" style="font-size:14px;line-height:1.7;">
+                                        {{ address.address_line }}<br>
+                                        {{ address.city }}, {{ address.state }} — {{ address.pincode }}<br>
+                                        <i class="fa fa-phone mr-1"></i>+91 {{ address.phone }}
+                                    </p>
+                                </div>
+                            </div>
+                            <a href="{% url 'edit_address' address.id %}?next=checkout"
+                                class="btn btn-sm btn-outline-secondary flex-shrink-0 ml-2">
+                                <i class="fa fa-edit"></i> Edit
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="alert alert-warning">No saved addresses. Please add one to continue.</div>
                     {% endif %}
-                    <p class="mb-0 text-muted" style="font-size:14px;line-height:1.7;">
-                        {{ address.address_line }}<br>
-                        {{ address.city }}, {{ address.state }} — {{ address.pincode }}<br>
-                        <i class="fa fa-phone mr-1"></i>+91 {{ address.phone }}
-                    </p>
-                </div>
-            </div>
-            <a href="{% url 'edit_address' address.id %}?next=checkout"
-               class="btn btn-sm btn-outline-secondary flex-shrink-0 ml-2">
-                <i class="fa fa-edit"></i> Edit
-            </a>
-        </div>
+
+                    <div class="text-right mb-4">
+                        <a href="{% url 'add_address' %}?next=checkout" class="btn btn-outline-primary px-4">
+                            <i class="fa fa-plus mr-1"></i> Add New Address
+                        </a>
+                    </div>
+
+                    <h5 class="font-weight-bold mb-3">Payment Method</h5>
+
+                    <label class="d-flex align-items-center mb-3 p-3 border rounded" style="cursor:pointer;"
+                        for="pay_cod">
+                        <input type="radio" name="payment_method" value="COD" id="pay_cod" checked class="mr-3">
+                        <i class="fas fa-money-bill-wave mr-3 text-success" style="font-size:22px;"></i>
+                        <div>
+                            <div class="font-weight-bold">Cash on Delivery</div>
+                            <small class="text-muted">Pay when your order arrives</small>
+                        </div>
+                    </label>
+
+                    <label class="d-flex align-items-center mb-3 p-3 border rounded" style="cursor:pointer;"
+                        for="pay_razorpay">
+                        <input type="radio" name="payment_method" value="RAZORPAY" id="pay_razorpay" class="mr-3">
+                        <i class="fas fa-credit-card mr-3 text-primary" style="font-size:22px;"></i>
+                        <div>
+                            <div class="font-weight-bold">Pay Online — Razorpay</div>
+                            <small class="text-muted">Cards, UPI, Net Banking, Wallets</small>
+                        </div>
+                    </label>
+
+                </div><!-- /left -->
+
+
+                <!-- ══ RIGHT — Order Summary ══ -->
+                <div class="col-lg-6">
+
+                    <!-- Cart items (sub_total already discounted by view) -->
+                    {% for item in cart_items %}
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                        <div class="d-flex align-items-center">
+                            {% if item.variant.primary_image %}
+                            <img src="{{ item.variant.primary_image.url }}"
+                                style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;"
+                                class="mr-3">
+                            {% endif %}
+                            <div>
+                                <div class="font-weight-bold" style="font-size:14px;">
+                                    {{ item.variant.product.product_name }}
+                                </div>
+                                <small class="text-muted">
+                                    {{ item.variant.color_name }} &nbsp;|&nbsp; Qty: {{ item.quantity }}
+                                </small>
+                                {% if item.variant.has_offer %}
+                                <br><span class="badge badge-danger" style="font-size:10px;">{{ item.variant.offer_label
+                                    }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="font-weight-bold">&#8377;{{ item.sub_total }}</div>
+                    </div>
+                    {% endfor %}
+
+                    <hr>
+
+                    <!-- Price breakdown -->
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Subtotal (after offers)</span>
+                        <span>&#8377;{{ total }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Delivery fee</span>
+                        <span class="text-success font-weight-bold">Free</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">GST (18%)</span>
+                        <span>&#8377;{{ tax }}</span>
+                    </div>
+
+                    <!-- Coupon discount row -->
+                    <div class="d-flex justify-content-between mb-2" id="rowCouponDiscount" 
+                    {% if not coupon_discount %}style="display:none;" {% endif %}>
+                        <span class="text-success">
+                            <i class="fas fa-tag mr-1"></i>
+                            Coupon (<span id="appliedCouponCode">{{ coupon_code }}</span>)
+                        </span>
+                        <span class="text-success font-weight-bold">
+                            &#8722;&nbsp;&#8377;<span id="couponDiscountAmt">{{ coupon_discount }}</span>
+                        </span>
+                    </div>
+
+                    <!-- Referral discount row -->
+                    <div class="d-flex justify-content-between mb-2" id="rowReferralDiscount"
+                        {% if not referral_code %}style="display:none;"{% endif %}>
+                        <span style="color:#FF6B00;">
+                            <i class="fa fa-gift mr-1"></i>
+                            Referral (<span id="appliedReferralCode">{{ referral_code|default:"" }}</span>)
+                        </span>
+                        <span class="font-weight-bold" style="color:#FF6B00;">
+                            &#8722;&nbsp;&#8377;<span id="referralDiscountAmt">{{ referral_discount }}</span>
+                        </span>
+                    </div>
+
+                    <!-- Wallet deduction row -->
+                    <div class="d-flex justify-content-between mb-2" id="rowWalletDeduct" 
+                    {% if not wallet_used %}style="display:none;" {% endif %}>
+                        <span class="text-primary">
+                            <i class="fas fa-wallet mr-1"></i>Wallet Used
+                        </span>
+                        <span class="text-primary font-weight-bold">
+                            &#8722;&nbsp;&#8377;<span id="walletUsedAmt">{{ wallet_used }}</span>
+                        </span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="font-weight-bold" style="font-size:1.05rem;">Total Payment</span>
+                        <span class="font-weight-bold" style="font-size:1.2rem;color:#3167eb;">
+                            &#8377;<span id="finalTotalAmt">{{ final_total }}</span>
+                        </span>
+                    </div>
+
+                    <!-- Hidden values JS reads -->
+                    <input type="hidden" id="hGrandTotal" value="{{ grand_total }}">
+                    <input type="hidden" id="hAfterCoupon" value="{{ after_coupon }}">
+                    <input type="hidden" id="hAfterReferral" value="{{ after_referral }}">
+                    <input type="hidden" id="hWalletBalance" value="{{ wallet_balance }}">
+                    <input type="hidden" id="hWalletUsed" value="{{ wallet_used }}">
+
+                    <!-- ── COUPON SECTION ──────────────────────── -->
+                    <div class="mb-3">
+                        <p class="font-weight-bold mb-2" style="font-size:14px;">
+                            <i class="fas fa-tag mr-1 text-primary"></i>Have a coupon?
+                        </p>
+                        <div class="input-group" id="couponInputGroup" 
+                        {% if coupon_code %}style="display:none;" {% endif %}>
+                            <input type="text" id="couponCodeInput" class="form-control" placeholder="Enter coupon code"
+                                style="text-transform:uppercase;"
+                                onkeydown="if(event.key==='Enter'){event.preventDefault();applyCoupon();}">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-primary" type="button" onclick="applyCoupon()">
+                                    Apply
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- ── Coupon Input (when NOT applied) ── -->
+                        <div id="couponInputGroup"
+                            class="{% if coupon_code %}d-flex{% else %}d-none{% endif %} 
+                                    align-items-center justify-content-between border border-success rounded p-2">
+
+                            <span class="text-success" style="font-size:14px;">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                applied the Coupon 
+                            </span>
+                        </div>
+
+
+                        <!-- ── Coupon Applied Badge ── -->
+                        <div id="couponAppliedBadge"
+                            class="{% if coupon_code %}d-flex{% else %}d-none{% endif %} 
+                                    align-items-center justify-content-between border border-success rounded p-2">
+                            <span class="text-success" style="font-size:14px;">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Coupon <strong><span id="couponBadgeCode">{{ coupon_code }}</span></strong> applied
+                            </span>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    onclick="removeCoupon()">Remove</button>
+                        </div>
+    
+                        <small id="couponMsg" class="d-block mt-1" style="font-size:13px;"></small>
+                    </div>
+
+                    <!-- ── REFERRAL CODE SECTION ────────────────── -->
+                    <div class="mb-3">
+                        <p class="font-weight-bold mb-2" style="font-size:14px;">
+                            <i class="fa fa-gift mr-1" style="color:#FF6B00;"></i>Have a referral code?
+                            <small class="text-muted font-weight-normal ml-1">(First order only)</small>
+                        </p>
+                        <div class="input-group" id="referralInputGroup" {% if referral_code %}style="display:none;" {% endif %}>
+                            <input type="text" id="referralCodeInput" class="form-control"
+                                placeholder="Enter referral code" style="text-transform:uppercase;"
+                                onkeydown="if(event.key==='Enter'){event.preventDefault();applyReferral();}">
+                            <div class="input-group-append">
+                                <button class="btn" type="button" onclick="applyReferral()"
+                                    style="background:#FF6B00;color:#fff;border-color:#FF6B00;">
+                                    Apply
+                                </button>
+                            </div>
+                        </div>
+
+
+
+                        <!-- BADGE -->
+                        <div id="referralAppliedBadge"
+                            class="{% if referral_code %}d-flex{% else %}d-none{% endif %}
+                                    align-items-center justify-content-between p-2 rounded"
+                            style="border:1px solid #FF6B00;">
+                            <span style="font-size:14px;color:#FF6B00;">
+                                <i class="fa fa-check-circle mr-1"></i>
+                                Referral <strong><span id="referralBadgeCode">{{ referral_code }}</span></strong> applied!
+                            </span>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    onclick="removeReferral()">Remove</button>
+                        </div>
+
+                        <small id="referralMsg" class="d-block mt-1" style="font-size:13px;"></small>
+                    </div>
+
+                    <!-- ── WALLET SECTION ──────────────────────── -->
+                    <div class="mb-4">
+                        <div class="border rounded p-3" style="background:#f8f9ff;border-radius:8px;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-wallet mr-2" style="color:#3167eb;"></i>
+                                    <strong>Wallet Balance:</strong>
+                                    <span class="font-weight-bold ml-1" style="color:#3167eb;">
+                                        &#8377;{{ wallet_balance }}
+                                    </span>
+                                </div>
+                                {% if wallet_balance > 0 %}
+                                <button type="button" id="walletBtn"
+                                    class="btn btn-sm {% if wallet_applied %}btn-outline-danger{% else %}btn-outline-primary{% endif %}"
+                                    onclick="{% if wallet_applied %}removeWallet(){% else %}
+                                        applyWallet(){% endif %}">
+                                    {% if wallet_applied %}Remove{% else %}Use Wallet{% endif %}
+                                </button>
+                                {% else %}
+                                <span class="text-muted small">No balance</span>
+                                {% endif %}
+                            </div>
+                            <small id="walletMsg" class="d-block mt-1" style="font-size:13px;"></small>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block py-3"
+                        style="font-size:1rem;font-weight:bold;border-radius:8px;" 
+                        {% if not addresses %}disabled{% endif %}>
+                        <i class="fas fa-lock mr-2"></i>Place Order
+                    </button>
+                    {% if not addresses %}
+                    <p class="text-danger text-center small mt-2">Please add a delivery address first.</p>
+                    {% endif %}
+
+                </div><!-- /right -->
+            </div><!-- /row -->
+        </form>
     </div>
-    {% endfor %}
-    {% else %}
-    <div class="alert alert-warning">No saved addresses. Please add one to continue.</div>
-    {% endif %}
-
-    <div class="text-right mb-4">
-        <a href="{% url 'add_address' %}?next=checkout" class="btn btn-outline-primary px-4">
-            <i class="fa fa-plus mr-1"></i> Add New Address
-        </a>
-    </div>
-
-    <h5 class="font-weight-bold mb-3">Payment Method</h5>
-
-    <label class="d-flex align-items-center mb-3 p-3 border rounded"
-           style="cursor:pointer;" for="pay_cod">
-        <input type="radio" name="payment_method" value="COD"
-               id="pay_cod" checked class="mr-3">
-        <i class="fas fa-money-bill-wave mr-3 text-success" style="font-size:22px;"></i>
-        <div>
-            <div class="font-weight-bold">Cash on Delivery</div>
-            <small class="text-muted">Pay when your order arrives</small>
-        </div>
-    </label>
-
-    <label class="d-flex align-items-center mb-3 p-3 border rounded"
-           style="cursor:pointer;" for="pay_razorpay">
-        <input type="radio" name="payment_method" value="RAZORPAY"
-               id="pay_razorpay" class="mr-3">
-        <i class="fas fa-credit-card mr-3 text-primary" style="font-size:22px;"></i>
-        <div>
-            <div class="font-weight-bold">Pay Online — Razorpay</div>
-            <small class="text-muted">Cards, UPI, Net Banking, Wallets</small>
-        </div>
-    </label>
-
-</div><!-- /left -->
-
-
-<!-- ══ RIGHT — Order Summary ══ -->
-<div class="col-lg-6">
-
-    <!-- Cart items (sub_total already discounted by view) -->
-    {% for item in cart_items %}
-    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-        <div class="d-flex align-items-center">
-            {% if item.variant.primary_image %}
-            <img src="{{ item.variant.primary_image.url }}"
-                 style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;"
-                 class="mr-3">
-            {% endif %}
-            <div>
-                <div class="font-weight-bold" style="font-size:14px;">
-                    {{ item.variant.product.product_name }}
-                </div>
-                <small class="text-muted">
-                    {{ item.variant.color_name }} &nbsp;|&nbsp; Qty: {{ item.quantity }}
-                </small>
-                {% if item.variant.has_offer %}
-                <br><span class="badge badge-danger" style="font-size:10px;">{{ item.variant.offer_label }}</span>
-                {% endif %}
-            </div>
-        </div>
-        <div class="font-weight-bold">&#8377;{{ item.sub_total }}</div>
-    </div>
-    {% endfor %}
-
-    <hr>
-
-    <!-- Price breakdown -->
-    <div class="d-flex justify-content-between mb-2">
-        <span class="text-muted">Subtotal (after offers)</span>
-        <span>&#8377;{{ total }}</span>
-    </div>
-    <div class="d-flex justify-content-between mb-2">
-        <span class="text-muted">Delivery fee</span>
-        <span class="text-success font-weight-bold">Free</span>
-    </div>
-    <div class="d-flex justify-content-between mb-2">
-        <span class="text-muted">GST (18%)</span>
-        <span>&#8377;{{ tax }}</span>
-    </div>
-
-    <!-- Coupon discount row -->
-    <div class="d-flex justify-content-between mb-2" id="rowCouponDiscount"
-         {% if not coupon_discount %}style="display:none;"{% endif %}>
-        <span class="text-success">
-            <i class="fas fa-tag mr-1"></i>
-            Coupon (<span id="appliedCouponCode">{{ coupon_code }}</span>)
-        </span>
-        <span class="text-success font-weight-bold">
-            &#8722;&nbsp;&#8377;<span id="couponDiscountAmt">{{ coupon_discount }}</span>
-        </span>
-    </div>
-
-    <!-- Referral discount row -->
-    <div class="d-flex justify-content-between mb-2" id="rowReferralDiscount"
-         {% if not referral_discount %}style="display:none;"{% endif %}>
-        <span style="color:#FF6B00;">
-            <i class="fa fa-gift mr-1"></i>
-            Referral (<span id="appliedReferralCode">{{ referral_code }}</span>)
-        </span>
-        <span class="font-weight-bold" style="color:#FF6B00;">
-            &#8722;&nbsp;&#8377;<span id="referralDiscountAmt">{{ referral_discount }}</span>
-        </span>
-    </div>
-
-    <!-- Wallet deduction row -->
-    <div class="d-flex justify-content-between mb-2" id="rowWalletDeduct"
-         {% if not wallet_used %}style="display:none;"{% endif %}>
-        <span class="text-primary">
-            <i class="fas fa-wallet mr-1"></i>Wallet Used
-        </span>
-        <span class="text-primary font-weight-bold">
-            &#8722;&nbsp;&#8377;<span id="walletUsedAmt">{{ wallet_used }}</span>
-        </span>
-    </div>
-
-    <hr>
-
-    <div class="d-flex justify-content-between mb-4">
-        <span class="font-weight-bold" style="font-size:1.05rem;">Total Payment</span>
-        <span class="font-weight-bold" style="font-size:1.2rem;color:#3167eb;">
-            &#8377;<span id="finalTotalAmt">{{ final_total }}</span>
-        </span>
-    </div>
-
-    <!-- Hidden values JS reads -->
-    <input type="hidden" id="hGrandTotal"      value="{{ grand_total }}">
-    <input type="hidden" id="hAfterCoupon"     value="{{ after_coupon }}">
-    <input type="hidden" id="hAfterReferral"   value="{{ after_referral }}">
-    <input type="hidden" id="hWalletBalance"   value="{{ wallet_balance }}">
-    <input type="hidden" id="hWalletUsed"      value="{{ wallet_used }}">
-
-    <!-- ── COUPON SECTION ──────────────────────── -->
-    <div class="mb-3">
-        <p class="font-weight-bold mb-2" style="font-size:14px;">
-            <i class="fas fa-tag mr-1 text-primary"></i>Have a coupon?
-        </p>
-        <div class="input-group" id="couponInputGroup"
-             {% if coupon_code %}style="display:none;"{% endif %}>
-            <input type="text" id="couponCodeInput" class="form-control"
-                   placeholder="Enter coupon code" style="text-transform:uppercase;"
-                   onkeydown="if(event.key==='Enter'){event.preventDefault();applyCoupon();}">
-            <div class="input-group-append">
-                <button class="btn btn-outline-primary" type="button" onclick="applyCoupon()">
-                    Apply
-                </button>
-            </div>
-        </div>
-        <div class="d-flex align-items-center justify-content-between border border-success
-                    rounded p-2" id="couponAppliedBadge"
-             {% if not coupon_code %}style="display:none;"{% endif %}>
-            <span class="text-success" style="font-size:14px;">
-                <i class="fas fa-check-circle mr-1"></i>
-                Coupon <strong><span id="couponBadgeCode">{{ coupon_code }}</span></strong> applied!
-            </span>
-            <button type="button" class="btn btn-sm btn-outline-danger"
-                    onclick="removeCoupon()">Remove</button>
-        </div>
-        <small id="couponMsg" class="d-block mt-1" style="font-size:13px;"></small>
-    </div>
-
-    <!-- ── REFERRAL CODE SECTION ────────────────── -->
-    <div class="mb-3">
-        <p class="font-weight-bold mb-2" style="font-size:14px;">
-            <i class="fa fa-gift mr-1" style="color:#FF6B00;"></i>Have a referral code?
-            <small class="text-muted font-weight-normal ml-1">(First order only)</small>
-        </p>
-        <div class="input-group" id="referralInputGroup"
-             {% if referral_code %}style="display:none;"{% endif %}>
-            <input type="text" id="referralCodeInput" class="form-control"
-                   placeholder="Enter referral code" style="text-transform:uppercase;"
-                   onkeydown="if(event.key==='Enter'){event.preventDefault();applyReferral();}">
-            <div class="input-group-append">
-                <button class="btn" type="button" onclick="applyReferral()"
-                        style="background:#FF6B00;color:#fff;border-color:#FF6B00;">
-                    Apply
-                </button>
-            </div>
-        </div>
-        <div class="d-flex align-items-center justify-content-between p-2 rounded"
-             id="referralAppliedBadge"
-             style="border:1px solid #FF6B00;{% if not referral_code %}display:none;{% endif %}">
-            <span style="font-size:14px;color:#FF6B00;">
-                <i class="fa fa-check-circle mr-1"></i>
-                Referral <strong><span id="referralBadgeCode">{{ referral_code }}</span></strong> applied!
-            </span>
-            <button type="button" class="btn btn-sm btn-outline-danger"
-                    onclick="removeReferral()">Remove</button>
-        </div>
-        <small id="referralMsg" class="d-block mt-1" style="font-size:13px;"></small>
-    </div>
-
-    <!-- ── WALLET SECTION ──────────────────────── -->
-    <div class="mb-4">
-        <div class="border rounded p-3" style="background:#f8f9ff;border-radius:8px;">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <i class="fas fa-wallet mr-2" style="color:#3167eb;"></i>
-                    <strong>Wallet Balance:</strong>
-                    <span class="font-weight-bold ml-1" style="color:#3167eb;">
-                        &#8377;{{ wallet_balance }}
-                    </span>
-                </div>
-                {% if wallet_balance > 0 %}
-                <button type="button" id="walletBtn"
-                        class="btn btn-sm {% if wallet_applied %}btn-outline-danger{% else %}btn-outline-primary{% endif %}"
-                        onclick="{% if wallet_applied %}removeWallet(){% else %}applyWallet(){% endif %}">
-                    {% if wallet_applied %}Remove{% else %}Use Wallet{% endif %}
-                </button>
-                {% else %}
-                <span class="text-muted small">No balance</span>
-                {% endif %}
-            </div>
-            <small id="walletMsg" class="d-block mt-1" style="font-size:13px;"></small>
-        </div>
-    </div>
-
-    <button type="submit" class="btn btn-primary btn-block py-3"
-            style="font-size:1rem;font-weight:bold;border-radius:8px;"
-            {% if not addresses %}disabled{% endif %}>
-        <i class="fas fa-lock mr-2"></i>Place Order
-    </button>
-    {% if not addresses %}
-    <p class="text-danger text-center small mt-2">Please add a delivery address first.</p>
-    {% endif %}
-
-</div><!-- /right -->
-</div><!-- /row -->
-</form>
-</div>
 </section>
 
 <script>
-const CSRF = '{{ csrf_token }}';
+    const CSRF = '{{ csrf_token }}';
 
-const grandTotal     = () => parseFloat(document.getElementById('hGrandTotal').value)    || 0;
-const afterCoupon    = () => parseFloat(document.getElementById('hAfterCoupon').value)   || 0;
-const afterReferral  = () => parseFloat(document.getElementById('hAfterReferral').value) || 0;
-const walletBalance  = () => parseFloat(document.getElementById('hWalletBalance').value) || 0;
-const walletUsedNow  = () => parseFloat(document.getElementById('hWalletUsed').value)    || 0;
+    const grandTotal = () => parseFloat(document.getElementById('hGrandTotal').value) || 0;
+    const afterCoupon = () => parseFloat(document.getElementById('hAfterCoupon').value) || 0;
+    const afterReferral = () => parseFloat(document.getElementById('hAfterReferral').value) || 0;
+    const walletBalance = () => parseFloat(document.getElementById('hWalletBalance').value) || 0;
+    const walletUsedNow = () => parseFloat(document.getElementById('hWalletUsed').value) || 0;
 
-function setAfterCoupon(v)   { document.getElementById('hAfterCoupon').value   = v; }
-function setAfterReferral(v) { document.getElementById('hAfterReferral').value = v; }
-function setWalletUsed(v)    { document.getElementById('hWalletUsed').value    = v; }
-function setFinal(v) {
-    document.getElementById('finalTotalAmt').textContent = Math.max(parseFloat(v), 0).toFixed(2);
-}
-function showMsg(id, text, isError) {
-    const el = document.getElementById(id);
-    el.textContent = text;
-    el.style.color = isError ? '#dc3545' : '#28a745';
-}
+    function setAfterCoupon(v) { document.getElementById('hAfterCoupon').value = v; }
+    function setAfterReferral(v) { document.getElementById('hAfterReferral').value = v; }
+    function setWalletUsed(v) { document.getElementById('hWalletUsed').value = v; }
+    function setFinal(v) {
+        document.getElementById('finalTotalAmt').textContent = Math.max(parseFloat(v), 0).toFixed(2);
+    }
+    function showMsg(id, text, isError) {
+        const el = document.getElementById(id);
+        el.textContent = text;
+        el.style.color = isError ? '#dc3545' : '#28a745';
+    }
 
-// ── COUPON ─────────────────────────────────────────────
-function applyCoupon() {
-    const code = document.getElementById('couponCodeInput').value.trim().toUpperCase();
-    if (!code) { showMsg('couponMsg', 'Please enter a coupon code.', true); return; }
-    fetch('{% url "apply_coupon" %}', {
-        method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-        body: JSON.stringify({code, grand_total: grandTotal()}),
-    }).then(r=>r.json()).then(d=>{
-        if (d.success) {
-            document.getElementById('rowCouponDiscount').style.display  = '';
-            document.getElementById('couponDiscountAmt').textContent    = parseFloat(d.discount).toFixed(2);
-            document.getElementById('appliedCouponCode').textContent    = code;
-            document.getElementById('couponBadgeCode').textContent      = code;
-            document.getElementById('couponInputGroup').style.display   = 'none';
-            document.getElementById('couponAppliedBadge').style.display = '';
-            setAfterCoupon(d.after_coup);
-            const newAfterRef = parseFloat(d.after_coup) - parseFloat(document.getElementById('referralDiscountAmt').textContent || 0);
-            setAfterReferral(Math.max(newAfterRef, 0));
-            setFinal(d.final);
-            showMsg('couponMsg', d.message, false);
-        } else { showMsg('couponMsg', d.message, true); }
-    });
-}
+    // ── COUPON ─────────────────────────────────────────────
+    function applyCoupon() {
+        const code = document.getElementById('couponCodeInput').value.trim().toUpperCase();
+        if (!code) { showMsg('couponMsg', 'Please enter a coupon code.', true); return; }
+        fetch('{% url "apply_coupon" %}', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ code, grand_total: grandTotal() }),
+        }).then(r => r.json()).then(d => {
+            if (d.success) {
+                document.getElementById('rowCouponDiscount').style.display = '';
+                document.getElementById('couponDiscountAmt').textContent = parseFloat(d.discount).toFixed(2);
+                document.getElementById('appliedCouponCode').textContent = code;
+                document.getElementById('couponBadgeCode').textContent = code;
+                document.getElementById('couponInputGroup').classList.add('d-none');
+                document.getElementById('couponAppliedBadge').classList.remove('d-none');
+                const newAfterRef = parseFloat(d.after_coup) - parseFloat(document.getElementById('referralDiscountAmt').textContent || 0);
+                setAfterReferral(Math.max(newAfterRef, 0));
+                setFinal(d.final);
+                showMsg('couponMsg', d.message, false);
+            } else { showMsg('couponMsg', d.message, true); }
+        });
+    }
 
-function removeCoupon() {
-    fetch('{% url "remove_coupon" %}', {
-        method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-        body: JSON.stringify({grand_total: grandTotal()}),
-    }).then(r=>r.json()).then(d=>{
-        if (d.success) {
-            document.getElementById('rowCouponDiscount').style.display  = 'none';
-            document.getElementById('couponAppliedBadge').style.display = 'none';
-            document.getElementById('couponInputGroup').style.display   = '';
-            document.getElementById('couponCodeInput').value            = '';
-            setAfterCoupon(d.after_coup);
-            setFinal(d.final);
-            showMsg('couponMsg', '', false);
-        }
-    });
-}
+    function removeCoupon() {
+        fetch('{% url "remove_coupon" %}', {
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json',
+                'X-CSRFToken':CSRF
+            },
+            body: JSON.stringify({ grand_total: grandTotal() }),
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                document.getElementById('rowCouponDiscount').style.display = 'none';
+                document.getElementById('couponDiscountAmt').textContent = '0';
+                document.getElementById('appliedCouponCode').textContent = '';
+                document.getElementById('couponBadgeCode').textContent = '';
+                document.getElementById('couponInputGroup').classList.remove('d-none');
+                document.getElementById('couponAppliedBadge').classList.add('d-none');
+                setAfterCoupon(d.after_coup);
+                setAfterReferral(d.after_coup); // important!
+                setFinal(d.final);
+                showMsg('couponMsg', '', false);
+            }
+        });
+    }
 
-// ── REFERRAL ───────────────────────────────────────────
-function applyReferral() {
-    const code = document.getElementById('referralCodeInput').value.trim().toUpperCase();
-    if (!code) { showMsg('referralMsg', 'Please enter a referral code.', true); return; }
-    fetch('{% url "apply_referral" %}', {
-        method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-        body: JSON.stringify({code, grand_total: afterCoupon()}),
-    }).then(r=>r.json()).then(d=>{
-        if (d.success) {
-            document.getElementById('rowReferralDiscount').style.display   = '';
-            document.getElementById('referralDiscountAmt').textContent     = parseFloat(d.discount).toFixed(2);
-            document.getElementById('appliedReferralCode').textContent     = code;
-            document.getElementById('referralBadgeCode').textContent       = code;
-            document.getElementById('referralInputGroup').style.display    = 'none';
-            document.getElementById('referralAppliedBadge').style.display  = '';
-            setAfterReferral(d.after_ref);
-            setFinal(d.final);
-            showMsg('referralMsg', d.message, false);
-        } else { showMsg('referralMsg', d.message, true); }
-    });
-}
+    // ── REFERRAL ───────────────────────────────────────────
+    function applyReferral() {
+        const code = document.getElementById('referralCodeInput').value.trim().toUpperCase();
+        if (!code) { showMsg('referralMsg', 'Please enter a referral code.', true); return; }
+        fetch('{% url "apply_referral" %}', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ code, grand_total: afterCoupon() }),
+        }).then(r => r.json()).then(d => {
+            if (d.success) {
+                document.getElementById('rowReferralDiscount').style.display = 'flex';
+                document.getElementById('referralDiscountAmt').textContent = parseFloat(d.discount).toFixed(2);
+                document.getElementById('appliedReferralCode').textContent = code;
+                document.getElementById('referralBadgeCode').textContent = code;
+                document.getElementById('referralInputGroup').classList.add('d-none');
+                document.getElementById('referralAppliedBadge').classList.remove('d-none');
+                showMsg('referralMsg', d.message, false);
+            } else { showMsg('referralMsg', d.message, true); }
+        });
+    }
 
-function removeReferral() {
-    fetch('{% url "remove_referral" %}', {
-        method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-        body: JSON.stringify({grand_total: grandTotal()}),
-    }).then(r=>r.json()).then(d=>{
-        if (d.success) {
-            document.getElementById('rowReferralDiscount').style.display   = 'none';
-            document.getElementById('referralAppliedBadge').style.display  = 'none';
-            document.getElementById('referralInputGroup').style.display    = '';
-            document.getElementById('referralCodeInput').value             = '';
-            setAfterReferral(afterCoupon());
-            setFinal(d.final);
-            showMsg('referralMsg', '', false);
-        }
-    });
-}
+    function removeReferral() {
+        fetch('{% url "remove_referral" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRF
+            },
+            body: JSON.stringify({ grand_total: grandTotal() }),
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                document.getElementById('rowReferralDiscount').style.display = 'none';
+                document.getElementById('referralDiscountAmt').textContent = '0';
+                document.getElementById('appliedReferralCode').textContent = '';
+                document.getElementById('referralBadgeCode').textContent = '';
+                document.getElementById('referralInputGroup').classList.remove('d-none');
+                document.getElementById('referralAppliedBadge').classList.add('d-none');
+                setAfterReferral(afterCoupon());
+                setFinal(d.final);
+                showMsg('referralMsg', '', false);
+            }
+        });
+    }
 
-// ── WALLET ─────────────────────────────────────────────
-function applyWallet() {
-    fetch('{% url "apply_wallet" %}', {
-        method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-        body: JSON.stringify({final_total: afterReferral()}),
-    }).then(r=>r.json()).then(d=>{
-        if (d.success) {
-            document.getElementById('rowWalletDeduct').style.display = '';
-            document.getElementById('walletUsedAmt').textContent     = parseFloat(d.wallet_used).toFixed(2);
-            setWalletUsed(d.wallet_used);
-            setFinal(d.amount_to_pay);
-            const btn = document.getElementById('walletBtn');
-            btn.textContent = 'Remove';
-            btn.className   = 'btn btn-sm btn-outline-danger';
-            btn.setAttribute('onclick','removeWallet()');
-            showMsg('walletMsg', d.message, false);
-        } else { showMsg('walletMsg', d.message, true); }
-    });
-}
 
-function removeWallet() {
-    fetch('{% url "remove_wallet" %}', {
-        method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-        body: JSON.stringify({final_total: afterReferral()}),
-    }).then(r=>r.json()).then(d=>{
-        if (d.success) {
-            document.getElementById('rowWalletDeduct').style.display = 'none';
-            document.getElementById('walletUsedAmt').textContent     = '0';
-            setWalletUsed('0');
-            setFinal(d.amount_to_pay);
-            const btn = document.getElementById('walletBtn');
-            btn.textContent = 'Use Wallet';
-            btn.className   = 'btn btn-sm btn-outline-primary';
-            btn.setAttribute('onclick','applyWallet()');
-            showMsg('walletMsg', '', false);
-        }
-    });
-}
+    // ── WALLET ─────────────────────────────────────────────
+    function applyWallet() {
+        fetch('{% url "apply_wallet" %}', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ final_total: afterReferral() }),
+        }).then(r => r.json()).then(d => {
+            if (d.success) {
+                document.getElementById('rowWalletDeduct').style.display = '';
+                document.getElementById('walletUsedAmt').textContent = parseFloat(d.wallet_used).toFixed(2);
+                setWalletUsed(d.wallet_used);
+                setFinal(d.amount_to_pay);
+                const btn = document.getElementById('walletBtn');
+                btn.textContent = 'Remove';
+                btn.className = 'btn btn-sm btn-outline-danger';
+                btn.setAttribute('onclick', 'removeWallet()');
+                showMsg('walletMsg', d.message, false);
+            } else { showMsg('walletMsg', d.message, true); }
+        });
+    }
+
+    function removeWallet() {
+        fetch('{% url "remove_wallet" %}', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ final_total: afterReferral() }),
+        }).then(r => r.json()).then(d => {
+            if (d.success) {
+                document.getElementById('rowWalletDeduct').style.display = 'none';
+                document.getElementById('walletUsedAmt').textContent = '0';
+                setWalletUsed('0');
+                setFinal(d.amount_to_pay);
+                const btn = document.getElementById('walletBtn');
+                btn.textContent = 'Use Wallet';
+                btn.className = 'btn btn-sm btn-outline-primary';
+                btn.setAttribute('onclick', 'applyWallet()');
+                showMsg('walletMsg', '', false);
+            }
+        });
+    }
+    
 </script>
 {% endblock %}
