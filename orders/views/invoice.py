@@ -139,16 +139,15 @@ def download_invoice(request, order_number):
         story.append(item_table)
         story.append(Spacer(1, 0.4 * cm))
 
-        grand_total = (
-            float(order.order_total)
-            + float(order.discount or 0)
-            + float(order.wallet_used or 0)
-        )
-        subtotal = grand_total - float(order.tax)
+        actual_total = float(order.order_total)
+        wallet_used = float(order.wallet_used or 0)
+        paid_amount = float(order.payment.amount_paid or 0) if order.payment else 0
+
+        subtotal = actual_total - float(order.tax)
 
         totals_data = [
             ["", "Subtotal:", f"Rs.{subtotal:.2f}"],
-            ["", "GST (18%):", f"Rs.{order.tax}"],
+            ["", "GST (18%):", f"Rs.{float(order.tax):.2f}"],
         ]
 
         if order.discount and order.discount > 0:
@@ -156,14 +155,18 @@ def download_invoice(request, order_number):
                 ["", f"Coupon ({order.coupon_code}):", f"- Rs.{order.discount}"]
             )
 
-        if order.wallet_used and order.wallet_used > 0:
-            totals_data.append(["", "Wallet Used:", f"- Rs.{order.wallet_used}"])
+        # show full order value
+        totals_data.append(["", "Order Total:", f"Rs.{actual_total:.2f}"])
 
-        # Shipping
+        # wallet deduction
+        if wallet_used > 0:
+            totals_data.append(["", "Wallet Used:", f"- Rs.{wallet_used:.2f}"])
+
+        # shipping
         totals_data.append(["", "Delivery:", "Free"])
 
-        # Final
-        totals_data.append(["", "Total Payment:", f"Rs.{order.order_total}"])
+        # what user actually paid externally
+        totals_data.append(["", "Amount Paid:", f"Rs.{paid_amount:.2f}"])
 
         totals_table = Table(totals_data, colWidths=[9 * cm, 4 * cm, 3.5 * cm])
 

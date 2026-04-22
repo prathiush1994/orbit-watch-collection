@@ -122,7 +122,6 @@
                 </button>
                 {% endif %}
 
-                <!-- Cancel — only if New or Accepted -->
                 {% if order.status == 'New' or order.status == 'Accepted' %}
                 <form method="POST" action="{% url 'cancel_order' order.order_number %}"
                       onsubmit="return confirm('Cancel order #{{ order.order_number }}?');">

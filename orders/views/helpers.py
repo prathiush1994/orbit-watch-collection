@@ -46,7 +46,7 @@ def _build_order_from_session(request, address, payment_obj, totals):
         pincode=address.pincode,
         address_type=address.address_type,
         order_number=_generate_order_number(),
-        order_total=totals["final_total"],
+        order_total=totals["actual_total"],
         tax=totals["tax"],
         discount=totals["coupon_discount"] + totals["referral_discount"],
         coupon_code=totals["coupon_code"],
@@ -141,14 +141,12 @@ def _build_order_from_session(request, address, payment_obj, totals):
     return order
 
 
-
 def checkout_context_additions(totals):
     return {
         "referral_discount": totals["referral_discount"],
         "referral_code": totals["referral_code"],
         "after_referral": totals["after_referral"],
     }
-
 
 
 def _compute_totals(cart_items, session):
@@ -180,7 +178,8 @@ def _compute_totals(cart_items, session):
 
     wallet_used = Decimal(str(session.get("wallet_used", "0")))
     wallet_applied = session.get("wallet_applied", False)
-    final_total = max(round(after_referral - wallet_used, 2), Decimal("0"))
+    actual_total = after_referral
+    final_total = max(round(actual_total - wallet_used, 2), Decimal("0"))
 
     return {
         "subtotal": subtotal,
@@ -197,4 +196,6 @@ def _compute_totals(cart_items, session):
         "wallet_used": wallet_used,
         "wallet_applied": wallet_applied,
         "final_total": final_total,
+        "actual_total": actual_total,
     }
+

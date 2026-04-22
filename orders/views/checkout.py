@@ -57,29 +57,29 @@ def checkout(request):
         else:
             item.sub_total = Decimal("0")
 
-        totals = _compute_totals(cart_items_list, request.session)
-        wallet = _get_wallet(request.user)
-        addresses = UserAddress.objects.filter(user=request.user).order_by("-is_default")
-        coupon_code = request.session.get("coupon_code", None)
-        context = {
-            "cart_items": cart_items_list,
-            "total": totals["subtotal"],
-            "tax": totals["tax"],
-            "grand_total": totals["grand_total"],
-            "coupon_discount": totals["coupon_discount"],
-            "after_coupon": totals["after_coupon"],
-            "referral_discount": totals["referral_discount"],
-            "referral_code": totals["referral_code"],
-            "after_referral": totals["after_referral"],
-            "wallet_balance": wallet.balance,
-            "wallet_used": totals["wallet_used"],
-            "wallet_applied": totals["wallet_applied"],
-            "final_total": totals["final_total"],
-            "addresses": addresses,
-            "razorpay_key_id": settings.RAZORPAY_KEY_ID,
-            "coupon_code": coupon_code,
-        }
-        return render(request, "orders/checkout.html", context)
+    totals = _compute_totals(cart_items_list, request.session)
+    wallet = _get_wallet(request.user)
+    addresses = UserAddress.objects.filter(user=request.user).order_by("-is_default")
+    coupon_code = request.session.get("coupon_code", None)
+    context = {
+        "cart_items": cart_items_list,
+        "total": totals["subtotal"],
+        "tax": totals["tax"],
+        "grand_total": totals["grand_total"],
+        "coupon_discount": totals["coupon_discount"],
+        "after_coupon": totals["after_coupon"],
+        "referral_discount": totals["referral_discount"],
+        "referral_code": totals["referral_code"],
+        "after_referral": totals["after_referral"],
+        "wallet_balance": wallet.balance,
+        "wallet_used": totals["wallet_used"],
+        "wallet_applied": totals["wallet_applied"],
+        "final_total": totals["final_total"],
+        "addresses": addresses,
+        "razorpay_key_id": settings.RAZORPAY_KEY_ID,
+        "coupon_code": coupon_code,
+    }
+    return render(request, "orders/checkout.html", context)
 
 
 @login_required(login_url="login")
@@ -159,3 +159,4 @@ def place_order(request):
 
     messages.error(request, "Invalid payment method.")
     return redirect("checkout")
+
