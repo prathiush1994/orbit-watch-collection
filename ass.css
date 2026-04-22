@@ -1,0 +1,8 @@
+/* DEFAULT (desktop) — keep current behavior */
+.admin-topbar {
+  left: var(--sidebar-w);
+}
+
+.admin-main {
+  margin-left: var(--sidebar-w);
+}

@@ -2,30 +2,244 @@
 {% load static %}
 
 {% block content %}
-<section class="section-content padding-y bg" style="min-height:84vh;">
-<div class="container">
-<div class="row">
 
-    <!-- ── SIDEBAR ───────────────────────────────── -->
-    <aside class="col-md-3">
-        <!-- Profile summary -->
-        <div class="card mb-3 text-center p-3">
-            {% if request.user.profile_photo %}
-                <img src="{{ request.user.profile_photo.url }}"
-                     class="rounded-circle mx-auto mb-2"
-                     style="width:80px;height:80px;object-fit:cover;">
-            {% else %}
-                <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center"
-                     style="width:80px;height:80px;background:#e9ecef;border:2px solid #dee2e6;">
-                    <i class="fa fa-user" style="font-size:32px;color:#adb5bd;"></i>
-                </div>
-            {% endif %}
-            <strong>{{ request.user.get_full_name }}</strong>
-            <small class="text-muted d-block">{{ request.user.email }}</small>
+<style>
+    /* ── RESPONSIVE DASHBOARD STYLES ─────────────────────── */
+
+    :root {
+        --brand: #FF6B00;
+        --brand-light: #fff4ec;
+        --sidebar-width: 260px;
+    }
+
+    /* Sidebar overlay for mobile */
+    #sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 1040;
+    }
+
+    #sidebar-overlay.active {
+        display: block;
+    }
+
+    /* ── SIDEBAR ───────────────────────────────────────────── */
+    #dashboard-sidebar {
+        width: var(--sidebar-width);
+        min-height: 100%;
+        transition: transform 0.3s ease;
+    }
+
+    /* Profile card inside sidebar */
+    #dashboard-sidebar .sidebar-profile {
+        background: #fff;
+        border-radius: 12px;
+        padding: 20px 16px;
+        text-align: center;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+    }
+
+    #dashboard-sidebar .sidebar-profile img,
+    #dashboard-sidebar .sidebar-profile .avatar-placeholder {
+        width: 76px;
+        height: 76px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--brand);
+        margin-bottom: 10px;
+    }
+
+    #dashboard-sidebar .sidebar-profile .avatar-placeholder {
+        background: #e9ecef;
+        border-color: #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Nav list */
+    .sidebar-nav .list-group-item {
+        border-left: 3px solid transparent;
+        font-size: 14px;
+        padding: 10px 16px;
+        transition: background 0.15s, border-color 0.15s;
+    }
+
+    .sidebar-nav .list-group-item:hover {
+        background: var(--brand-light);
+        border-left-color: var(--brand);
+        color: var(--brand);
+    }
+
+    .sidebar-nav .list-group-item.active {
+        background: var(--brand-light);
+        border-left-color: var(--brand);
+        color: var(--brand);
+        font-weight: 600;
+    }
+
+    /* ── MOBILE TOPBAR ─────────────────────────────────────── */
+    #mobile-topbar {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        background: #fff;
+        border-bottom: 1px solid #e9ecef;
+        padding: 10px 16px;
+        position: sticky;
+        top: 0;
+        z-index: 1030;
+    }
+
+    #mobile-topbar .topbar-title {
+        font-weight: 700;
+        font-size: 15px;
+        color: #333;
+    }
+
+    #mobile-topbar .btn-menu {
+        background: none;
+        border: none;
+        padding: 4px 8px;
+        font-size: 20px;
+        color: #555;
+        cursor: pointer;
+    }
+
+    /* ── LAYOUT WRAPPER ────────────────────────────────────── */
+    .dashboard-layout {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+        padding: 28px 0;
+        min-height: 82vh;
+    }
+
+    .dashboard-main {
+        flex: 1;
+        min-width: 0; /* prevents flex overflow */
+    }
+
+    /* ── MOBILE BREAKPOINT ─────────────────────────────────── */
+    @media (max-width: 767px) {
+
+        #mobile-topbar {
+            display: flex;
+        }
+
+        .dashboard-layout {
+            padding: 16px 0;
+            gap: 0;
+        }
+
+        /* Sidebar becomes a drawer */
+        #dashboard-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: #fff;
+            z-index: 1050;
+            overflow-y: auto;
+            transform: translateX(-100%);
+            padding: 20px 16px;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+        }
+
+        #dashboard-sidebar.open {
+            transform: translateX(0);
+        }
+
+        .dashboard-main {
+            width: 100%;
+        }
+
+        /* Close button inside sidebar on mobile */
+        #sidebar-close-btn {
+            display: flex;
+        }
+    }
+
+    @media (min-width: 768px) {
+        #sidebar-close-btn {
+            display: none !important;
+        }
+    }
+
+    /* ── CARD TWEAKS ───────────────────────────────────────── */
+    .card {
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-header {
+        background: #fff;
+        border-bottom: 1px solid #f0f0f0;
+        border-radius: 10px 10px 0 0 !important;
+        font-size: 15px;
+    }
+</style>
+
+<!-- Mobile top bar (hidden on desktop) -->
+<div id="mobile-topbar">
+    <button class="btn-menu" id="sidebar-open-btn" aria-label="Open menu">
+        <i class="fa fa-bars"></i>
+    </button>
+    <span class="topbar-title">My Account</span>
+    <!-- User avatar shortcut -->
+    {% if request.user.profile_photo %}
+        <img src="{{ request.user.profile_photo.url }}"
+             style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid var(--brand);">
+    {% else %}
+        <div style="width:34px;height:34px;border-radius:50%;
+                    background:#e9ecef;border:2px solid #dee2e6;
+                    display:flex;align-items:center;justify-content:center;">
+            <i class="fa fa-user" style="font-size:16px;color:#adb5bd;"></i>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Overlay -->
+<div id="sidebar-overlay"></div>
+
+<section class="section-content bg" style="min-height: 84vh;">
+<div class="container">
+<div class="dashboard-layout">
+
+    <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+    <aside id="dashboard-sidebar">
+
+        <!-- Close button (mobile only) -->
+        <div id="sidebar-close-btn"
+             style="justify-content:flex-end;margin-bottom:12px;">
+            <button onclick="closeSidebar()"
+                    style="background:none;border:none;font-size:22px;
+                           color:#555;cursor:pointer;">
+                <i class="fa fa-times"></i>
+            </button>
         </div>
 
-        <!-- Nav -->
-        <ul class="list-group mb-3">
+        <!-- Profile summary -->
+        <div class="sidebar-profile">
+            {% if request.user.profile_photo %}
+                <img src="{{ request.user.profile_photo.url }}" alt="Profile photo">
+            {% else %}
+                <div class="avatar-placeholder mx-auto">
+                    <i class="fa fa-user" style="font-size:30px;color:#adb5bd;"></i>
+                </div>
+            {% endif %}
+            <strong class="d-block" style="font-size:15px;">
+                {{ request.user.get_full_name }}
+            </strong>
+            <small class="text-muted">{{ request.user.email }}</small>
+        </div>
+
+        <!-- Navigation links -->
+        <ul class="list-group sidebar-nav mb-3">
             <a class="list-group-item {% block nav_profile %}{% endblock %}"
                href="{% url 'dashboard_profile' %}">
                 <i class="fa fa-user mr-2"></i> My Profile
@@ -60,18 +274,46 @@
             </a>
         </ul>
 
-        <a href="{% url 'logout' %}" class="btn btn-block"
-           style="background:#FF6B00;color:#fff;font-weight:600;">
+        <a href="{% url 'logout' %}"
+           class="btn btn-block"
+           style="background: #FF6B00; color: #fff; font-weight: 600; border-radius: 8px;">
             <i class="fa fa-power-off mr-1"></i> Log Out
         </a>
     </aside>
 
-    <!-- ── MAIN CONTENT ──────────────────────────── -->
-    <main class="col-md-9">
+    <!-- ── MAIN CONTENT ─────────────────────────────────────── -->
+    <main class="dashboard-main">
         {% block dashboard_content %}{% endblock %}
     </main>
 
 </div>
 </div>
 </section>
+
+<script>
+    /* ── Sidebar drawer (mobile) ─── */
+    const sidebar = document.getElementById('dashboard-sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    function openSidebar() {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('sidebar-open-btn').addEventListener('click', openSidebar);
+    overlay.addEventListener('click', closeSidebar);
+
+    /* Close sidebar on nav link click (mobile UX) */
+    document.querySelectorAll('#dashboard-sidebar .list-group-item').forEach(function (link) {
+        link.addEventListener('click', closeSidebar);
+    });
+</script>
+
 {% endblock %}
