@@ -7,6 +7,7 @@ from carts.models import CartItem
 from accounts.models import UserAddress
 from .helpers import _compute_totals, _build_order_from_session, _razorpay_client
 from ..models import Payment, Order
+from django.conf import settings
 
 
 @login_required(login_url="login")
