@@ -37,10 +37,9 @@
 
 
         <!-- Resend (hidden until timer ends) -->
-        <div id="resend-container" >
+        <div id="resend-container" style="display:none;">
             <p class="text-muted">Didn't receive the code?</p>
-            <a href="{% url 'resend_otp' user.id %}"
-               class="btn btn-outline-secondary">
+            <a href="{% url 'resend_login_otp' %}" class="btn btn-outline-secondary">
                 Resend Code
             </a>
         </div>

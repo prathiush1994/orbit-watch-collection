@@ -14,14 +14,14 @@ urlpatterns = [
     # Main routes
     path("", views.home, name="home"),
     path("store/", include("store.urls")),
-    path("accounts/", include("accounts.urls")),
+    path("user/", include("accounts.urls")),
     path("carts/", include("carts.urls")),
     path("wishlist/", include("wishlist.urls")),
     path("dashboard/", include("dashboard.urls")),
     path("orders/", include("orders.urls")),
     path("wallet/", include("wallet.urls")),
     path("inventory/", include("inventory.urls")),
-    path("auth/", include("allauth.urls")),
+    path("accounts/", include("allauth.urls")),
     path("reviews/", include("reviews.urls")),
 ]
 

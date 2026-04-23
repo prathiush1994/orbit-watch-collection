@@ -4,7 +4,6 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib.messages import get_messages
 from django.views.decorators.cache import never_cache
-
 from ..models import Account
 from ..email_utils import generate_otp, send_otp_email
 from .otp_data import _otp_remaining

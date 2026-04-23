@@ -198,17 +198,23 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "none"
 
 
-# ── Social Account Settings ───────────────────────────
+# ── Social Account Settings ───────────────────────────────────────
 SOCIALACCOUNT_ADAPTER = "accounts.social_adapter.MySocialAccountAdapter"
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_LOGIN_ON_GET = True 
 
 
 # ── Google Provider ───────────────────────────────────
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
+        "APP": {
+            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+            "secret":    os.getenv("GOOGLE_CLIENT_SECRET"),
+            "key":       "",
+        },
         "SCOPE": ["profile", "email"],
         "AUTH_PARAMS": {
             "access_type": "online",

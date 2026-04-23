@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load socialaccount %}
 
 {% block content %}
 
@@ -14,20 +13,18 @@
 
         {% include 'includes/alert.html' %}
 
-        <!-- Google Sign Up 
-        {% get_providers as socialaccount_providers %}
-        {% if socialaccount_providers %}
-        <a href="{% provider_login_url 'google' %}" class="btn btn-block mb-3"
-           style="background:#fff; border:1px solid #ddd; font-weight:500;">
+        <!-- Google Sign Up — always visible, no database check needed -->
+        <a href="/accounts/google/login/?process=login" class="btn btn-block mb-3"
+           style="background:#fff; border:1px solid #ddd; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px;">
             <img src="https://developers.google.com/identity/images/g-logo.png"
-                 width="18" style="margin-right:8px; vertical-align:middle;">
+                 width="18" style="vertical-align:middle;">
             Sign up with Google
         </a>
+
         <div class="text-center text-muted mb-3">
             <small>─────── or register with email ───────</small>
         </div>
-        {% endif %}
-        -->
+
         <!-- Registration Form -->
         <form action="{% url 'register' %}" method="POST">
             {% csrf_token %}
