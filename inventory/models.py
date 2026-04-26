@@ -35,19 +35,17 @@ class Inventory(models.Model):
         if qty <= 0:
             raise ValueError("Quantity to add must be positive.")
         if reason in ["damage", "order"]:
-            # behave like deduct
             self.quantity = max(0, self.quantity - qty)
             change_type = InventoryLog.DEDUCT
 
         else:
-            # default → add
             self.quantity += qty
             change_type = InventoryLog.ADD
 
         self.save(update_fields=["quantity", "updated_at"])
         InventoryLog.objects.create(
             inventory=self,
-            change_type=InventoryLog.ADD,
+            change_type=change_type,
             quantity_changed=qty,
             quantity_after=self.quantity,
             reason=reason,
@@ -63,7 +61,7 @@ class Inventory(models.Model):
         self.save(update_fields=["quantity", "updated_at"])
         InventoryLog.objects.create(
             inventory=self,
-            change_type=change_type,
+            change_type=InventoryLog.DEDUCT,
             quantity_changed=qty,
             quantity_after=self.quantity,
             reason=reason,

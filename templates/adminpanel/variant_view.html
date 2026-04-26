@@ -45,15 +45,33 @@ style="background:{% if variant.color_code %}{{ variant.color_code }}{% else %}#
 <td style="font-weight:600;">₹{{ variant.price }}</td>
 
 <td>
-{% if variant.stock == 0 %}
-<span style="color:var(--red);font-weight:600;">0</span>
-{% elif variant.stock <= 5 %}
-<span style="color:var(--amber);font-weight:600;">{{ variant.stock }}</span>
-{% else %}
-<span style="color:var(--green);font-weight:600;">{{ variant.stock }}</span>
-{% endif %}
+  {% with inv=variant.inventory %}
+    {% if inv %}
+      {% if inv.quantity == 0 %}
+        <span style="color:var(--red);font-weight:600;">0</span>
+      {% elif inv.quantity <= 5 %}
+        <span style="color:var(--amber);font-weight:600;">
+          {{ inv.quantity }}
+        </span>
+      {% else %}
+        <span style="color:var(--green);font-weight:600;">
+          {{ inv.quantity }}
+        </span>
+      {% endif %}
+      <div style="margin-top:6px;">
+        <a href="{% url 'admin_inventory_add_stock' inv.id %}"
+           class="btn-admin"
+           style="font-size:11px;padding:4px 10px;">
+          + Stock
+        </a>
+      </div>
+    {% else %}
+      <span style="color:var(--text-muted);font-size:12px;">
+        No inventory
+      </span>
+    {% endif %}
+  {% endwith %}
 </td>
-
 <td>
 <span class="abadge {% if variant.is_available %}b-avail{% else %}b-unavail{% endif %}">
 {% if variant.is_available %}Active{% else %}Hidden{% endif %}

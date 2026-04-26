@@ -58,7 +58,7 @@
 
         <form method="POST" action="">
           {% csrf_token %}
-
+          <input type="hidden" name="next" value="{{ request.GET.next }}">
           <!-- Quantity -->
           <div class="a-form-group">
             <label class="a-label">

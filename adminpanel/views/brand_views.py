@@ -30,7 +30,7 @@ def brand_list(request):
     if search_query:
         brands = brands.filter(brand_name__icontains=search_query)
 
-    paginator = Paginator(brands, 2)
+    paginator = Paginator(brands, 10)
     page = request.GET.get("page", 1)
     brands = paginator.get_page(page)
 

@@ -33,14 +33,12 @@ def checkout(request):
         if item.variant.stock > 0:
             try:
                 pct, label, _ = get_applicable_offer(item.variant.product)
-
                 original_price = item.variant.price
                 effective_price = apply_discount(original_price, pct)
                 item.variant.has_offer = pct > 0
                 item.variant.original_price = original_price
                 item.variant.effective_price = effective_price
                 item.variant.offer_label = label
-
                 item.sub_total = effective_price * item.quantity
 
             except Exception:

@@ -38,9 +38,6 @@ def _unique_slug_variant(color_name, exclude_id=None):
     return slug
 
 
-# ── Product List ──────────────────────────────────────────────────────────────
-
-
 @admin_required
 def product_list(request):
     search_query = request.GET.get("q", "").strip()
@@ -83,9 +80,6 @@ def product_suggestions(request):
             .order_by("product_name")[:8]
         )
     return JsonResponse({"suggestions": suggestions})
-
-
-# ── Add / Edit Product ────────────────────────────────────────────────────────
 
 
 @admin_required
@@ -183,9 +177,6 @@ def product_edit(request, product_id):
         "selected_categories": list(product.category.values_list("id", flat=True)),
     }
     return render(request, "adminpanel/product_form.html", context)
-
-
-# ── Add / Edit Variant ────────────────────────────────────────────────────────
 
 
 @admin_required
@@ -293,9 +284,6 @@ def variant_edit(request, variant_id):
     return render(request, "adminpanel/variant_form.html", context)
 
 
-# ── Gallery Images ────────────────────────────────────────────────────────────
-
-
 @admin_required
 def variant_image_add(request, variant_id):
     variant = get_object_or_404(ProductVariant, id=variant_id)
@@ -341,3 +329,4 @@ def product_variants(request, product_id):
     context = {"product": product, "variants": variants}
 
     return render(request, "adminpanel/variant_view.html", context)
+

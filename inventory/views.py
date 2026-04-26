@@ -105,6 +105,14 @@ def inventory_add_stock(request, inventory_id):
             f"Added {qty} unit{'s' if qty != 1 else ''} to {variant_name}. "
             f"New stock: {inventory.quantity}.",
         )
+        next_page = request.POST.get("next") or request.GET.get("next")
+
+        if next_page == "variants":
+            return redirect(
+                "admin_product_variants",
+                product_id=inventory.variant.product.id
+            )
+
         return redirect("admin_inventory_list")
 
     return render(
