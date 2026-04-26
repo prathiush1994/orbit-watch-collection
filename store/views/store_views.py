@@ -1,17 +1,13 @@
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Q, Min, Max
 from django.core.paginator import Paginator
-
 from store.models import ProductVariant
 from category.models import Category
 from brands.models import Brand
-
 from carts.models import CartItem
 from carts.views import _get_or_create_cart
-
 from wishlist.models import WishlistItem
 from wishlist.views import _get_or_create_wishlist
-
 from offers.utils import annotate_variants_with_offers
 
 

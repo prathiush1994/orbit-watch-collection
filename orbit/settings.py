@@ -164,7 +164,7 @@ DEFAULT_FROM_EMAIL = "Orbit Watch <prathiush1994@gmail.com>"
 # ── Django Messages ───────────────────────────────────
 from django.contrib.messages import constants as message_constants
 
-MESSAGE_STORAGE = "django.contrib.messages.storage.session.SessionStorage"
+MESSAGE_STORAGE = "django.contrib.messages.storage.fallback.FallbackStorage"
 
 MESSAGE_TAGS = {
     message_constants.DEBUG: "secondary",
