@@ -23,7 +23,7 @@ def store(request, category_slug=None):
     base_qs_kwargs = dict(
         product__brand__status="active",
         is_available=True,
-        stock__gt=0,
+        inventory__quantity__gt=0,
     )
 
     if category_slug:
@@ -38,10 +38,14 @@ def store(request, category_slug=None):
             product__category__status="active", **base_qs_kwargs
         ).distinct()
 
-    variants = variants.select_related("product", "product__brand").prefetch_related(
-        "product__category",
-        "product__offer",
-        "product__category__offer",
+    variants = (
+        variants
+        .select_related("product", "product__brand", "inventory")
+        .prefetch_related(
+            "product__category",
+            "product__offer",
+            "product__category__offer",
+        )
     )
     
     # ── Filters ─────────────────────────────
@@ -105,17 +109,18 @@ def store(request, category_slug=None):
     all_categories = Category.objects.filter(status="active")
 
     all_brands = Brand.objects.filter(
-        status="active", product__variants__is_available=True
+        status="active", product__variants__inventory__quantity__gt=0
     ).distinct()
 
     price_bounds = ProductVariant.objects.filter(
         product__brand__status="active",
         product__category__status="active",
         is_available=True,
-        stock__gt=0,
+        inventory__quantity__gt=0,
     ).aggregate(min=Min("price"), max=Max("price"))
     active_categories_set = set(category_slugs)
     active_brands_set = set(brand_slugs)
+    
     return render(
         request,
         "store/store.html",

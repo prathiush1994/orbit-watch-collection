@@ -107,8 +107,9 @@ def _build_order_from_session(request, address, payment_obj, totals):
     )
 
     for item in cart_items:
-        if item.variant.stock <= 0:
-            continue
+        if item.variant.stock < item.quantity:
+            raise ValueError(f"{item.variant} is out of stock or insufficient quantity.")
+
         OrderProduct.objects.create(
             order=order,
             user=request.user,
@@ -119,8 +120,12 @@ def _build_order_from_session(request, address, payment_obj, totals):
             quantity=item.quantity,
             ordered=True,
         )
-        item.variant.stock -= item.quantity
-        item.variant.save(update_fields=["stock"])
+
+        item.variant.inventory.deduct_stock(
+            qty=item.quantity,
+            reason="order",
+            updated_by=request.user
+        )
 
     cart_items.delete()
 
@@ -154,7 +159,7 @@ def _compute_totals(cart_items, session):
 
     subtotal = Decimal("0")
     for item in cart_items:
-        if item.variant.stock <= 0:
+        if not item.variant.is_in_stock:
             continue
         try:
             pct, _ = get_applicable_offer(item.variant.product)

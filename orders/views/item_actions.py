@@ -20,18 +20,16 @@ def cancel_order(request, order_number):
 
     reason = request.POST.get("cancel_reason", "")
 
-    for item in order.items.select_related("variant").all():
-        if item.variant:
-            item.variant.stock += item.quantity
-            item.variant.save(update_fields=["stock"])
-
     refund_amount = Decimal("0")
     now = timezone.now()
 
     for item in order.items.filter(item_status="Active").select_related("variant"):
         if item.variant:
-            item.variant.stock += item.quantity
-            item.variant.save(update_fields=["stock"])
+            item.variant.inventory.add_stock(
+                qty=item.quantity,
+                reason="order_cancel",
+                updated_by=request.user
+            )
         refund_amount += item.product_price * item.quantity
         item.item_status = "Cancelled"
         item.cancelled_qty = item.quantity
@@ -208,8 +206,11 @@ def cancel_item(request, order_number, item_id):
     reason = request.POST.get("cancel_reason", "")
 
     if item.variant:
-        item.variant.stock += cancel_qty
-        item.variant.save(update_fields=["stock"])
+        item.variant.inventory.add_stock(
+            qty=cancel_qty,
+            reason="order_cancel",
+            updated_by=request.user
+        )
 
     item_unit_refund = item.product_price * cancel_qty
 

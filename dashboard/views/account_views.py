@@ -5,105 +5,10 @@ from django.utils import timezone
 from datetime import timedelta
 from accounts.models import Account
 from accounts.email_utils import generate_otp, send_otp_email
-from accounts.models import UserAddress
-from orders.models import Order, Payment, Coupon, CouponUsage
-from offers.models import ReferralCode
 import base64
 import uuid
 from django.core.files.base import ContentFile
-from wallet.models import Wallet
-import random, string
-
-OTP_EXPIRY_MINUTES = 2
-
-
-def _otp_remaining(otp_created_at):
-    """Returns seconds remaining, or 0 if expired."""
-    if not otp_created_at:
-        return 0
-    expiry = otp_created_at + timedelta(minutes=OTP_EXPIRY_MINUTES)
-    remaining = (expiry - timezone.now()).total_seconds()
-    return max(int(remaining), 0)
-
-
-@login_required(login_url="login")
-def profile(request):
-    user = request.user
-
-    # Auto-generate referral code on first profile visit
-    referral_code = None
-    try:
-        referral_code = user.referral_code
-    except Exception:
-        # User has no code yet — create one now
-        while True:
-            code = "ORB" + "".join(
-                random.choices(string.ascii_uppercase + string.digits, k=5)
-            )
-            if not ReferralCode.objects.filter(code=code).exists():
-                break
-        referral_code = ReferralCode.objects.create(
-            user=user,
-            code=code,
-            referee_discount=100,  # ₹100 wallet credit for new user
-            referrer_reward=50,  # ₹50 wallet reward for referrer
-        )
-
-    # Stats: how many people used this code
-    times_used = (
-        ReferralCode.objects.filter(user=user)
-        .values_list("times_used", flat=True)
-        .first()
-        or 0
-    )
-
-    referral_url = f"{request.scheme}://{request.get_host()}/accounts/register/?ref={referral_code.token}"
-
-    return render(
-        request,
-        "dashboard/profile.html",
-        {
-            "referral_code": referral_code,
-            "referral_url": referral_url,
-            "times_used": times_used,
-        },
-    )
-
-
-@login_required(login_url="login")
-def edit_profile(request):
-    if request.method == "POST":
-        user = request.user
-        user.first_name = request.POST.get("first_name", "").strip()
-        user.last_name = request.POST.get("last_name", "").strip()
-        user.phone_number = request.POST.get("phone_number", "").strip()
-
-        # Handle photo delete
-        if request.POST.get("delete_photo") == "1":
-            if user.profile_photo:
-                user.profile_photo.delete(save=False)
-                user.profile_photo = None
-
-        # Handle cropped photo (base64 from JS cropper)
-        cropped_photo = request.POST.get("cropped_photo", "").strip()
-        if cropped_photo and cropped_photo.startswith("data:image"):
-            try:
-                format, imgstr = cropped_photo.split(";base64,")
-                ext = format.split("/")[-1]
-                filename = f"profile_{uuid.uuid4().hex}.{ext}"
-                decoded = base64.b64decode(imgstr)
-                user.profile_photo.save(filename, ContentFile(decoded), save=False)
-            except Exception:
-                pass
-
-        user.save()
-        messages.success(
-            request, "Profile updated successfully.", extra_tags="edit_profile"
-        )
-        return redirect("dashboard_profile")
-
-    return render(request, "dashboard/edit_profile.html")
-
+from .utils import _otp_remaining
 
 @login_required(login_url="login")
 def change_email(request):
@@ -228,42 +133,6 @@ def resend_change_email_otp(request):
     messages.success(request, "New OTP sent.", extra_tags="change_email")
     return redirect("dashboard_change_email")
 
-
-@login_required(login_url="login")
-def orders(request):
-    return redirect("my_orders")
-
-
-@login_required(login_url="login")
-def transactions(request):
-    """Shows all payments made by this user."""
-    from orders.models import Payment
-
-    user_payments = Payment.objects.filter(user=request.user).order_by("-created_at")
-    return render(
-        request,
-        "dashboard/transactions.html",
-        {
-            "payments": user_payments,
-        },
-    )
-
-
-@login_required(login_url="login")
-def returns(request):
-    """Shows orders with return/cancelled status."""
-    from orders.models import Order
-
-    returned_orders = Order.objects.filter(
-        user=request.user, status__in=["Return Requested", "Returned", "Cancelled"]
-    )
-    return render(
-        request,
-        "dashboard/returns.html",
-        {
-            "orders": returned_orders,
-        },
-    )
 
 
 @login_required(login_url="login")
@@ -464,69 +333,4 @@ def resend_delete_account_otp(request):
     else:
         messages.error(request, "Failed to send OTP.", extra_tags="delete_account")
     return redirect("dashboard_verify_delete_account")
-
-
-@login_required(login_url="login")
-def dashboard_wallet(request):
-    wallet, _ = Wallet.objects.get_or_create(user=request.user)
-
-    transactions = wallet.transactions.select_related("order").all()[:50]
-
-    # Stats
-    total_credited = sum(
-        t.amount for t in wallet.transactions.filter(txn_type="credit")
-    )
-    total_debited = sum(t.amount for t in wallet.transactions.filter(txn_type="debit"))
-
-    context = {
-        "wallet": wallet,
-        "transactions": transactions,
-        "total_credited": total_credited,
-        "total_debited": total_debited,
-    }
-    return render(request, "dashboard/wallet.html", context)
-
-
-@login_required(login_url="login")
-def dashboard_coupons(request):
-    now = timezone.now()
-
-    # All active, not expired coupons
-    available = Coupon.objects.filter(
-        is_active=True,
-        valid_from__lte=now,
-    ).filter(
-        # valid_until is null (no expiry) OR still in future
-        valid_until__isnull=True
-    ) | Coupon.objects.filter(
-        is_active=True,
-        valid_from__lte=now,
-        valid_until__gt=now,
-    )
-
-    coupon_list = []
-    for c in available.order_by("-id"):
-        usage = CouponUsage.objects.filter(coupon=c, user=request.user).first()
-        used = usage.used_count if usage else 0
-        coupon_list.append(
-            {
-                "coupon": c,
-                "used": used,
-                "remaining": c.usage_limit - used,
-                "exhausted": used >= c.usage_limit,
-            }
-        )
-
-    context = {
-        "coupon_list": coupon_list,
-        "now": now,
-    }
-    return render(request, "dashboard/coupons.html", context)
-
-
-@login_required(login_url="login")
-def address(request):
-    addresses = UserAddress.objects.filter(user=request.user)
-    return render(request, "dashboard/address.html", {"addresses": addresses})
-
 

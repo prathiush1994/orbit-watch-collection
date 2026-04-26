@@ -35,7 +35,7 @@ class ProductVariant(models.Model):
         max_length=20, blank=True, help_text="Optional hex code e.g. #FF0000"
     )
     price = models.IntegerField(help_text="Price for this specific variant")
-    stock = models.IntegerField(default=0)
+
     is_available = models.BooleanField(default=True)
     slug = models.SlugField(
         max_length=250, unique=True, help_text="e.g. titan-celestor-red"
@@ -88,15 +88,14 @@ class ProductVariant(models.Model):
     def get_all_variants(self):
         """ALL variants of the same product including self (for swatches)."""
         return self.product.variants.filter(is_available=True)
+    
+    @property
+    def stock(self):
+        return self.inventory.quantity if hasattr(self, "inventory") else 0
 
+    @property
     def is_in_stock(self):
         return self.stock > 0
-
-    def is_in_stock(self):
-        try:
-            return self.inventory.quantity > 0
-        except Exception:
-            return self.stock > 0
 
 
 class VariantImage(models.Model):

@@ -6,9 +6,10 @@ from offers.utils import annotate_variants_with_offers
 def home(request):
     men = list(
         ProductVariant.objects.filter(
-            product__category__slug="men", is_available=True, stock__gt=0
+            product__category__slug="men", is_available=True, 
+            inventory__quantity__gt=0
         )
-        .select_related("product")
+        .select_related("product", "inventory")
         .prefetch_related(
             "product__category", "product__offer", "product__category__offer"
         )
@@ -17,9 +18,10 @@ def home(request):
 
     women = list(
         ProductVariant.objects.filter(
-            product__category__slug="women", is_available=True, stock__gt=0
+            product__category__slug="women", is_available=True, 
+            inventory__quantity__gt=0
         )
-        .select_related("product")
+        .select_related("product", "inventory")
         .prefetch_related(
             "product__category", "product__offer", "product__category__offer"
         )
@@ -28,9 +30,10 @@ def home(request):
 
     kids = list(
         ProductVariant.objects.filter(
-            product__category__slug="kids", is_available=True, stock__gt=0
+            product__category__slug="kids", is_available=True, 
+            inventory__quantity__gt=0
         )
-        .select_related("product")
+        .select_related("product", "inventory")
         .prefetch_related(
             "product__category", "product__offer", "product__category__offer"
         )

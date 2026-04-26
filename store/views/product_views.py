@@ -14,9 +14,14 @@ from reviews.views import _user_has_purchased
 def product_detail(request, category_slug, variant_slug):
     try:
         variant = (
-            ProductVariant.objects.select_related("product", "product__brand")
+            ProductVariant.objects
+            .select_related("product", "product__brand", "inventory")
             .prefetch_related("product__category")
-            .get(slug=variant_slug, is_available=True)
+            .get(
+                    slug=variant_slug,
+                    is_available=True,
+                    inventory__quantity__gt=0
+                )
         )
     except ProductVariant.DoesNotExist:
         return redirect("store")
@@ -29,7 +34,9 @@ def product_detail(request, category_slug, variant_slug):
         return redirect("store")
 
     gallery_images = variant.images.all()
-    all_variants = variant.get_all_variants()
+    all_variants = variant.get_all_variants().filter(
+    inventory__quantity__gt=0
+)
 
     # ── Offer
     offer_ctx = get_offer_context(variant.product, variant.price)

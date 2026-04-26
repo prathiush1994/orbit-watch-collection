@@ -48,7 +48,7 @@ def wishlist(request):
     )
     for item in items:
         item.in_cart = item.variant_id in cart_variant_ids
-        item.out_of_stock = item.variant.stock <= 0
+        item.out_of_stock = item.variant.inventory.quantity <= 0
         item.unavailable = not item.variant.is_available or (
             item.variant.product.brand and item.variant.product.brand.status != "active"
         )
@@ -93,7 +93,7 @@ def add_to_cart_from_wishlist(request, variant_id):
     if not variant.is_available:
         return err("This product is currently unlisted.")
 
-    if variant.stock <= 0:
+    if variant.inventory.quantity <= 0:
         return err("This item is out of stock.")
 
     cart = _get_or_create_cart(request)
@@ -112,7 +112,7 @@ def add_to_cart_from_wishlist(request, variant_id):
     try:
         cart_item = CartItem.objects.get(variant=variant, cart=cart)
 
-        if cart_item.quantity >= variant.stock:
+        if cart_item.quantity >= variant.inventory.quantity:
             return err("Not enough stock available.")
 
         cart_item.quantity += 1

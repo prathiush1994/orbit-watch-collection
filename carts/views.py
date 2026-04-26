@@ -87,7 +87,12 @@ def cart(request):
     cart_obj = _get_or_create_cart(request)
     cart_items = list(
         CartItem.objects.filter(cart=cart_obj, is_active=True)
-        .select_related("variant", "variant__product", "variant__product__brand")
+        .select_related(
+            "variant",
+            "variant__product",
+            "variant__product__brand",
+            "variant__inventory",
+        )
         .prefetch_related(
             "variant__product__category",
             "variant__product__offer",
@@ -105,7 +110,7 @@ def cart(request):
     has_unavailable = False
 
     for item in cart_items:
-        if item.variant.stock <= 0:
+        if item.variant.inventory.quantity <= 0:
             has_unavailable = True
             continue
         # Use effective_price (discounted) for totals
@@ -136,7 +141,7 @@ def add_cart(request, variant_id):
     clear_messages(request)
     variant = get_object_or_404(ProductVariant, id=variant_id)
 
-    if variant.stock <= 0:
+    if variant.inventory.quantity <= 0:
         messages.error(request, "This item is out of stock.")
         return redirect(request.META.get("HTTP_REFERER", "store"))
 
@@ -157,7 +162,7 @@ def add_cart(request, variant_id):
 
     try:
         cart_item = CartItem.objects.get(cart=cart, variant=variant)
-        if cart_item.quantity >= variant.stock:
+        if cart_item.quantity >= variant.inventory.quantity:
             messages.error(request, "Stock limit reached.")
             return redirect(request.META.get("HTTP_REFERER", "store"))
         cart_item.quantity += 1
@@ -172,7 +177,7 @@ def increment_cart(request, variant_id):
     cart = _get_or_create_cart(request)
     cart_item = get_object_or_404(CartItem, cart=cart, variant_id=variant_id)
 
-    if cart_item.variant.stock <= 0:
+    if cart_item.variant.inventory.quantity <= 0:
         messages.error(request, "Out of stock.")
         return redirect("cart")
 
@@ -190,7 +195,7 @@ def increment_cart(request, variant_id):
         messages.error(request, "Max 3 of the same product allowed.")
         return redirect("cart")
 
-    if cart_item.quantity >= cart_item.variant.stock:
+    if cart_item.quantity >= cart_item.variant.inventory.quantity:
         messages.error(request, "Stock limit reached.")
         return redirect("cart")
 
