@@ -8,6 +8,7 @@ from carts.models import CartItem
 from wallet.models import Wallet
 from orders.models import Order, OrderProduct, Coupon, CouponUsage
 from offers.models import ReferralCode, ReferralUse
+from django.db import transaction
 
 
 def _generate_order_number():
@@ -35,113 +36,124 @@ def _razorpay_client():
 
 
 def _build_order_from_session(request, address, payment_obj, totals):
-    order = Order.objects.create(
-        user=request.user,
-        payment=payment_obj,
-        full_name=address.full_name,
-        phone=address.phone,
-        address_line=address.address_line,
-        city=address.city,
-        state=address.state,
-        pincode=address.pincode,
-        address_type=address.address_type,
-        order_number=_generate_order_number(),
-        order_total=totals["actual_total"],
-        tax=totals["tax"],
-        discount=totals["coupon_discount"] + totals["referral_discount"],
-        coupon_code=totals["coupon_code"],
-        wallet_used=totals["wallet_used"],
-        is_ordered=True,
-    )
 
-    if totals["coupon_id"]:
-        try:
-            coupon_obj = Coupon.objects.get(id=totals["coupon_id"])
-            order.coupon = coupon_obj
-            order.save(update_fields=["coupon"])
-            usage, _ = CouponUsage.objects.get_or_create(
-                coupon=coupon_obj, user=request.user
-            )
-            usage.used_count += 1
-            usage.save()
-            coupon_obj.total_usage += 1
-            coupon_obj.save(update_fields=["total_usage"])
-        except Coupon.DoesNotExist:
-            pass
+    cart = _get_or_create_cart(request)
+    cart_items = CartItem.objects.filter(
+        cart=cart, is_active=True
+    ).select_related("variant", "variant__product")
 
-    if totals["referral_id"]:
-        try:
-            ref_code = ReferralCode.objects.get(id=totals["referral_id"])
-
-            ReferralUse.objects.get_or_create(
-                referral_code=ref_code,
-                referee=request.user,
-                defaults={"reward_given": True},
+    for item in cart_items:
+        inventory = getattr(item.variant, "inventory", None)
+        if not inventory or inventory.quantity < item.quantity:
+            raise ValueError(
+                f"{item.variant} is out of stock or insufficient quantity."
             )
 
-            referrer_wallet, _ = Wallet.objects.get_or_create(user=ref_code.user)
-            referrer_wallet.credit(
-                amount=ref_code.referrer_reward,
-                description=f"Referral reward — {request.user.email} placed first order "
-                f"using your code {ref_code.code}",
+    with transaction.atomic():
+
+        order = Order.objects.create(
+            user=request.user,
+            payment=payment_obj,
+            full_name=address.full_name,
+            phone=address.phone,
+            address_line=address.address_line,
+            city=address.city,
+            state=address.state,
+            pincode=address.pincode,
+            address_type=address.address_type,
+            order_number=_generate_order_number(),
+            order_total=totals["actual_total"],
+            tax=totals["tax"],
+            discount=totals["coupon_discount"] + totals["referral_discount"],
+            coupon_code=totals["coupon_code"],
+            wallet_used=totals["wallet_used"],
+            is_ordered=True,
+        )
+
+        if totals["coupon_id"]:
+            try:
+                coupon_obj = Coupon.objects.get(id=totals["coupon_id"])
+                order.coupon = coupon_obj
+                order.save(update_fields=["coupon"])
+
+                usage, _ = CouponUsage.objects.get_or_create(
+                    coupon=coupon_obj, user=request.user
+                )
+                usage.used_count += 1
+                usage.save()
+
+                coupon_obj.total_usage += 1
+                coupon_obj.save(update_fields=["total_usage"])
+
+            except Coupon.DoesNotExist:
+                pass
+
+        if totals["referral_id"]:
+            try:
+                ref_code = ReferralCode.objects.get(id=totals["referral_id"])
+
+                ReferralUse.objects.get_or_create(
+                    referral_code=ref_code,
+                    referee=request.user,
+                    defaults={"reward_given": True},
+                )
+
+                referrer_wallet, _ = Wallet.objects.get_or_create(
+                    user=ref_code.user
+                )
+                referrer_wallet.credit(
+                    amount=ref_code.referrer_reward,
+                    description=f"Referral reward — {request.user.email} used {ref_code.code}",
+                    order=order,
+                )
+
+                ref_code.times_used += 1
+                ref_code.save(update_fields=["times_used"])
+
+            except Exception:
+                pass
+
+        if totals["wallet_used"] > 0:
+            wallet, _ = Wallet.objects.get_or_create(user=request.user)
+            wallet.debit(
+                amount=totals["wallet_used"],
+                description=f"Payment for Order #{order.order_number}",
                 order=order,
             )
 
-            ref_code.times_used += 1
-            ref_code.save(update_fields=["times_used"])
+        for item in cart_items:
+            OrderProduct.objects.create(
+                order=order,
+                user=request.user,
+                variant=item.variant,
+                product_name=item.variant.product.product_name,
+                color_name=item.variant.color_name,
+                product_price=item.variant.price,
+                quantity=item.quantity,
+                ordered=True,
+            )
 
-        except (ReferralCode.DoesNotExist, Exception):
-            pass  
+            item.variant.inventory.deduct_stock(
+                qty=item.quantity,
+                reason="order",
+                updated_by=request.user,
+            )
 
-    if totals["wallet_used"] > 0:
-        wallet, _ = Wallet.objects.get_or_create(user=request.user)
-        wallet.debit(
-            amount=totals["wallet_used"],
-            description=f"Payment for Order #{order.order_number}",
-            order=order,
-        )
+        cart_items.delete()
 
-    cart = _get_or_create_cart(request)
-    cart_items = CartItem.objects.filter(cart=cart, is_active=True).select_related(
-        "variant", "variant__product"
-    )
-
-    for item in cart_items:
-        if item.variant.stock < item.quantity:
-            raise ValueError(f"{item.variant} is out of stock or insufficient quantity.")
-
-        OrderProduct.objects.create(
-            order=order,
-            user=request.user,
-            variant=item.variant,
-            product_name=item.variant.product.product_name,
-            color_name=item.variant.color_name,
-            product_price=item.variant.price,
-            quantity=item.quantity,
-            ordered=True,
-        )
-
-        item.variant.inventory.deduct_stock(
-            qty=item.quantity,
-            reason="order",
-            updated_by=request.user
-        )
-
-    cart_items.delete()
-
-    for key in [
-        "coupon_code",
-        "coupon_id",
-        "coupon_discount",
-        "referral_code",
-        "referral_id",
-        "referral_discount",
-        "wallet_used",
-        "wallet_applied",
-        "pending_address_id",
-        "pending_razorpay_order_id",
-    ]:
-        request.session.pop(key, None)
+        for key in [
+            "coupon_code",
+            "coupon_id",
+            "coupon_discount",
+            "referral_code",
+            "referral_id",
+            "referral_discount",
+            "wallet_used",
+            "wallet_applied",
+            "pending_address_id",
+            "pending_razorpay_order_id",
+        ]:
+            request.session.pop(key, None)
 
     return order
 
@@ -159,7 +171,7 @@ def _compute_totals(cart_items, session):
 
     subtotal = Decimal("0")
     for item in cart_items:
-        if not item.variant.is_in_stock:
+        if not inventory or inventory.quantity <= 0:
             continue
         try:
             pct, _ = get_applicable_offer(item.variant.product)

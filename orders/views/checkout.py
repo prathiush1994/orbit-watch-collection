@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect
+
 from django.contrib.auth.decorators import login_required
+
 from django.contrib import messages
 from django.conf import settings
 from carts.views import _get_or_create_cart
@@ -29,25 +31,39 @@ def checkout(request):
 
     # Annotate each item with its discounted sub_total for the template
     cart_items_list = list(cart_items)
-    for item in cart_items_list:
-        if item.variant.stock > 0:
-            try:
-                pct, label, _ = get_applicable_offer(item.variant.product)
-                original_price = item.variant.price
-                effective_price = apply_discount(original_price, pct)
-                item.variant.has_offer = pct > 0
-                item.variant.original_price = original_price
-                item.variant.effective_price = effective_price
-                item.variant.offer_label = label
-                item.sub_total = effective_price * item.quantity
 
-            except Exception:
-                item.variant.has_offer = False
-                item.variant.original_price = item.variant.price
-                item.variant.effective_price = item.variant.price
-                item.sub_total = item.variant.price * item.quantity
-        else:
-            item.sub_total = Decimal("0")
+    for item in cart_items_list:
+
+        stock = item.variant.stock
+
+        if stock <= 0:
+            messages.error(
+                request,
+                f"{item.variant.product.product_name} is out of stock."
+            )
+            return redirect("cart")
+
+        if item.quantity > stock:
+            messages.error(
+                request,
+                f"Only {stock} unit(s) available for {item.variant.product.product_name}."
+            )
+            return redirect("cart")
+
+        try:
+            pct, label, _ = get_applicable_offer(item.variant.product)
+            original_price = item.variant.price
+            effective_price = apply_discount(original_price, pct)
+            item.variant.has_offer = pct > 0
+            item.variant.original_price = original_price
+            item.variant.effective_price = effective_price
+            item.variant.offer_label = label
+            item.sub_total = effective_price * item.quantity
+        except Exception:
+            item.variant.has_offer = False
+            item.variant.original_price = item.variant.price
+            item.variant.effective_price = item.variant.price
+            item.sub_total = item.variant.price * item.quantity
 
     totals = _compute_totals(cart_items_list, request.session)
     wallet = _get_wallet(request.user)

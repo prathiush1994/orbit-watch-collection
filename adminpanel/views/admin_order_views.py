@@ -152,10 +152,13 @@ def admin_approve_item_return(request, order_number, item_id):
 
     return_qty = item.returned_qty or item.quantity
 
-    # 1. Restore stock
-    if item.variant:
-        item.variant.stock += return_qty
-        item.variant.save(update_fields=["stock"])
+    if item.variant and hasattr(item.variant, "inventory"):
+        item.variant.inventory.add_stock(
+            qty=return_qty,
+            reason="order_cancel",
+            updated_by=request.user,
+            note=f"Return approved for order {order.order_number}",
+        )
 
     # 2. Proportional wallet refund based on item value vs order total
     order_subtotal = sum(i.product_price * i.quantity for i in order.items.all())

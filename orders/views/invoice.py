@@ -21,7 +21,12 @@ import io
 @login_required(login_url="login")
 def download_invoice(request, order_number):
     order = get_object_or_404(Order, order_number=order_number, user=request.user)
-    order_items = OrderProduct.objects.filter(order=order)
+    order_items = OrderProduct.objects.filter(order=order).exclude(
+        item_status__in=["Return Requested", "Returned", "Cancelled"]
+    )
+    if not order_items.exists():
+        messages.error(request, "No valid items to generate invoice.")
+        return redirect("order_detail", order_number=order_number)
 
     if order.status == "Cancelled":
         messages.error(request, "Invoice not available for cancelled orders.")
@@ -31,14 +36,7 @@ def download_invoice(request, order_number):
         messages.error(request, "Invoice not available for returned orders.")
         return redirect("order_detail", order_number=order_number)
 
-    if order.items.filter(
-        item_status__in=["Return Requested", "Returned", "Cancelled"]
-    ).exists():
-        messages.error(
-            request,
-            "Invoice not available because some items are returned or cancelled.",
-        )
-        return redirect("order_detail", order_number=order_number)
+
 
     try:
         buffer = io.BytesIO()
@@ -223,3 +221,4 @@ def download_invoice(request, order_number):
 
     except ImportError:
         return HttpResponse("ReportLab not installed", status=500)
+
