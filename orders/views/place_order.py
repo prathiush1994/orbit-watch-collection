@@ -50,6 +50,7 @@ def place_order(request):
             messages.error(request, "Wallet balance changed. Please review your order.")
             return redirect("checkout")
 
+    # ── COD / Wallet-only ────────────────────────────────────
     if payment_method == "COD":
         pay_method = "WALLET" if totals["final_total"] == 0 else "COD"
         payment = Payment.objects.create(
@@ -61,34 +62,53 @@ def place_order(request):
         order = _build_order_from_session(request, address, payment, totals)
         return redirect("order_complete", order_number=order.order_number)
 
+    # ── Razorpay ─────────────────────────────────────────────
     if payment_method == "RAZORPAY":
         amount_paise = int(totals["final_total"] * 100)
         rz_client = _razorpay_client()
-        rz_order = rz_client.order.create(
-            {
-                "amount": amount_paise,
-                "currency": "INR",
-                "payment_capture": 1,
-            }
-        )
-        request.session["pending_address_id"] = address_id
-        request.session["pending_razorpay_order_id"] = rz_order["id"]
-        return render(
-            request,
-            "orders/razorpay_payment.html",
-            {
-                "razorpay_key_id": settings.RAZORPAY_KEY_ID,
-                "razorpay_order_id": rz_order["id"],
-                "amount_paise": amount_paise,
-                "final_total": totals["final_total"],
-                "order_currency": "INR",
-                "user_name": f"{request.user.first_name} {request.user.last_name}".strip()
-                or request.user.email,
-                "user_email": request.user.email,
-                "user_phone": getattr(request.user, "phone_number", ""),
+
+        # KEY CHANGE: Store all order info in Razorpay order notes
+        # Webhook will read these notes to create the Django order
+        # without needing browser session
+        rz_order = rz_client.order.create({
+            "amount":          amount_paise,
+            "currency":        "INR",
+            "payment_capture": 1,
+            "notes": {
+                # Who is paying
+                "user_id":    str(request.user.id),
+                # Where to deliver
+                "address_id": str(address_id),
+                # Discount info (webhook needs this to compute totals)
+                "coupon_discount":   str(totals["coupon_discount"]),
+                "coupon_code":       str(totals["coupon_code"]),
+                "coupon_id":         str(totals["coupon_id"] or ""),
+                "referral_discount": str(totals["referral_discount"]),
+                "referral_code":     str(totals["referral_code"]),
+                "referral_id":       str(totals["referral_id"] or ""),
+                "wallet_used":       str(totals["wallet_used"]),
+                "wallet_applied":    str(totals["wallet_applied"]),
             },
-        )
+        })
+
+        # Still store in session as backup
+        request.session["pending_address_id"]        = address_id
+        request.session["pending_razorpay_order_id"] = rz_order["id"]
+
+        data = {
+            "razorpay_key_id":   settings.RAZORPAY_KEY_ID,
+            "razorpay_order_id": rz_order["id"],
+            "amount_paise":      amount_paise,
+            "final_total":       totals["final_total"],
+            "order_currency":    "INR",
+            "user_name": (
+                f"{request.user.first_name} {request.user.last_name}".strip()
+                or request.user.email
+            ),
+            "user_email":  request.user.email,
+            "user_phone":  getattr(request.user, "phone_number", ""),
+        }
+        return render(request, "orders/razorpay_payment.html", data)
 
     messages.error(request, "Invalid payment method.")
     return redirect("checkout")
-

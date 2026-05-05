@@ -20,7 +20,11 @@ import io
 
 @login_required(login_url="login")
 def download_invoice(request, order_number):
-    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    order = get_object_or_404(
+        Order,
+        order_number=order_number,
+        user=request.user,
+    )
     order_items = OrderProduct.objects.filter(order=order).exclude(
         item_status__in=["Return Requested", "Returned", "Cancelled"]
     )
@@ -35,9 +39,6 @@ def download_invoice(request, order_number):
     if order.status == "Returned":
         messages.error(request, "Invoice not available for returned orders.")
         return redirect("order_detail", order_number=order_number)
-
-
-
     try:
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -66,7 +67,10 @@ def download_invoice(request, order_number):
         info_data = [
             ["Order Number:", f"#{order.order_number}"],
             ["Date:", order.created_at.strftime("%d %B %Y")],
-            ["Payment:", order.payment.payment_method if order.payment else "COD"],
+            [
+                "Payment:",
+                order.payment.payment_method if order.payment else "COD",
+            ],
             ["Status:", order.status],
         ]
 
@@ -87,7 +91,8 @@ def download_invoice(request, order_number):
         story.append(
             Paragraph(
                 f"{order.full_name} | +91 {order.phone}<br/>"
-                f"{order.address_line}, {order.city}, {order.state} — {order.pincode}",
+                f"{order.address_line}, {order.city}, {order.state} — "
+                f"{order.pincode}",
                 styles["Normal"],
             )
         )
@@ -116,7 +121,12 @@ def download_invoice(request, order_number):
         item_table.setStyle(
             TableStyle(
                 [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3167eb")),
+                    (
+                        "BACKGROUND",
+                        (0, 0),
+                        (-1, 0),
+                        colors.HexColor("#3167eb"),
+                    ),
                     ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                     ("FONTSIZE", (0, 0), (-1, -1), 9),
@@ -126,7 +136,13 @@ def download_invoice(request, order_number):
                         (-1, -1),
                         [colors.white, colors.HexColor("#f4f6ff")],
                     ),
-                    ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#dee2e6")),
+                    (
+                        "GRID",
+                        (0, 0),
+                        (-1, -1),
+                        0.5,
+                        colors.HexColor("#dee2e6"),
+                    ),
                     ("ALIGN", (3, 0), (-1, -1), "RIGHT"),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                     ("WORDWRAP", (0, 0), (-1, -1), "CJK"),
@@ -139,7 +155,11 @@ def download_invoice(request, order_number):
 
         actual_total = float(order.order_total)
         wallet_used = float(order.wallet_used or 0)
-        paid_amount = float(order.payment.amount_paid or 0) if order.payment else 0
+        paid_amount = (
+            float(order.payment.amount_paid or 0)
+            if order.payment
+            else 0
+        )
 
         subtotal = actual_total - float(order.tax)
 
@@ -150,7 +170,11 @@ def download_invoice(request, order_number):
 
         if order.discount and order.discount > 0:
             totals_data.append(
-                ["", f"Coupon ({order.coupon_code}):", f"- Rs.{order.discount}"]
+                [
+                    "",
+                    f"Coupon ({order.coupon_code}):",
+                    f"- Rs.{order.discount}",
+                ]
             )
 
         # show full order value
@@ -173,7 +197,12 @@ def download_invoice(request, order_number):
         totals_table.setStyle(
             TableStyle(
                 [
-                    ("FONTNAME", (1, last_row), (2, last_row), "Helvetica-Bold"),
+                    (
+                        "FONTNAME",
+                        (1, last_row),
+                        (2, last_row),
+                        "Helvetica-Bold",
+                    ),
                     ("FONTSIZE", (0, 0), (-1, -1), 10),
                     ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
                     (
@@ -201,12 +230,14 @@ def download_invoice(request, order_number):
 
         story.append(
             Paragraph(
-                "Thank you for shopping with Orbit Watch Collection!", center_style
+                "Thank you for shopping with Orbit Watch Collection!",
+                center_style,
             )
         )
         story.append(
             Paragraph(
-                "support@orbit.com | +91-859-321-1234 | Kerala, India", center_style
+                "support@orbit.com | +91-859-321-1234 | Kerala, India",
+                center_style,
             )
         )
 

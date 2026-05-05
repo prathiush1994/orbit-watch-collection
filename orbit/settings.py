@@ -18,7 +18,14 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG") == "True"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    "slideshow-tweet-thank.ngrok-free.dev",
+]
+CSRF_TRUSTED_ORIGINS = [
+    "https://slideshow-tweet-thank.ngrok-free.dev"
+]
 
 # Application definition
 
@@ -206,6 +213,9 @@ SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
 SOCIALACCOUNT_LOGIN_ON_GET = True 
 
+CSRF_COOKIE_SECURE = False   
+SESSION_COOKIE_SECURE = False  
+
 
 # ── Google Provider ───────────────────────────────────
 SOCIALACCOUNT_PROVIDERS = {
@@ -224,5 +234,6 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
-RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+RAZORPAY_KEY_ID = config("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET")
+RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")

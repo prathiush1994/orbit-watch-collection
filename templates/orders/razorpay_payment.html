@@ -13,9 +13,7 @@
             <i class="fas fa-credit-card" style="font-size:34px;color:#3167eb;"></i>
         </div>
         <h4 class="font-weight-bold mb-1">Complete Your Payment</h4>
-        <p class="text-muted">
-            You will be redirected to Razorpay's secure payment window.
-        </p>
+        <p class="text-muted">You will be redirected to Razorpay's secure payment window.</p>
     </div>
 
     <div class="card mb-4" style="border-radius:10px;">
@@ -51,80 +49,85 @@
 </div>
 </div>
 </section>
+{% endblock %}
 
+{% block extra_js %}
 <!-- Razorpay SDK -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
-document.getElementById('rzpPayBtn').addEventListener('click', function () {
+document.addEventListener('DOMContentLoaded', function () {
 
-    // Track if payment.failed fired so ondismiss doesn't double-redirect
-    let paymentFailed = false;
+    const btn = document.getElementById('rzpPayBtn');
+    console.log("BUTTON FOUND:", btn);
+    console.log("RAZORPAY LOADED:", typeof Razorpay);
 
-    const options = {
-        key: '{{ razorpay_key_id }}',
-        amount: {{ amount_paise }},
-        currency: '{{ order_currency }}',
-        name: 'Orbit Watch Collection',
-        description: 'Order Payment',
-        order_id: '{{ razorpay_order_id }}',
+    btn.addEventListener('click', function () {
+        console.log("BUTTON CLICKED");
 
-        // ── All payment methods enabled ──────────────────
-        // (no 'method' block — Razorpay shows all available options)
+        let paymentFailed = false;
 
-        prefill: {
-            name: '{{ user_name }}',
-            email: '{{ user_email }}',
-            contact: '{{ user_phone }}',
-        },
+        const options = {
+            key      : '{{ razorpay_key_id }}',
+            amount   : parseInt('{{ amount_paise }}', 10),
+            currency : '{{ order_currency }}',
+            name     : 'Orbit Watch Collection',
+            description: 'Order Payment',
+            order_id : '{{ razorpay_order_id }}',
 
-        theme: {
-            color: '#3167eb'
-        },
+            prefill: {
+                name   : '{{ user_name }}',
+                email  : '{{ user_email }}',
+                contact: '{{ user_phone }}',
+            },
 
-        // SUCCESS: signature verified server-side in razorpay_callback
-        handler: function (response) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '{% url "razorpay_callback" %}';
+            theme: { color: '#3167eb' },
 
-            const fields = {
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id  : response.razorpay_order_id,
-                razorpay_signature : response.razorpay_signature,
-                csrfmiddlewaretoken: '{{ csrf_token }}',
-            };
+            handler: function (response) {
+                console.log("PAYMENT SUCCESS:", response);
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{% url "razorpay_callback" %}';
 
-            for (const key in fields) {
-                const input = document.createElement('input');
-                input.type  = 'hidden';
-                input.name  = key;
-                input.value = fields[key];
-                form.appendChild(input);
-            }
-            document.body.appendChild(form);
-            form.submit();
-        },
+                const fields = {
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id  : response.razorpay_order_id,
+                    razorpay_signature : response.razorpay_signature,
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                };
 
-        modal: {
-            ondismiss: function () {
-                // Only redirect if user manually closed — not if payment.failed already redirected
-                if (!paymentFailed) {
-                    window.location.href = '{% url "payment_failed" %}';
+                for (const key in fields) {
+                    const input = document.createElement('input');
+                    input.type  = 'hidden';
+                    input.name  = key;
+                    input.value = fields[key];
+                    form.appendChild(input);
                 }
-            }
-        }
-    };
+                document.body.appendChild(form);
+                console.log("SUBMITTING FORM TO:", form.action);
+                form.submit();
+            },
 
-    const rzp = new Razorpay(options);
+            modal: {
+                ondismiss: function () {
+                    console.log("POPUP CLOSED");
+                    if (paymentFailed) {
+                        window.location.href = '{% url "payment_failed" %}';
+                    }
+                }
+            },
+        };
 
-    rzp.on('payment.failed', function (response) {
-        paymentFailed = true;
-        window.location.href = '{% url "payment_failed" %}';
+        const rzp = new Razorpay(options);
+
+        rzp.on('payment.failed', function (response) {
+            paymentFailed = true;
+            console.log("PAYMENT FAILED:", response.error);
+            window.location.href = '{% url "payment_failed" %}';
+        });
+
+        rzp.open();
     });
-
-    rzp.open();
 });
 </script>
-
 {% endblock %}

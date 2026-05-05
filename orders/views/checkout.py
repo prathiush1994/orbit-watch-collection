@@ -1,14 +1,11 @@
 from django.shortcuts import render, redirect
-
 from django.contrib.auth.decorators import login_required
-
 from django.contrib import messages
 from django.conf import settings
 from carts.views import _get_or_create_cart
 from carts.models import CartItem
 from accounts.models import UserAddress
 from .helpers import _compute_totals, _get_wallet
-from decimal import Decimal
 from offers.utils import get_applicable_offer, apply_discount
 
 
@@ -39,14 +36,15 @@ def checkout(request):
         if stock <= 0:
             messages.error(
                 request,
-                f"{item.variant.product.product_name} is out of stock."
+                f"{item.variant.product.product_name} is out of stock.",
             )
             return redirect("cart")
 
         if item.quantity > stock:
             messages.error(
                 request,
-                f"Only {stock} unit(s) available for {item.variant.product.product_name}."
+                f"Only {stock} unit(s) available for "
+                f"{item.variant.product.product_name}.",
             )
             return redirect("cart")
 
@@ -67,7 +65,10 @@ def checkout(request):
 
     totals = _compute_totals(cart_items_list, request.session)
     wallet = _get_wallet(request.user)
-    addresses = UserAddress.objects.filter(user=request.user).order_by("-is_default")
+    addresses = (
+        UserAddress.objects.filter(user=request.user)
+        .order_by("-is_default")
+    )
     coupon_code = request.session.get("coupon_code", None)
     context = {
         "cart_items": cart_items_list,

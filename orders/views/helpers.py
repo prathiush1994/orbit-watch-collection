@@ -171,10 +171,11 @@ def _compute_totals(cart_items, session):
 
     subtotal = Decimal("0")
     for item in cart_items:
+        inventory = getattr(item.variant, "inventory", None)
         if not inventory or inventory.quantity <= 0:
             continue
         try:
-            pct, _ = get_applicable_offer(item.variant.product)
+            pct, label, _ = get_applicable_offer(item.variant.product)
             ep = apply_discount(item.variant.price, pct)
         except Exception:
             ep = Decimal(str(item.variant.price))
