@@ -25,6 +25,7 @@ urlpatterns = [
     path("reviews/", include("reviews.urls")),
 ]
 
+handler404 = 'orbit.views.error_404'
 
 # Media files (development only)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

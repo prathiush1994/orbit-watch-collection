@@ -21,10 +21,6 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
         return True
 
     def pre_social_login(self, request, sociallogin):
-        """
-        If a user with this email already exists, connect the social account
-        to them instead of creating a duplicate.
-        """
         if sociallogin.is_existing:
             return
         try:

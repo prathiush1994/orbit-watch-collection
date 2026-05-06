@@ -168,6 +168,10 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = "Orbit Watch <prathiush1994@gmail.com>"
 
 
+RAZORPAY_KEY_ID = config("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET")
+RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")
+
 # ── Django Messages ───────────────────────────────────
 from django.contrib.messages import constants as message_constants
 
@@ -203,7 +207,7 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "none"
-
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 
 # ── Social Account Settings ───────────────────────────────────────
 SOCIALACCOUNT_ADAPTER = "accounts.social_adapter.MySocialAccountAdapter"
@@ -220,11 +224,6 @@ SESSION_COOKIE_SECURE = False
 # ── Google Provider ───────────────────────────────────
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
-        "APP": {
-            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
-            "secret":    os.getenv("GOOGLE_CLIENT_SECRET"),
-            "key":       "",
-        },
         "SCOPE": ["profile", "email"],
         "AUTH_PARAMS": {
             "access_type": "online",
@@ -234,6 +233,3 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-RAZORPAY_KEY_ID = config("RAZORPAY_KEY_ID")
-RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET")
-RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")

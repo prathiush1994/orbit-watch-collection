@@ -74,6 +74,11 @@ document.addEventListener('DOMContentLoaded', function () {
             name     : 'Orbit Watch Collection',
             description: 'Order Payment',
             order_id : '{{ razorpay_order_id }}',
+            
+            // ADD THIS LINE ↓
+            redirect: true,
+            callback_url: 'https://slideshow-tweet-thank.ngrok-free.dev/orders/razorpay/callback/',
+            // ↑ ADD THIS LINE
 
             prefill: {
                 name   : '{{ user_name }}',
@@ -107,6 +112,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.log("SUBMITTING FORM TO:", form.action);
                 form.submit();
             },
+
 
             modal: {
                 ondismiss: function () {
