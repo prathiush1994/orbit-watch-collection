@@ -71,6 +71,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "orbit.urls"
 
+# ── Templates ───────────────────────────────
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -90,32 +91,22 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "orbit.wsgi.application"
-
 AUTH_USER_MODEL = "accounts.Account"
 
 
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
-
-
-#DATABASES = {
-#    "default": {
-#        "ENGINE": "django.db.backends.postgresql",
-#        "NAME": config("DB_NAME"),
-#        "USER": config("DB_USER"),
-#        "PASSWORD": config("DB_PASSWORD"),
-#        "HOST": config("DB_HOST", default="localhost"),
-#        "PORT": config("DB_PORT", default="5432"),
-#    }
-#}
+# ── Database ───────────────────────────────
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": config("DB_NAME"),
+        "USER": config("DB_USER"),
+        "PASSWORD": config("DB_PASSWORD"),
+        "HOST": config("DB_HOST", default="localhost"),
+        "PORT": config("DB_PORT", default="5432"),
     }
 }
+
 
 # ── Password validation ───────────────────────────────
 
