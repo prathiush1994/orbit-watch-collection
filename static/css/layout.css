@@ -14,8 +14,9 @@
   align-items: center;
 }
 .brand-wrap .logo {
-  max-height: 55px;
-  width: auto;
+    max-height: 42px !important;
+    width: auto !important;
+    display: block;
 }
 .widget-header {
   display: flex;
@@ -28,11 +29,11 @@
   align-items: center;
   justify-content: flex-end;
   gap: 15px;
-  flex-wrap: nowrap;     
-  white-space: nowrap; 
-  flex-shrink: 0; 
+  flex-wrap: wrap;
 }
+
 .nav-right form {
+  min-width: 200px;
   max-width: 220px;
   flex-shrink: 1;
 }
