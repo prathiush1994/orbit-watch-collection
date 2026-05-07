@@ -21,7 +21,7 @@ DEBUG = os.getenv("DEBUG") == "True"
 ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://slideshow-tweet-thank.ngrok-free.dev"
+    "https://orbit-watch-collection.onrender.com"
 ]
 
 # Application definition
