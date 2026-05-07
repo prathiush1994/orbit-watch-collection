@@ -1,7 +1,12 @@
 from django.shortcuts import render
 from store.models import ProductVariant
 from offers.utils import annotate_variants_with_offers
+from django.core.management import call_command
+from django.http import HttpResponse
 
+def load_data(request):
+    call_command("loaddata", "data.json")
+    return HttpResponse("Data loaded")
 
 def home(request):
     men = list(
