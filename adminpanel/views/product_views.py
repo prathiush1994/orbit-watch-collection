@@ -206,7 +206,6 @@ def variant_add(request, product_id):
                 color_name=color_name,
                 color_code=color_code,
                 price=int(price),
-                stock=int(stock),
                 description_override=desc_override,
                 is_available=is_available,
                 slug=_unique_slug_variant(f"{product.slug}-{color_name}"),
@@ -259,7 +258,7 @@ def variant_edit(request, variant_id):
             variant.color_name = color_name
             variant.color_code = color_code
             variant.price = int(price)
-            variant.stock = int(stock)
+            variant.quantity = int(stock)
             variant.description_override = desc_override
             variant.is_available = is_available
 

@@ -56,81 +56,85 @@
     </div>
 
     <!-- ================= DESKTOP ================= -->
-<div class="row align-items-center d-none d-lg-flex py-2">
+    <div class="d-none d-lg-flex align-items-center py-2">
 
-  <!-- LEFT: LOGO -->
-  <div class="col-lg-3">
-    <a href="{% url 'home' %}" class="brand-wrap">
-      <img class="logo" src="{% static 'images/orbitlogo01.png' %}" />
-    </a>
-  </div>
+      <!-- LOGO -->
+      <div>
+        <a href="{% url 'home' %}" class="brand-wrap">
+          <img class="logo" src="{% static 'images/orbitlogo01.png' %}" />
+        </a>
+      </div>
 
-  <!-- RIGHT: EVERYTHING -->
-  <div class="col-lg-9 nav-right">
+      <!-- RIGHT SIDE -->
+      <div class="nav-right d-flex align-items-center ml-auto">
 
-
-
-    <!-- CATEGORY -->
-    <div>
-      <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-        <i class="fa fa-bars"></i> All category
-      </button>
-    </div>
-
-    <!-- STORE -->
-    <a href="{% url 'store' %}" class="btn btn-outline-primary">Store</a>
-
-    <!-- SEARCH -->
-    <form action="{% url 'store' %}" method="GET" style="min-width:250px;">
-      <div class="input-group">
-        <input type="text" id="searchInput" name="q" class="form-control" placeholder="Search..." />
-        <div class="input-group-append">
-          <button class="btn btn-primary"><i class="fa fa-search"></i></button>
+        <!-- CATEGORY -->
+        <div class="mr-2">
+          <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+            <i class="fa fa-bars"></i> All category
+          </button>
         </div>
-      </div>
-    </form>
 
-    <!-- USER -->
-    {% if user.id is None %}
-    <div class="widget-header text-center">
-      <small class="text-muted">Welcome guest!</small>
-      <div>
-        <a href="{% url 'login' %}">Login</a> |
-        <a href="{% url 'register' %}">Register</a>
+        <!-- STORE -->
+        <a href="{% url 'store' %}" class="btn btn-outline-primary mr-2">
+          Store
+        </a>
+
+        <!-- SEARCH -->
+        <form action="{% url 'store' %}" method="GET" class="mr-3" style="min-width:250px;">
+          <div class="input-group">
+            <input type="text" id="searchInput" name="q"
+              class="form-control"
+              placeholder="Search..." />
+            <div class="input-group-append">
+              <button class="btn btn-primary">
+                <i class="fa fa-search"></i>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- USER -->
+        {% if user.id is None %}
+        <div class="widget-header text-center mr-3">
+          <small class="text-muted">Welcome guest!</small>
+          <div>
+            <a href="{% url 'login' %}">Login</a> |
+            <a href="{% url 'register' %}">Register</a>
+          </div>
+        </div>
+        {% else %}
+        <div class="widget-header text-center mr-3">
+          <small class="text-muted">Welcome {{ user.first_name }}</small>
+          <div>
+            <a href="{% url 'dashboard_profile' %}">Dashboard</a> |
+            <a href="{% url 'logout' %}">Logout</a>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- CART -->
+        <a href="{% url 'cart' %}" class="widget-header position-relative mr-2">
+          <div class="icon icon-xs border rounded-circle d-flex align-items-center justify-content-center">
+            <i class="fas fa-shopping-cart"></i>
+          </div>
+          {% if cart_count > 0 %}
+          <span class="notify">{{ cart_count }}</span>
+          {% endif %}
+        </a>
+
+        <!-- WISHLIST -->
+        <a href="{% url 'wishlist' %}" class="widget-header position-relative">
+          <div class="icon icon-xs border rounded-circle d-flex align-items-center justify-content-center">
+            <i class="fas fa-heart"></i>
+          </div>
+          {% if wishlist_count > 0 %}
+          <span class="notify">{{ wishlist_count }}</span>
+          {% endif %}
+        </a>
+
       </div>
     </div>
-    {% else %}
-    <div class="widget-header text-center">
-      <small class="text-muted">Welcome {{ user.first_name }}</small>
-      <div>
-        <a href="{% url 'dashboard_profile' %}">Dashboard</a> |
-        <a href="{% url 'logout' %}">Logout</a>
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- CART -->
-    <a href="{% url 'cart' %}" class="widget-header position-relative">
-      <div class="icon icon-xs border rounded-circle d-flex align-items-center justify-content-center">
-        <i class="fas fa-shopping-cart"></i>
-      </div>
-      {% if cart_count > 0 %}
-      <span class="notify">{{ cart_count }}</span>
-      {% endif %}
-    </a>
-
-    <!-- WISHLIST -->
-    <a href="{% url 'wishlist' %}" class="widget-header position-relative">
-      <div class="icon icon-xs border rounded-circle d-flex align-items-center justify-content-center">
-        <i class="fas fa-heart"></i>
-      </div>
-      {% if wishlist_count > 0 %}
-      <span class="notify">{{ wishlist_count }}</span>
-      {% endif %}
-    </a>
-
-  </div>
-</div>
   </div>
 </header>
 
