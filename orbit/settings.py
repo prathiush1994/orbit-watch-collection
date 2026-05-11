@@ -140,9 +140,9 @@ STATICFILES_DIRS = [
 STATIC_ROOT = BASE_DIR / "static"
 
 CLOUDINARY_STORAGE = {
-    "CLOUD_NAME": "disowew34",
-    "API_KEY": "266331355874972",
-    "API_SECRET": "bOI3NHwH7CiQZdWVgs44-tPPZgU"
+    "CLOUD_NAME": os.getenv("CLOUD_NAME"),
+    "API_KEY": os.getenv("API_KEY"),
+    "API_SECRET": os.getenv("API_SECRET"),
 }
 
 STORAGES = {
