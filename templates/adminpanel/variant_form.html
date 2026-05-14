@@ -67,7 +67,7 @@
       </div>
       <div class="a-card-body">
 
-        <form method="POST" action="">
+        <form method="POST" action="" enctype="multipart/form-data">
           {% csrf_token %}
           <input type="hidden" name="primary_image" id="primaryImageData">
 
@@ -143,15 +143,14 @@
             </div>
             {% endif %}
             <div id="newGalleryWrap" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"></div>
-            <div id="galleryHiddenInputs"></div>
             <label class="upload-btn" for="galleryFileInput">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
               Add Gallery Image
             </label>
-            <input type="file" id="galleryFileInput" accept="image/*" style="display:none;"
-                   onchange="addGalleryImage(this)">
+            <input type="file" id="galleryFileInput" name="gallery_images"
+                  accept="image/*" multiple style="display:none;">
           </div>
 
           <!-- Description override -->
@@ -252,46 +251,33 @@ textBox.addEventListener('input', function() {
     picker.value = val;
   }
 });
+const galleryInput = document.getElementById('galleryFileInput');
 
-let galIdx = 0;
-function addGalleryImage(fileInput) {
-  const file = fileInput.files[0];
-  if (!file) return;
-  fileInput.value = '';
-  const myIdx    = galIdx++;
-  const hiddenId = 'gallery_image_' + myIdx;
-  const prevId   = 'galPrev_' + myIdx;
-  const hidden   = document.createElement('input');
-  hidden.type    = 'hidden';
-  hidden.name    = hiddenId;
-  hidden.id      = hiddenId;
-  document.getElementById('galleryHiddenInputs').appendChild(hidden);
-  const wrap = document.createElement('div');
-  wrap.className = 'gal-wrap';
-  wrap.id = 'galwrap_' + myIdx;
-  wrap.style.display = 'none';
-  wrap.innerHTML = `<img id="${prevId}" src="" class="gal-thumb"><button type="button" class="gal-del" onclick="removeGallery(${myIdx})" title="Remove">✕</button>`;
-  document.getElementById('newGalleryWrap').appendChild(wrap);
-  const fakeEvent = { target: { files: [file], value: '' } };
-  openCropModal(fakeEvent, hiddenId, prevId, 1);
-  const poll = setInterval(function() {
-    if (document.getElementById(hiddenId) && document.getElementById(hiddenId).value) {
-      document.getElementById('galwrap_' + myIdx).style.display = 'inline-block';
-      clearInterval(poll);
-    }
-  }, 200);
-}
-function deleteGalleryImage(url) {
-  var form = document.getElementById('deleteGalleryForm');
-  form.action = url;
-  form.style.display = 'block';
-  form.submit();
-}
-function removeGallery(idx) {
-  const wrap = document.getElementById('galwrap_' + idx);
-  if (wrap) wrap.remove();
-  const inp = document.getElementById('gallery_image_' + idx);
-  if (inp) inp.value = '';
-}
+galleryInput.addEventListener('change', function () {
+
+  const previewWrap = document.getElementById('newGalleryWrap');
+  previewWrap.innerHTML = '';
+
+  Array.from(this.files).forEach(file => {
+
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+
+      const wrap = document.createElement('div');
+      wrap.className = 'gal-wrap';
+
+      wrap.innerHTML = `
+        <img src="${e.target.result}" class="gal-thumb">
+      `;
+
+      previewWrap.appendChild(wrap);
+    };
+
+    reader.readAsDataURL(file);
+  });
+
+});
+
 </script>
 {% endblock %}
