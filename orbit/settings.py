@@ -21,7 +21,7 @@ DEBUG = os.getenv("DEBUG") == "True"
 ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://orbit-watch-collection.onrender.com"
+    "http://174.129.121.177",
 ]
 
 # Application definition
@@ -156,7 +156,6 @@ STORAGES = {
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-
 
 
 # ── Session Timeout ───────────────────────────────

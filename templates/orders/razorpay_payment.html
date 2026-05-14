@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function () {
             
             // ADD THIS LINE ↓
             redirect: true,
-            callback_url: 'https://slideshow-tweet-thank.ngrok-free.dev/orders/razorpay/callback/',
+            callback_url: window.location.origin + '{% url "razorpay_callback" %}',
             // ↑ ADD THIS LINE
 
             prefill: {
