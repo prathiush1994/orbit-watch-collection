@@ -14,7 +14,7 @@
   }
 
   .gallery-panel {
-    width: 50%;
+    width: 46%;
     border-right: 1px solid #eee;
     display: flex;
     flex-direction: row;
@@ -29,7 +29,7 @@
     align-items: center;
     width: 84px;
     flex-shrink: 0;
-    height: 480px;
+    max-height: 480px;
   }
 
   .thumb-arrow {
@@ -49,6 +49,48 @@
       background 0.15s,
       border-color 0.15s;
     user-select: none;
+  }
+
+  .price-save-text {
+    font-size: 13px;
+    color: #28a745;
+    font-weight: 600;
+    margin-top: -10px;
+    margin-bottom: 14px;
+  }
+
+  .product-action-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .action-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 210px;
+  }
+
+  .action-note,
+  .wishlist-note {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #888;
+  }
+
+  .btn-wishlist.in-wishlist {
+    background: #f1f3f5;
+    border-color: #d6d9dd;
+    color: #6c757d;
+    pointer-events: none;
+    cursor: default;
+  }
+
+  .btn-wishlist.in-wishlist:hover {
+    background: #e9ecef;
+    color: #495057;
   }
 
   .thumb-arrow:hover {
@@ -104,9 +146,10 @@
   }
 
   .main-image-area {
-    position: relative;
-    overflow: hidden;
-    cursor: zoom-in;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px;
   }
 
   .main-image-area img {
@@ -117,7 +160,7 @@
   }
 
   .info-panel {
-    width: 50%;
+    width: 54%;
     padding: 36px 40px;
   }
 
@@ -290,7 +333,6 @@
     align-items: center;
     gap: 10px;
     text-decoration: none;
-    margin-left: 12px;
     transition: background 0.2s;
   }
 
@@ -323,18 +365,13 @@
     align-items: center;
     gap: 8px;
     text-decoration: none;
-    margin-left: 12px;
+
     transition: background 0.2s;
   }
 
   .btn-wishlist:hover {
     background: #fff0f0;
     text-decoration: none;
-  }
-
-  .btn-wishlist.in-wishlist {
-    background: #e74c3c;
-    color: #fff;
   }
 
   /* ── Review styles ── */
@@ -552,8 +589,8 @@
   }
 
   .star-picker label:hover,
-  .star-picker label:hover~label,
-  .star-picker input:checked~label {
+  .star-picker label:hover ~ label,
+  .star-picker input:checked ~ label {
     color: #f5a623;
   }
 
@@ -592,6 +629,60 @@
       gap: 20px;
     }
   }
+  .toast-wrapper {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 99999;
+}
+
+  .toast-box {
+    background: #111;
+    color: #fff;
+    padding: 14px 18px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    min-width: 260px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+
+    animation: toastSlide 0.3s ease;
+    transition: all 0.3s ease;
+  }
+  .toast-close {
+    background: transparent;
+    border: none;
+    color: #fff;
+
+    font-size: 20px;
+    line-height: 1;
+
+    cursor: pointer;
+
+    opacity: 0.7;
+    padding: 0;
+  }
+
+  .toast-close:hover {
+    opacity: 1;
+  }
+
+  @keyframes toastSlide {
+    from {
+      opacity: 0;
+      transform: translateX(40px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
 </style>
 
 <section class="product-detail-section">
@@ -604,13 +695,23 @@
           <div class="thumb-scroll-box" id="thumbScrollBox">
             <div class="thumb-list" id="thumbList">
               {% if variant.primary_image %}
-              <div class="thumb-item active" data-src="{{ variant.primary_image.url }}" data-alt="{{ variant }}">
+              <div
+                class="thumb-item active"
+                data-src="{{ variant.primary_image.url }}"
+                data-alt="{{ variant }}"
+              >
                 <img src="{{ variant.primary_image.url }}" alt="{{ variant }}" />
               </div>
               {% endif %} {% for img in gallery_images %}
-              <div class="thumb-item" data-src="{{ img.image.url }}"
-                data-alt="{{ img.alt_text|default:variant.color_name }}">
-                <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:variant.color_name }}" />
+              <div
+                class="thumb-item"
+                data-src="{{ img.image.url }}"
+                data-alt="{{ img.alt_text|default:variant.color_name }}"
+              >
+                <img
+                  src="{{ img.image.url }}"
+                  alt="{{ img.alt_text|default:variant.color_name }}"
+                />
               </div>
               {% endfor %}
             </div>
@@ -618,44 +719,60 @@
           <button class="thumb-arrow" id="thumbDown"><i class="fas fa-chevron-down"></i></button>
         </div>
         <div class="main-image-area">
-          <img id="mainImage"
+          <img
+            id="mainImage"
             src="{% if variant.primary_image %}{{ variant.primary_image.url }}{% else %}{% static 'images/no-image.png' %}{% endif %}"
-            alt="{{ variant }}" />
+            alt="{{ variant }}"
+          />
         </div>
       </div>
 
       <!-- ── Info ── -->
       <div class="info-panel">
         <h1 class="product-title">{{ product.product_name }}</h1>
+
         {% if variant.color_name %}
         <p class="product-color-label">{{ variant.color_name }}</p>
         {% endif %}
 
         <!-- Offer-aware price display -->
+        {% if has_offer %}
+
         <div class="product-price">
-          {% if has_offer %}
           <span class="price-final">&#8377;{{ effective_price }}</span>
+
           <span class="price-original">&#8377;{{ variant.price }}</span>
+
           <span class="offer-badge">{{ offer_pct }}% OFF</span>
-          <div style="font-size: 13px; color: #28a745; margin-top: 4px">
-            You save &#8377;{{ savings }}
-          </div>
-          {% else %}
-          <span class="price-no-offer">&#8377;{{ variant.price }}</span>
-          {% endif %}
         </div>
 
+        <div class="price-save-text">You save &#8377;{{ savings }}</div>
+
+        {% else %}
+
+        <div class="product-price">
+          <span class="price-no-offer">&#8377;{{ variant.price }}</span>
+        </div>
+
+        {% endif %}
+
         <p class="product-description">{{ variant.get_description }}</p>
+
         <hr class="section-divider" />
 
         <!-- Color swatches -->
         {% if all_variants|length > 1 %}
         <div class="mb-3">
           <p class="swatch-label">Choose Strap Color</p>
+
           <div class="swatch-row">
             {% for v in all_variants %}
-            <a href="{{ v.get_url }}" class="swatch-link {% if v.pk == variant.pk %}active{% endif %}"
-              title="{{ v.color_name }}">
+
+            <a
+              href="{{ v.get_url }}"
+              class="swatch-link {% if v.pk == variant.pk %}active{% endif %}"
+              title="{{ v.color_name }}"
+            >
               <div class="swatch-img-box">
                 {% if v.primary_image %}
                 <img src="{{ v.primary_image.url }}" alt="{{ v.color_name }}" />
@@ -663,6 +780,7 @@
                 <img src="{% static 'images/no-image.png' %}" alt="{{ v.color_name }}" />
                 {% endif %}
               </div>
+
               {% if v.offer_data.has_offer %}
               <div class="swatch-price swatch-price-offer">
                 &#8377;{{ v.offer_data.final_price }}
@@ -670,41 +788,63 @@
               {% else %}
               <div class="swatch-price">&#8377;{{ v.price }}</div>
               {% endif %}
+
               <div class="swatch-color-name">{{ v.color_name }}</div>
             </a>
+
             {% endfor %}
           </div>
         </div>
+
         <hr class="section-divider" />
         {% endif %}
 
         <!-- Action buttons -->
         {% if not variant.is_in_stock %}
+
         <span class="out-of-stock-badge">
           <i class="fas fa-times-circle"></i>
           &nbsp; Out of Stock
         </span>
+
         {% else %}
-        <div class="d-flex flex-wrap align-items-center">
+
+        <div class="product-action-wrap">
           {% if in_cart %}
-          <a href="{% url 'cart' %}" class="btn-view-cart">
-            View Cart
-            <i class="fas fa-eye"></i>
-          </a>
+
+          <div class="action-column">
+            <a href="{% url 'cart' %}" class="btn-view-cart">
+              View Cart
+              <i class="fas fa-eye"></i>
+            </a>
+
+            <small class="action-note">Already added to cart</small>
+          </div>
+
           {% else %}
+
           <a href="{% url 'add_cart' variant.id %}" class="btn-add-cart">
             Add to Cart
             <i class="fas fa-shopping-cart"></i>
           </a>
-          {% endif %} {% if in_cart %}
-          <button class="btn-wishlist" disabled>In Cart</button>
+
+          {% endif %} {% if not in_cart %} {% if in_wishlist %}
+
+          <div class="action-column">
+            <a href="{% url 'toggle_wishlist' variant.id %}" class="btn-wishlist in-wishlist">
+              In Wishlist
+            </a>
+
+            <small class="wishlist-note">Saved to wishlist</small>
+          </div>
+
           {% else %}
-          <a href="{% url 'toggle_wishlist' variant.id %}"
-            class="btn-wishlist {% if in_wishlist %}in-wishlist{% endif %}">
-            <span>{% if in_wishlist %}In Wishlist{% else %}Add to Wishlist{% endif %}</span>
-          </a>
-          {% endif %}
+
+          <a href="{% url 'toggle_wishlist' variant.id %}" class="btn-wishlist">Add to Wishlist</a>
+
+          {% endif %} {% endif %}
         </div>
+
         {% endif %}
       </div>
     </div>
@@ -712,7 +852,7 @@
     <!-- REVIEWS SECTION -->
     <div class="reviews-section">
       <div class="row">
-        <div class="col-md-9">
+        <div class="col-lg-10 col-xl-9">
           <h3>Customer Reviews</h3>
 
           <!-- ── Rating summary ── -->
@@ -723,13 +863,13 @@
               <div class="stars-row">
                 {% with avg_int=avg_rating|floatformat:0 %}
                   {% for i in "12345" %}
-                    {% if forloop.counter <= avg_int|add:"0" %}
-                      <i class="fas fa-star"></i>
-                    {% else %}
-                      <i class="far fa-star"></i>
-                    {% endif %}
+                      {% if forloop.counter <= avg_int|add:"0" %}
+                          <i class="fas fa-star"></i>
+                      {% else %}
+                          <i class="far fa-star"></i>
+                      {% endif %}
                   {% endfor %}
-                {% endwith %}
+              {% endwith %}
               </div>
               <div class="count">{{ review_count }} review{{ review_count|pluralize }}</div>
             </div>
@@ -762,7 +902,10 @@
 
               <!-- Star picker UI -->
               <div class="mb-2">
-                <label class="d-block mb-1" style="font-size: 0.9rem; font-weight: 600; color: #333">
+                <label
+                  class="d-block mb-1"
+                  style="font-size: 0.9rem; font-weight: 600; color: #333"
+                >
                   Your Rating
                   <span class="text-danger">*</span>
                 </label>
@@ -814,15 +957,17 @@
           </div>
           {% endif %} {% else %}
           <div class="no-review-cta">
-            <i class="fas fa-user-circle mb-2" style="font-size: 1.5rem; color: #ccc; display: block"></i>
+            <i
+              class="fas fa-user-circle mb-2"
+              style="font-size: 1.5rem; color: #ccc; display: block"
+            ></i>
             <a href="{% url 'login' %}?next={{ request.path }}">Log in</a>
             to write a review.
           </div>
           {% endif %}
 
           <!-- ── Review list ── -->
-          {% if reviews %}
-          {% for review in reviews %}
+          {% if reviews %} {% for review in reviews %}
           <div class="review-card">
             <div class="review-header">
               <div class="reviewer-info">
@@ -832,31 +977,35 @@
 
                 <div>
                   <p class="reviewer-name">
-                    {{ review.user.get_full_name|default:review.user.email }}
+                      {{ review.user.get_full_name|default:review.user.email }}
 
-                    {% if review.user == request.user %}
-                    <span class="my-review-badge">Your review</span>
-                    {% endif %}
+                      {% if review.user == request.user %}
+                          <span class="my-review-badge">
+                              Your review
+                          </span>
+                      {% endif %}
                   </p>
 
                   <div class="review-stars">
                     {% for i in "12345" %}
-                    {% if forloop.counter <= review.rating %} <i class="fas fa-star"></i>
-                      {% else %}
-                      <i class="far fa-star"></i>
-                      {% endif %}
-                      {% endfor %}
+                        {% if forloop.counter <= review.rating %}
+                            <i class="fas fa-star"></i>
+                        {% else %}
+                            <i class="far fa-star"></i>
+                        {% endif %}
+                    {% endfor %}
                   </div>
 
-                  <span class="review-meta">
-                    {{ review.created_at|date:"d M Y" }}
-                  </span>
+                  <span class="review-meta">{{ review.created_at|date:"d M Y" }}</span>
                 </div>
               </div>
 
               {% if review.user == request.user %}
-              <form method="POST" action="{% url 'delete_review' review.id %}"
-                onsubmit="return confirm('Delete your review?');">
+              <form
+                method="POST"
+                action="{% url 'delete_review' review.id %}"
+                onsubmit="return confirm('Delete your review?');"
+              >
                 {% csrf_token %}
                 <button type="submit" class="btn-delete-review">
                   <i class="fas fa-trash-alt mr-1"></i>
@@ -872,9 +1021,7 @@
 
             <p class="review-text">{{ review.body }}</p>
           </div>
-          {% endfor %}
-
-          {% else %}
+          {% endfor %} {% else %}
           <p class="text-muted" style="font-size: 0.92rem">
             No reviews yet. Be the first to share your experience!
           </p>
@@ -885,7 +1032,22 @@
     <!-- end reviews-section -->
   </div>
 </section>
+{% if messages %}
 
+<div class="toast-wrapper">
+    {% for message in messages %}
+        {% if 'cart_popup' in message.tags or 'wishlist_popup' in message.tags %}
+        <div class="toast-box">
+            <span>{{ message }}</span>
+            <button class="toast-close">
+                &times;
+            </button>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+{% endif %}
 {% endblock %} {% block extra_js %}
 
 <script>
@@ -900,41 +1062,39 @@
 </script>
 <script src="{% static 'js/product-detail.js' %}"></script>
 <script>
-  /* ── Zoom ── */
-  const zoomArea = document.querySelector(".main-image-area");
-  const zoomImg = document.getElementById("mainImage");
-  if (zoomArea && zoomImg) {
-    zoomArea.addEventListener("mousemove", function (e) {
-      const rect = zoomArea.getBoundingClientRect();
-      zoomImg.style.transformOrigin = `${((e.clientX - rect.left) / rect.width) * 100}% ${((e.clientY - rect.top) / rect.height) * 100}%`;
-      zoomImg.style.transform = "scale(2)";
-    });
-    zoomArea.addEventListener("mouseleave", function () {
-      zoomImg.style.transform = "scale(1)";
-    });
+  function removeToast(toast) {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(40px)";
+
+    setTimeout(function () {
+      toast.remove();
+    }, 300);
   }
 
-  /* ── Star picker → hidden rating field ── */
-  const starInputs = document.querySelectorAll('#starPicker input[type="radio"]');
-  const ratingField = document.getElementById("id_rating"); // Django hidden field
-  const ratingError = document.getElementById("ratingError");
+  // Close button
+  document.querySelectorAll(".toast-close").forEach(function (btn) {
 
-  starInputs.forEach(function (radio) {
-    radio.addEventListener("change", function () {
-      if (ratingField) ratingField.value = this.value;
-      if (ratingError) ratingError.style.display = "none";
+    btn.addEventListener("click", function () {
+
+      const toast = this.closest(".toast-box");
+
+      if (toast) {
+        removeToast(toast);
+      }
+
     });
+
   });
 
-  /* ── Validate before submit ── */
-  const reviewForm = document.querySelector(".write-review-box form");
-  if (reviewForm) {
-    reviewForm.addEventListener("submit", function (e) {
-      if (!ratingField || !ratingField.value) {
-        e.preventDefault();
-        if (ratingError) ratingError.style.display = "block";
-      }
+  // Auto remove after 3 sec
+  setTimeout(function () {
+
+    document.querySelectorAll(".toast-box").forEach(function (toast) {
+
+      removeToast(toast);
+
     });
-  }
+
+  }, 3000);
 </script>
 {% endblock %}

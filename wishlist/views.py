@@ -65,8 +65,14 @@ def toggle_wishlist(request, variant_id):
     item = WishlistItem.objects.filter(wishlist=wishlist, variant=variant)
     if item.exists():
         item.delete()
+        messages.success(
+            request, "Removed from wishlist.", extra_tags="wishlist_popup"
+        )
     else:
         WishlistItem.objects.create(wishlist=wishlist, variant=variant)
+        messages.success(
+            request, "Added to wishlist.", extra_tags="wishlist_popup"
+        )
     next_url = request.GET.get("next")
     return redirect(next_url if next_url else request.META.get("HTTP_REFERER", "store"))
 

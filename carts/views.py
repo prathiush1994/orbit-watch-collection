@@ -169,7 +169,7 @@ def add_cart(request, variant_id):
         cart_item.save()
     except CartItem.DoesNotExist:
         CartItem.objects.create(cart=cart, variant=variant, quantity=1)
-    messages.success(request, "Item added to cart.")
+    messages.success(request, "Item added to cart.", extra_tags="cart_popup")
     return redirect(request.META.get("HTTP_REFERER", "store"))
 
 
@@ -216,12 +216,14 @@ def decrement_cart(request, variant_id):
 def remove_cartitem(request, variant_id):
     cart = _get_or_create_cart(request)
     CartItem.objects.filter(cart=cart, variant_id=variant_id).delete()
+    messages.success(request, "Item removed from cart.")
     return redirect("cart")
 
 
 def remove_cart(request, variant_id):
     cart = _get_or_create_cart(request)
-    cart_item = CartItem.objects.filter(cart=cart, variant_id=variant_id).first()
+    cart_item = CartItem.objects.filter(
+        cart=cart, variant_id=variant_id).first()
     if cart_item and cart_item.quantity > 1:
         cart_item.quantity -= 1
         cart_item.save()
