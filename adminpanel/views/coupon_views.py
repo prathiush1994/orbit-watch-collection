@@ -9,12 +9,14 @@ from orders.models import Coupon
 def admin_coupon_list(request):
     coupons = Coupon.objects.all().order_by("-id")
     now = timezone.now()
+
     return render(
         request,
         "adminpanel/admin_coupon_list.html",
         {
             "coupons": coupons,
             "now": now,
+            "test" : 123, 
         },
     )
 
