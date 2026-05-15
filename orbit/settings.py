@@ -212,7 +212,7 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "none"
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"
 
 # ── Social Account Settings ───────────────────────────────────────
 SOCIALACCOUNT_ADAPTER = "accounts.social_adapter.MySocialAccountAdapter"

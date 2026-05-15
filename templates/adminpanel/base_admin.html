@@ -691,6 +691,11 @@
       <i class="fas fa-box"></i> Products
     </a>
 
+    <a href="{% url 'admin_inventory_list' %}"
+       class="s-link {% if active == 'inventory' %}active{% endif %}">
+      <i class="fas fa-boxes"></i> Inventory
+    </a>
+
     <a href="{% url 'admin_order_list' %}"
        class="s-link {% if active == 'orders' %}active{% endif %}">
       <i class="fas fa-file-alt"></i> Orders
@@ -709,11 +714,6 @@
     <a href="{% url 'admin_offer_list' %}"
        class="s-link {% if active == 'offers' %}active{% endif %}">
       <i class="fas fa-percent"></i> Offers
-    </a>
-
-    <a href="{% url 'admin_inventory_list' %}"
-       class="s-link {% if active == 'inventory' %}active{% endif %}">
-      <i class="fas fa-boxes"></i> Inventory
     </a>
 
     <a href="{% url 'admin_settings' %}"

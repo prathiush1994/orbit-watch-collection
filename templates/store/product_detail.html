@@ -1065,7 +1065,6 @@
   function removeToast(toast) {
     toast.style.opacity = "0";
     toast.style.transform = "translateX(40px)";
-
     setTimeout(function () {
       toast.remove();
     }, 300);
@@ -1073,28 +1072,20 @@
 
   // Close button
   document.querySelectorAll(".toast-close").forEach(function (btn) {
-
     btn.addEventListener("click", function () {
-
       const toast = this.closest(".toast-box");
-
       if (toast) {
         removeToast(toast);
       }
-
     });
-
   });
 
   // Auto remove after 3 sec
   setTimeout(function () {
 
     document.querySelectorAll(".toast-box").forEach(function (toast) {
-
       removeToast(toast);
-
     });
-
   }, 3000);
 </script>
 {% endblock %}
