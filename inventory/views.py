@@ -27,7 +27,7 @@ def inventory_list(request):
 
     inventories = Inventory.objects.select_related(
         "variant", "variant__product", "variant__product__brand"
-    ).order_by("variant__product__product_name", "variant__color_name")
+    ).order_by("-updated_at")
 
     if q:
         inventories = inventories.filter(
