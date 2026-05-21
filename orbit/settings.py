@@ -11,8 +11,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = True
 
-DEBUG = os.getenv("DEBUG") == "True"
-
+#DEBUG = os.getenv("DEBUG") == "True"
+DEBUG = True
 ALLOWED_HOSTS = [
     "orbitwatches.online",
     "www.orbitwatches.online",
