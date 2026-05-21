@@ -20,6 +20,13 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
     def is_auto_signup_allowed(self, request, sociallogin):
         return True
 
+
+"""
+class MySocialAccountAdapter(DefaultSocialAccountAdapter):
+
+    def is_auto_signup_allowed(self, request, sociallogin):
+        return True
+
     def pre_social_login(self, request, sociallogin):
         if sociallogin.is_existing:
             return
@@ -47,3 +54,4 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
 
     def get_login_redirect_url(self, request):
         return "/"
+"""
