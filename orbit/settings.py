@@ -206,8 +206,8 @@ LOGOUT_REDIRECT_URL = "/"
 
 
 # ── Allauth Account Settings ──────────────────────────
-ACCOUNT_ADAPTER = "accounts.social_adapter.MyAccountAdapter"
-ACCOUNT_LOGIN_METHODS = {"email"}
+# ACCOUNT_ADAPTER = "accounts.social_adapter.MyAccountAdapter"
+ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USERNAME_REQUIRED = False
@@ -216,7 +216,7 @@ ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 
 # ── Social Account Settings ───────────────────────────────────────
-SOCIALACCOUNT_ADAPTER = "accounts.social_adapter.MySocialAccountAdapter"
+# SOCIALACCOUNT_ADAPTER = "accounts.social_adapter.MySocialAccountAdapter"
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_QUERY_EMAIL = True
