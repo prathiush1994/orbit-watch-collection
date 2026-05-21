@@ -2,26 +2,27 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from decouple import config
-
+from django.contrib.messages import constants as message_constants
 load_dotenv()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG") == "True"
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    "orbitwatches.online",
+    "www.orbitwatches.online",
+    "localhost",
+    "127.0.0.1",
+]
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://174.129.121.177",
+    "https://orbitwatches.online",
+    "https://www.orbitwatches.online",
 ]
 
 # Application definition
@@ -180,8 +181,6 @@ RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET")
 RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")
 
 # ── Django Messages ───────────────────────────────────
-from django.contrib.messages import constants as message_constants
-
 MESSAGE_STORAGE = "django.contrib.messages.storage.fallback.FallbackStorage"
 
 MESSAGE_TAGS = {
@@ -214,7 +213,7 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "none"
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 
 # ── Social Account Settings ───────────────────────────────────────
 SOCIALACCOUNT_ADAPTER = "accounts.social_adapter.MySocialAccountAdapter"
@@ -222,11 +221,13 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
-SOCIALACCOUNT_LOGIN_ON_GET = True 
+SOCIALACCOUNT_LOGIN_ON_GET = True
 
-CSRF_COOKIE_SECURE = False   
-SESSION_COOKIE_SECURE = False  
-
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # ── Google Provider ───────────────────────────────────
 SOCIALACCOUNT_PROVIDERS = {
