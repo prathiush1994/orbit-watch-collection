@@ -3,25 +3,28 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
 
 class MyAccountManager(BaseUserManager):
-    def create_user(self, first_name, last_name, email, password=None):
+    def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("User must have an email address")
-
         user = self.model(
             email=self.normalize_email(email),
-            first_name=first_name,
-            last_name=last_name,
+            first_name=extra_fields.get("first_name", ""),
+            last_name=extra_fields.get("last_name", ""),
         )
-        user.set_password(password)
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, first_name, last_name, email, password, **extra_fields):
+    def create_superuser(self, email, password, **extra_fields):
+        extra_fields.setdefault("first_name", "Admin")
+        extra_fields.setdefault("last_name", "User")
         user = self.create_user(
-            email=self.normalize_email(email),
+            email=email,
             password=password,
-            first_name=first_name,
-            last_name=last_name,
+            **extra_fields
         )
         user.is_admin = True
         user.is_active = True
