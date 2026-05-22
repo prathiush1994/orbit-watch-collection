@@ -8,11 +8,8 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = config("DEBUG", cast=bool, default=False)
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
-SECURE_SSL_REDIRECT = True
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"
+
 
 ALLOWED_HOSTS = [
     "orbitwatches.online",
