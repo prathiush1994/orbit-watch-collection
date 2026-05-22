@@ -2,32 +2,29 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from decouple import config
-from django.contrib.messages import constants as message_constants
+
 load_dotenv()
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = os.getenv("SECRET_KEY")
-DEBUG = config("DEBUG", cast=bool, default=False)
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
-SECURE_SSL_REDIRECT = True
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = "Lax"
-CSRF_COOKIE_SAMESITE = "Lax"
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
-ALLOWED_HOSTS = [
-    "orbitwatches.online",
-    "www.orbitwatches.online",
-    "localhost",
-    "127.0.0.1",
-]
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.getenv("DEBUG") == "True"
+
+ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://orbitwatches.online",
-    "https://www.orbitwatches.online",
+    "http://174.129.121.177",
 ]
+
+# Application definition
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -62,7 +59,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -72,7 +68,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "accounts.middleware.NoCacheMiddleware",
 ]
-
 
 ROOT_URLCONF = "orbit.urls"
 
@@ -155,7 +150,7 @@ STORAGES = {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
@@ -183,6 +178,8 @@ RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET")
 RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")
 
 # ── Django Messages ───────────────────────────────────
+from django.contrib.messages import constants as message_constants
+
 MESSAGE_STORAGE = "django.contrib.messages.storage.fallback.FallbackStorage"
 
 MESSAGE_TAGS = {
@@ -209,12 +206,13 @@ LOGOUT_REDIRECT_URL = "/"
 
 # ── Allauth Account Settings ──────────────────────────
 ACCOUNT_ADAPTER = "accounts.social_adapter.MyAccountAdapter"
-ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"
 
 # ── Social Account Settings ───────────────────────────────────────
 SOCIALACCOUNT_ADAPTER = "accounts.social_adapter.MySocialAccountAdapter"
@@ -222,7 +220,11 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
-SOCIALACCOUNT_LOGIN_ON_GET = False
+SOCIALACCOUNT_LOGIN_ON_GET = True 
+
+CSRF_COOKIE_SECURE = False   
+SESSION_COOKIE_SECURE = False  
+
 
 # ── Google Provider ───────────────────────────────────
 SOCIALACCOUNT_PROVIDERS = {
