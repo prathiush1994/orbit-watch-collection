@@ -15,8 +15,7 @@ def admin_coupon_list(request):
         "adminpanel/admin_coupon_list.html",
         {
             "coupons": coupons,
-            "now": now,
-            "test" : 123, 
+            "now": now, 
         },
     )
 

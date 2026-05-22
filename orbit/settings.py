@@ -6,13 +6,14 @@ from django.contrib.messages import constants as message_constants
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 SECRET_KEY = os.getenv("SECRET_KEY")
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+DEBUG = config("DEBUG", cast=bool, default=False)
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 SECURE_SSL_REDIRECT = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-#DEBUG = os.getenv("DEBUG") == "True"
-DEBUG = True
 ALLOWED_HOSTS = [
     "orbitwatches.online",
     "www.orbitwatches.online",
@@ -24,8 +25,6 @@ CSRF_TRUSTED_ORIGINS = [
     "https://orbitwatches.online",
     "https://www.orbitwatches.online",
 ]
-
-# Application definition
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -206,28 +205,21 @@ LOGOUT_REDIRECT_URL = "/"
 
 
 # ── Allauth Account Settings ──────────────────────────
-# ACCOUNT_ADAPTER = "accounts.social_adapter.MyAccountAdapter"
+ACCOUNT_ADAPTER = "accounts.social_adapter.MyAccountAdapter"
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "none"
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 
 # ── Social Account Settings ───────────────────────────────────────
-# SOCIALACCOUNT_ADAPTER = "accounts.social_adapter.MySocialAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "accounts.social_adapter.MySocialAccountAdapter"
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
 SOCIALACCOUNT_LOGIN_ON_GET = True
-
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY = True
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # ── Google Provider ───────────────────────────────────
 SOCIALACCOUNT_PROVIDERS = {
