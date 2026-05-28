@@ -335,7 +335,16 @@
     text-decoration: none;
     transition: background 0.2s;
   }
+  .product-category{
+      margin-bottom:8px;
+      font-size:14px;
+      color:#666;
+  }
 
+  .product-category span{
+      font-weight:600;
+      color:#222;
+  }
   .btn-view-cart:hover {
     background: #eef2fd;
     text-decoration: none;
@@ -730,6 +739,13 @@
       <!-- ── Info ── -->
       <div class="info-panel">
         <h1 class="product-title">{{ product.product_name }}</h1>
+        <p class="product-category">
+          Categories :
+          
+          {% for category in variant.product.category.all %}
+            <span>{{ category.category_name }}</span>{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+        </p>
 
         {% if variant.color_name %}
         <p class="product-color-label">{{ variant.color_name }}</p>

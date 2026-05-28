@@ -89,6 +89,7 @@ def admin_coupon_add(request):
                 code=code,
                 discount_type=discount_type,
                 discount=discount,
+                max_discount=max_discount,
                 min_order_amt=min_order_amt,
                 usage_limit=usage_limit,
                 is_active=is_active,
@@ -165,6 +166,10 @@ def admin_coupon_edit(request, coupon_id):
             )
 
         try:
+            if discount_type == "percentage":
+                coupon.max_discount = 5000
+            else:
+                coupon.max_discount = None
             coupon.code = code
             coupon.discount_type = discount_type
             coupon.discount = discount

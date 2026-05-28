@@ -4,6 +4,8 @@ from django.contrib.messages import get_messages
 from carts.models import CartItem
 from store.models import ProductVariant
 from .models import Cart
+from django.http import JsonResponse
+from decimal import Decimal
 
 CART_MAX_TOTAL = 10
 PRODUCT_MAX_QTY = 3
@@ -118,8 +120,6 @@ def cart(request):
         total += item.discounted_subtotal
         quantity += item.quantity
 
-    from decimal import Decimal
-
     tax = round(Decimal("0.18") * Decimal(str(total)), 2)
     grand_total = round(Decimal(str(total)) + tax, 2)
 
@@ -175,43 +175,108 @@ def add_cart(request, variant_id):
 
 def increment_cart(request, variant_id):
     cart = _get_or_create_cart(request)
-    cart_item = get_object_or_404(CartItem, cart=cart, variant_id=variant_id)
+
+    cart_item = get_object_or_404(
+        CartItem,
+        cart=cart,
+        variant_id=variant_id
+    )
 
     if cart_item.variant.inventory.quantity <= 0:
-        messages.error(request, "Out of stock.")
-        return redirect("cart")
+        return JsonResponse({
+            "success": False,
+            "message": "Out of stock."
+        })
 
-    all_items = CartItem.objects.filter(cart=cart, is_active=True)
+    all_items = CartItem.objects.filter(
+        cart=cart,
+        is_active=True
+    )
+
     if sum(i.quantity for i in all_items) >= CART_MAX_TOTAL:
-        messages.error(request, "Maximum 10 items allowed.")
-        return redirect("cart")
+        return JsonResponse({
+            "success": False,
+            "message": "Maximum 10 items allowed."
+        })
 
     same_product_qty = sum(
         i.quantity
         for i in all_items
         if i.variant.product_id == cart_item.variant.product_id
     )
+
     if same_product_qty >= PRODUCT_MAX_QTY:
-        messages.error(request, "Max 3 of the same product allowed.")
-        return redirect("cart")
+        return JsonResponse({
+            "success": False,
+            "message": "Max 3 of same product allowed."
+        })
 
     if cart_item.quantity >= cart_item.variant.inventory.quantity:
-        messages.error(request, "Stock limit reached.")
-        return redirect("cart")
+        return JsonResponse({
+            "success": False,
+            "message": "Stock limit reached."
+        })
 
     cart_item.quantity += 1
     cart_item.save()
-    return redirect("cart")
+
+    effective_price = _effective_price(cart_item.variant)
+    subtotal = effective_price * cart_item.quantity
+    
+    cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+    total = 0
+    for item in cart_items:
+        effective_price = _effective_price(item.variant)
+        total += effective_price * item.quantity
+
+    tax = round(Decimal("0.18") * Decimal(str(total)), 2)
+    grand_total = round(Decimal(str(total)) + tax, 2)
+
+    return JsonResponse({
+        "success": True,
+        "quantity": cart_item.quantity,
+        "subtotal": float(subtotal),
+        "cart_total": float(total),
+        "tax": float(tax),
+        "grand_total": float(grand_total),
+    })
 
 
 def decrement_cart(request, variant_id):
+
     cart = _get_or_create_cart(request)
-    cart_item = get_object_or_404(CartItem, cart=cart, variant_id=variant_id)
+
+    cart_item = get_object_or_404(
+        CartItem,
+        cart=cart,
+        variant_id=variant_id
+    )
+
     if cart_item.quantity > 1:
         cart_item.quantity -= 1
         cart_item.save()
-    return redirect("cart")
 
+    effective_price = _effective_price(cart_item.variant)
+    subtotal = effective_price * cart_item.quantity
+
+    cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+    total = 0
+    for item in cart_items:
+        effective_price = _effective_price(item.variant)
+        total += effective_price * item.quantity
+
+    tax = round(Decimal("0.18") * Decimal(str(total)), 2)
+    grand_total = round(Decimal(str(total)) + tax, 2)
+
+    return JsonResponse({
+        "success": True,
+        "quantity": cart_item.quantity,
+        "subtotal": float(subtotal),
+        "cart_total": float(total),
+        "tax": float(tax),
+        "grand_total": float(grand_total),
+    })
+ 
 
 def remove_cartitem(request, variant_id):
     cart = _get_or_create_cart(request)

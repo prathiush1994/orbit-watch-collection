@@ -18,7 +18,7 @@
 
             {% if action == 'Add' %}
             <div class="a-form-group">
-                <label class="a-label">Product <span class="text-danger">*</span></label>
+                <label class="a-label">Product </label>
                 <select name="product_id" class="a-input" required>
                     <option value="">-- Select product --</option>
                     {% for p in products %}
@@ -36,18 +36,18 @@
             {% endif %}
 
             <div class="a-form-group">
-                <label class="a-label">Discount Percentage <span class="text-danger">*</span></label>
+                <label class="a-label">Discount Percentage </label>
                 <div class="input-group">
                     <input type="number" name="discount_pct" class="a-input"
                            value="{% if offer %}{{ offer.discount_pct }}{% endif %}"
-                           min="1" max="90" step="0.5" required
+                           min="1" max="25" step="0.5" required
                            placeholder="e.g. 15 for 15% off"
                            style="border-radius:0.25rem 0 0 0.25rem;">
                     <div class="input-group-append">
                         <span class="input-group-text">%</span>
                     </div>
                 </div>
-                <small class="text-muted">Max 90%. This discount competes with category offer — larger wins.</small>
+                <small class="text-muted">Max 25%. This discount competes with category offer — larger wins.</small>
             </div>
 
             <div class="row">

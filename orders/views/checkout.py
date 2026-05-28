@@ -6,15 +6,23 @@ from carts.views import _get_or_create_cart
 from carts.models import CartItem
 from accounts.models import UserAddress
 from .helpers import _compute_totals, _get_wallet
-from offers.utils import get_applicable_offer, apply_discount
 
 
 @login_required(login_url="login")
 def checkout(request):
+
     cart = _get_or_create_cart(request)
+
     cart_items = (
-        CartItem.objects.filter(cart=cart, is_active=True)
-        .select_related("variant", "variant__product")
+        CartItem.objects.filter(
+            cart=cart,
+            is_active=True
+        )
+        .select_related(
+            "variant",
+            "variant__product",
+            "variant__inventory",
+        )
         .prefetch_related(
             "variant__product__category",
             "variant__product__offer",
@@ -26,12 +34,19 @@ def checkout(request):
         messages.warning(request, "Your cart is empty.")
         return redirect("cart")
 
-    # Annotate each item with its discounted sub_total for the template
     cart_items_list = list(cart_items)
+
+    from offers.utils import annotate_variants_with_offers
+
+    annotate_variants_with_offers(
+        [item.variant for item in cart_items_list]
+    )
+
+    total = 0
 
     for item in cart_items_list:
 
-        stock = item.variant.stock
+        stock = item.variant.inventory.quantity
 
         if stock <= 0:
             messages.error(
@@ -48,28 +63,59 @@ def checkout(request):
             )
             return redirect("cart")
 
-        try:
-            pct, label, _ = get_applicable_offer(item.variant.product)
-            original_price = item.variant.price
-            effective_price = apply_discount(original_price, pct)
-            item.variant.has_offer = pct > 0
-            item.variant.original_price = original_price
-            item.variant.effective_price = effective_price
-            item.variant.offer_label = label
-            item.sub_total = effective_price * item.quantity
-        except Exception:
-            item.variant.has_offer = False
-            item.variant.original_price = item.variant.price
-            item.variant.effective_price = item.variant.price
-            item.sub_total = item.variant.price * item.quantity
+        item.sub_total = (
+            item.variant.effective_price * item.quantity
+        )
 
-    totals = _compute_totals(cart_items_list, request.session)
+        total += item.sub_total
+
+    totals = _compute_totals(
+        cart_items_list,
+        request.session
+    )
+
+    # overwrite subtotal with offer-adjusted subtotal
+    totals["subtotal"] = total
+
+    from decimal import Decimal
+
+    totals["tax"] = round(
+        Decimal("0.18") * Decimal(str(total)),
+        2
+    )
+
+    totals["grand_total"] = round(
+        Decimal(str(total)) + totals["tax"],
+        2
+    )
+
+    totals["after_coupon"] = max(
+        totals["grand_total"] - totals["coupon_discount"],
+        Decimal("0")
+    )
+
+    totals["after_referral"] = max(
+        totals["after_coupon"] - totals["referral_discount"],
+        Decimal("0")
+    )
+
+    totals["final_total"] = max(
+        totals["after_referral"] - totals["wallet_used"],
+        Decimal("0")
+    )
+
     wallet = _get_wallet(request.user)
+
     addresses = (
         UserAddress.objects.filter(user=request.user)
         .order_by("-is_default")
     )
-    coupon_code = request.session.get("coupon_code", None)
+
+    coupon_code = request.session.get(
+        "coupon_code",
+        None
+    )
+
     context = {
         "cart_items": cart_items_list,
         "total": totals["subtotal"],
@@ -88,4 +134,9 @@ def checkout(request):
         "razorpay_key_id": settings.RAZORPAY_KEY_ID,
         "coupon_code": coupon_code,
     }
-    return render(request, "orders/checkout.html", context)
+
+    return render(
+        request,
+        "orders/checkout.html",
+        context
+    )

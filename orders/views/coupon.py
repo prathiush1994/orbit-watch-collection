@@ -70,7 +70,6 @@ def apply_coupon(request):
         request.session["wallet_used"] = str(wallet_used)
 
     final = max(after_coup - wallet_used, Decimal("0"))
-
     return JsonResponse(
         {
             "success": True,

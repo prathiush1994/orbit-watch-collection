@@ -104,13 +104,36 @@
                                 <small class="text-muted">
                                     {{ item.variant.color_name }} &nbsp;|&nbsp; Qty: {{ item.quantity }}
                                 </small>
-                                {% if item.variant.has_offer %}
-                                <br><span class="badge badge-danger" style="font-size:10px;">{{ item.variant.offer_label
-                                    }}</span>
-                                {% endif %}
+                            {% if item.variant.has_offer %}
+                            <span class="badge badge-danger" style="font-size:10px;">
+                                {{ item.variant.offer_label }}
+                            </span>
+                            {% endif %}
                             </div>
                         </div>
-                        <div class="font-weight-bold">&#8377;{{ item.sub_total }}</div>
+                        <div class="text-right">
+                            {% if item.variant.has_offer %}
+                                <div class="text-danger font-weight-bold">
+                                    ₹{{ item.variant.effective_price }}
+                                </div>
+                                <small class="text-muted d-block">
+                                    <del>₹{{ item.variant.original_price }}</del>
+                                </small>
+                                <small class="text-success d-block">
+                                    {{ item.variant.offer_label }}
+                                </small>
+                                <div class="font-weight-bold mt-1">
+                                    Total: ₹{{ item.sub_total }}
+                                </div>
+                            {% else %}
+                                <div class="font-weight-bold">
+                                    ₹{{ item.variant.price }}
+                                </div>
+                                <div class="font-weight-bold mt-1">
+                                    Total: ₹{{ item.sub_total }}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                     {% endfor %}
 
@@ -182,7 +205,11 @@
                     <!-- ── COUPON SECTION ──────────────────────── -->
                     <div class="mb-3">
                         <p class="font-weight-bold mb-2" style="font-size:14px;">
-                            <i class="fas fa-tag mr-1 text-primary"></i>Have a coupon?
+                            <i class="fas fa-tag mr-1 text-primary"></i>
+                            Have a coupon?
+                            <small class="text-muted font-weight-normal ml-1">
+                                (Maximum discount up to ₹5000)
+                            </small>
                         </p>
                         <div class="input-group" id="couponInputGroup" 
                         {% if coupon_code %}style="display:none;" {% endif %}>
@@ -300,93 +327,193 @@
     </div>
 </section>
 
+
+
+
+
 <script>
     const CSRF = '{{ csrf_token }}';
+    const grandTotal = () =>
+        parseFloat(document.getElementById('hGrandTotal').value) || 0;
+    const afterCoupon = () =>
+        parseFloat(document.getElementById('hAfterCoupon').value) || 0;
+    const afterReferral = () =>
+        parseFloat(document.getElementById('hAfterReferral').value) || 0;
+    const walletBalance = () =>
+        parseFloat(document.getElementById('hWalletBalance').value) || 0;
+    const walletUsedNow = () =>
+        parseFloat(document.getElementById('hWalletUsed').value) || 0;
 
-    const grandTotal = () => parseFloat(document.getElementById('hGrandTotal').value) || 0;
-    const afterCoupon = () => parseFloat(document.getElementById('hAfterCoupon').value) || 0;
-    const afterReferral = () => parseFloat(document.getElementById('hAfterReferral').value) || 0;
-    const walletBalance = () => parseFloat(document.getElementById('hWalletBalance').value) || 0;
-    const walletUsedNow = () => parseFloat(document.getElementById('hWalletUsed').value) || 0;
 
-    function setAfterCoupon(v) { document.getElementById('hAfterCoupon').value = v; }
-    function setAfterReferral(v) { document.getElementById('hAfterReferral').value = v; }
-    function setWalletUsed(v) { document.getElementById('hWalletUsed').value = v; }
-    function setFinal(v) {
-        document.getElementById('finalTotalAmt').textContent = Math.max(parseFloat(v), 0).toFixed(2);
+    function setAfterCoupon(v) {
+        v = parseFloat(v) || 0;
+        document.getElementById('hAfterCoupon').value = v;
     }
+
+    function setAfterReferral(v) {
+        v = parseFloat(v) || 0;
+        document.getElementById('hAfterReferral').value = v;
+    }
+
+    function setWalletUsed(v) {
+        document.getElementById('hWalletUsed').value = v;
+    }
+
+    function setFinal(v) {
+        document.getElementById('finalTotalAmt').textContent =
+            Math.max(parseFloat(v), 0).toFixed(2);
+    }
+
     function showMsg(id, text, isError) {
         const el = document.getElementById(id);
         el.textContent = text;
-        el.style.color = isError ? '#dc3545' : '#28a745';
+        el.style.color = isError
+            ? '#dc3545'
+            : '#28a745';
     }
 
     // ── COUPON ─────────────────────────────────────────────
     function applyCoupon() {
-        const code = document.getElementById('couponCodeInput').value.trim().toUpperCase();
-        if (!code) { showMsg('couponMsg', 'Please enter a coupon code.', true); return; }
+        const code = document.getElementById('couponCodeInput')
+            .value
+            .trim()
+            .toUpperCase();
+        if (!code) {
+            showMsg(
+                'couponMsg',
+                'Please enter a coupon code.',
+                true
+            );
+            return;
+        }
         fetch('{% url "apply_coupon" %}', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-            body: JSON.stringify({ code, grand_total: grandTotal() }),
-        }).then(r => r.json()).then(d => {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRF
+            },
+
+            body: JSON.stringify({code: code}),
+        })
+        .then(r => r.json())
+        .then(d => {
             if (d.success) {
-                document.getElementById('rowCouponDiscount').style.display = '';
-                document.getElementById('couponDiscountAmt').textContent = parseFloat(d.discount).toFixed(2);
-                document.getElementById('appliedCouponCode').textContent = code;
-                document.getElementById('couponBadgeCode').textContent = code;
-                document.getElementById('couponInputGroup').classList.add('d-none');
-                document.getElementById('couponAppliedBadge').classList.remove('d-none');
-                const newAfterRef = parseFloat(d.after_coup) - parseFloat(document.getElementById('referralDiscountAmt').textContent || 0);
-                setAfterReferral(Math.max(newAfterRef, 0));
-                setFinal(d.final);
+                document.getElementById('rowCouponDiscount')
+                    .style.display = '';
+                document.getElementById('couponDiscountAmt')
+                    .textContent = parseFloat(d.discount).toFixed(2);
+                document.getElementById('appliedCouponCode')
+                    .textContent = code;
+                document.getElementById('couponBadgeCode')
+                    .textContent = code;
+                document.getElementById('couponInputGroup')
+                    .classList.add('d-none');
+                document.getElementById('couponAppliedBadge')
+                    .classList.remove('d-none');
+                // Update hidden values
+                setAfterCoupon(d.after_coup);
+                const referralDiscount =
+                    parseFloat(
+                        document.getElementById('referralDiscountAmt')
+                            .textContent || 0
+                    );
+                const afterReferral =
+                    parseFloat(d.after_coup) - referralDiscount;
+                setAfterReferral(afterReferral);
+                // Update final payment UI
+                document.getElementById('finalTotalAmt').textContent =
+                    parseFloat(d.final).toFixed(2);
                 showMsg('couponMsg', d.message, false);
-            } else { showMsg('couponMsg', d.message, true); }
+            } else {
+                showMsg('couponMsg', d.message, true);
+            }
         });
     }
 
     function removeCoupon() {
         fetch('{% url "remove_coupon" %}', {
-            method:'POST',
-            headers:{
-                'Content-Type':'application/json',
-                'X-CSRFToken':CSRF
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRF
             },
-            body: JSON.stringify({ grand_total: grandTotal() }),
+            body: JSON.stringify({}),
         })
         .then(r => r.json())
         .then(d => {
             if (d.success) {
-                document.getElementById('rowCouponDiscount').style.display = 'none';
-                document.getElementById('couponDiscountAmt').textContent = '0';
-                document.getElementById('appliedCouponCode').textContent = '';
-                document.getElementById('couponBadgeCode').textContent = '';
-                document.getElementById('couponInputGroup').classList.remove('d-none');
-                document.getElementById('couponAppliedBadge').classList.add('d-none');
+                document.getElementById('rowCouponDiscount')
+                    .style.display = 'none';
+                document.getElementById('couponDiscountAmt')
+                    .textContent = '0';
+                document.getElementById('appliedCouponCode')
+                    .textContent = '';
+                document.getElementById('couponBadgeCode')
+                    .textContent = '';
+                document.getElementById('couponInputGroup')
+                    .classList.remove('d-none');
+                document.getElementById('couponAppliedBadge')
+                    .classList.add('d-none');
+                // Reset hidden values
                 setAfterCoupon(d.after_coup);
-                setAfterReferral(d.after_coup); // important!
-                setFinal(d.final);
+                setAfterReferral(d.after_coup);
+                // Update final payment UI
+                document.getElementById('finalTotalAmt').textContent =
+                    parseFloat(d.final).toFixed(2);
+
                 showMsg('couponMsg', '', false);
             }
         });
     }
-
+    
     // ── REFERRAL ───────────────────────────────────────────
     function applyReferral() {
-        const code = document.getElementById('referralCodeInput').value.trim().toUpperCase();
-        if (!code) { showMsg('referralMsg', 'Please enter a referral code.', true); return; }
+        const code = document.getElementById('referralCodeInput')
+            .value
+            .trim()
+            .toUpperCase();
+        if (!code) {
+            showMsg(
+                'referralMsg',
+                'Please enter a referral code.',
+                true
+            );
+            return;
+        }
         fetch('{% url "apply_referral" %}', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-            body: JSON.stringify({ code, grand_total: afterCoupon() }),
-        }).then(r => r.json()).then(d => {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRF
+            },
+            body: JSON.stringify({
+                code: code
+            }),
+        })
+        .then(r => r.json())
+        .then(d => {
             if (d.success) {
-                document.getElementById('rowReferralDiscount').style.display = 'flex';
-                document.getElementById('referralDiscountAmt').textContent = parseFloat(d.discount).toFixed(2);
-                document.getElementById('appliedReferralCode').textContent = code;
-                document.getElementById('referralBadgeCode').textContent = code;
-                document.getElementById('referralInputGroup').classList.add('d-none');
-                document.getElementById('referralAppliedBadge').classList.remove('d-none');
+                document.getElementById('rowReferralDiscount')
+                    .style.display = 'flex';
+                document.getElementById('referralDiscountAmt')
+                    .textContent = parseFloat(d.discount).toFixed(2);
+                document.getElementById('appliedReferralCode')
+                    .textContent = code;
+                document.getElementById('referralBadgeCode')
+                    .textContent = code;
+                document.getElementById('referralInputGroup')
+                    .classList.add('d-none');
+                document.getElementById('referralAppliedBadge')
+                    .classList.remove('d-none');
+                // Update hidden values
+                setAfterReferral(d.after_referral);
+                // Update total payment UI
+                document.getElementById('finalTotalAmt').textContent =
+                    parseFloat(d.final).toFixed(2);
                 showMsg('referralMsg', d.message, false);
-            } else { showMsg('referralMsg', d.message, true); }
+            } else {
+                showMsg('referralMsg', d.message, true);
+            }
         });
     }
 
@@ -397,7 +524,7 @@
                 'Content-Type': 'application/json',
                 'X-CSRFToken': CSRF
             },
-            body: JSON.stringify({ grand_total: grandTotal() }),
+            body: JSON.stringify({}),
         })
         .then(r => r.json())
         .then(d => {
@@ -408,8 +535,11 @@
                 document.getElementById('referralBadgeCode').textContent = '';
                 document.getElementById('referralInputGroup').classList.remove('d-none');
                 document.getElementById('referralAppliedBadge').classList.add('d-none');
+                // Reset referral hidden value
                 setAfterReferral(afterCoupon());
-                setFinal(d.final);
+                // Update final total UI
+                document.getElementById('finalTotalAmt').textContent =
+                    parseFloat(d.final).toFixed(2);
                 showMsg('referralMsg', '', false);
             }
         });
@@ -420,7 +550,7 @@
     function applyWallet() {
         fetch('{% url "apply_wallet" %}', {
             method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-            body: JSON.stringify({ final_total: afterReferral() }),
+            body: JSON.stringify({}),
         }).then(r => r.json()).then(d => {
             if (d.success) {
                 document.getElementById('rowWalletDeduct').style.display = '';
@@ -439,7 +569,7 @@
     function removeWallet() {
         fetch('{% url "remove_wallet" %}', {
             method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
-            body: JSON.stringify({ final_total: afterReferral() }),
+            body: JSON.stringify({}),
         }).then(r => r.json()).then(d => {
             if (d.success) {
                 document.getElementById('rowWalletDeduct').style.display = 'none';

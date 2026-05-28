@@ -38,9 +38,9 @@ def _razorpay_client():
 def _build_order_from_session(request, address, payment_obj, totals):
 
     cart = _get_or_create_cart(request)
-    cart_items = CartItem.objects.filter(
-        cart=cart, is_active=True
-    ).select_related("variant", "variant__product")
+    cart_items = CartItem.objects.filter(cart=cart, is_active=True).select_related(
+        "variant", "variant__product"
+    )
 
     for item in cart_items:
         inventory = getattr(item.variant, "inventory", None)
@@ -98,9 +98,7 @@ def _build_order_from_session(request, address, payment_obj, totals):
                     defaults={"reward_given": True},
                 )
 
-                referrer_wallet, _ = Wallet.objects.get_or_create(
-                    user=ref_code.user
-                )
+                referrer_wallet, _ = Wallet.objects.get_or_create(user=ref_code.user)
                 referrer_wallet.credit(
                     amount=ref_code.referrer_reward,
                     description=f"Referral reward — {request.user.email} used {ref_code.code}",
@@ -175,9 +173,9 @@ def _compute_totals(cart_items, session):
         if not inventory or inventory.quantity <= 0:
             continue
         try:
-            pct, label, _ = get_applicable_offer(item.variant.product)
+            pct, label = get_applicable_offer(item.variant.product)
             ep = apply_discount(item.variant.price, pct)
-        except Exception:
+        except Exception as e:
             ep = Decimal(str(item.variant.price))
         subtotal += ep * item.quantity
 

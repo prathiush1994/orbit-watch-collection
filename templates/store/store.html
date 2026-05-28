@@ -208,7 +208,7 @@
                   <button class="btn btn-secondary btn-sm w-50" disabled>In Cart</button>
                   {% else %}
                   <!-- Wishlist -->
-                  <a href="{% url 'toggle_wishlist' variant.id %}?next={{ request.get_full_path }}"
+                  <a href="{% url 'toggle_wishlist' variant.id %}?next={{ request.get_full_path|urlencode }}"
                      class="btn btn-sm w-50 
                      {% if variant.id in wishlist_ids %}btn-danger{% else %}btn-outline-primary{% endif %}">
                     ♥
@@ -227,15 +227,31 @@
           <ul class="pagination justify-content-center">
             {% if products.has_previous %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ products.previous_page_number }}">Previous</a>
+              <a class="page-link" href=href="?page={{ products.previous_page_number }}{% if keyword %}&q={{ keyword }}{% endif %}{% for cat in active_categories %}&category={{ cat }}{% endfor %}
+              {% for brand in active_brands %}&brand={{ brand }}{% endfor %}
+              {% if active_min_price %}&min_price={{ active_min_price }}{% endif %}
+              {% if active_max_price %}&max_price={{ active_max_price }}{% endif %}
+              {% if active_sort %}&sort={{ active_sort }}{% endif %}">Previous</a>
             </li>
             {% endif %} {% for i in products.paginator.page_range %}
             <li class="page-item {% if products.number == i %}active{% endif %}">
-              <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+              <a class="page-link" 
+              href="?page={{ i }}{% if keyword %}&q={{ keyword }}{% endif %}
+              {% for cat in active_categories %}&category={{ cat }}{% endfor %}
+              {% for brand in active_brands %}&brand={{ brand }}{% endfor %}
+              {% if active_min_price %}&min_price={{ active_min_price }}{% endif %}
+              {% if active_max_price %}&max_price={{ active_max_price }}{% endif %}
+              {% if active_sort %}&sort={{ active_sort }}{% endif %}">{{ i }}</a>
             </li>
             {% endfor %} {% if products.has_next %}
             <li class="page-item">
-              <a class="page-link" href="?page={{ products.next_page_number }}">Next</a>
+              <a class="page-link" href="?page={{ products.next_page_number }}
+              {% if keyword %}&q={{ keyword }}{% endif %}
+              {% for cat in active_categories %}&category={{ cat }}{% endfor %}
+              {% for brand in active_brands %}&brand={{ brand }}{% endfor %}
+              {% if active_min_price %}&min_price={{ active_min_price }}{% endif %}
+              {% if active_max_price %}&max_price={{ active_max_price }}{% endif %}
+              {% if active_sort %}&sort={{ active_sort }}{% endif %}">Next</a>
             </li>
             {% endif %}
           </ul>
