@@ -6,7 +6,6 @@ from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 from django.db.models import Count
 from category.models import Category
-from store.models import Product
 from .decorators import admin_required
 
 
@@ -35,7 +34,7 @@ def category_list(request):
     if search_query:
         categories = categories.filter(category_name__icontains=search_query)
 
-    paginator = Paginator(categories, 10)
+    paginator = Paginator(categories, 7)
     page = request.GET.get("page", 1)
     categories = paginator.get_page(page)
 

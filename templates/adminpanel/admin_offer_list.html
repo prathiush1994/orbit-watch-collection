@@ -89,7 +89,65 @@
             </table>
         </div>
     </div>
-</div>
+    
+    <!-- Pagination -->
+    {% if product_offers.has_other_pages %}
+    <div style="padding:12px 20px;border-top:1px solid var(--border);">
+        <div class="a-pages">
+
+        {% if product_offers.has_previous %}
+            <a class="a-page"
+            href="?product_page={{ product_offers.previous_page_number }}&tab=product">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" width="13" height="13">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+            </a>
+        {% else %}
+            <span class="a-page dis">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" width="13" height="13">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+            </span>
+        {% endif %}
+
+        {% for num in product_offers.paginator.page_range %}
+            {% if product_offers.number == num %}
+                <span class="a-page cur">{{ num }}</span>
+            {% else %}
+                <a class="a-page"
+                href="?product_page={{ num }}&tab=product">
+                {{ num }}
+                </a>
+            {% endif %}
+        {% endfor %}
+
+        {% if product_offers.has_next %}
+            <a class="a-page"
+            href="?product_page={{ product_offers.next_page_number }}&tab=product">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" width="13" height="13">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </a>
+        {% else %}
+            <span class="a-page dis">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" width="13" height="13">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </span>
+        {% endif %}
+
+        </div>
+
+        <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:8px;">
+            Page {{ product_offers.number }} of {{ product_offers.paginator.num_pages }}
+        </div>
+    </div>
+    {% endif %}
+    </div>
 
 
 <!-- ════════════════════════════════════
@@ -163,6 +221,39 @@
             </table>
         </div>
     </div>
+        <!-- Pagination -->
+    {% if category_offers.has_other_pages %}
+    <div style="padding:12px 20px;border-top:1px solid var(--border);">
+        <div class="a-pages">
+        {% if category_offers.has_previous %}
+            <a class="a-page" href="?category_page={{ category_offers.previous_page_number }}&tab=category{% if search_query %}&q={{ search_query }}{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+            </a>
+        {% else %}
+            <span class="a-page dis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg></span>
+        {% endif %}
+
+        {% for num in category_offers.paginator.page_range %}
+            {% if category_offers.number == num %}
+            <span class="a-page cur">{{ num }}</span>
+            {% elif num > category_offers.number|add:'-3' and num < category_offers.number|add:'3' %}
+            <a class="a-page" href="?category_page={{ num }}&tab=category{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+
+        {% if category_offers.has_next %}
+            <a class="a-page" href="?category_page={{ category_offers.next_page_number }}&tab=category{% if search_query %}&q={{ search_query }}{% endif %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
+            </a>
+        {% else %}
+            <span class="a-page dis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg></span>
+        {% endif %}
+        </div>
+        <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:8px;">
+        Page {{ category_offers.number }} of {{ category_offers.paginator.num_pages }}
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 </div><!-- /tab-content -->

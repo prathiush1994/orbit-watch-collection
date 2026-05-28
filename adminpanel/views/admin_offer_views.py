@@ -29,8 +29,18 @@ def _get_categories():
 
 @staff_member_required(login_url="admin_login")
 def admin_offer_list(request):
+    
     from accounts.models import Account
     from django.db.models import Prefetch
+    
+    active_tab = request.GET.get("tab")
+
+    if "category_page" in request.GET:
+        active_tab = "category"
+    elif "product_page" in request.GET:
+        active_tab = "product"
+    else:
+        active_tab = "product"
 
     now = timezone.now()
     product_offers = ProductOffer.objects.select_related("product").order_by("-id")
@@ -46,8 +56,13 @@ def admin_offer_list(request):
         .order_by("-date_joined")
     )
 
-    paginator = Paginator(all_users, 15)
-    ref_page_obj = paginator.get_page(request.GET.get("ref_page", 1))
+    product_paginator = Paginator(product_offers, 7)
+    product_page = request.GET.get("product_page", 1)
+    product_offers = product_paginator.get_page(product_page)
+
+    category_paginator = Paginator(category_offers, 7)
+    category_page = request.GET.get("category_page", 1)
+    category_offers = category_paginator.get_page(category_page)
 
     return render(
         request,
@@ -55,7 +70,7 @@ def admin_offer_list(request):
         {
             "product_offers": product_offers,
             "category_offers": category_offers,
-            "ref_page_obj": ref_page_obj,
+            "active_tab": active_tab,
             "now": now,
             "active_tab": request.GET.get("tab", "product"),
         },
@@ -84,10 +99,10 @@ def admin_product_offer_add(request):
             )
         try:
             disc = float(discount_pct)
-            if not (0 < disc <= 90):
+            if not (0 < disc <= 51):
                 raise ValueError
         except (ValueError, TypeError):
-            messages.error(request, "Discount must be between 1 and 90.")
+            messages.error(request, "Discount must be between 1 and 50.")
             return render(
                 request,
                 "adminpanel/admin_offer_product_form.html",
@@ -135,10 +150,10 @@ def admin_product_offer_edit(request, offer_id):
         valid_until = request.POST.get("valid_until", "").strip() or None
         try:
             disc = float(discount_pct)
-            if not (0 < disc <= 90):
+            if not (0 < disc <= 51):
                 raise ValueError
         except (ValueError, TypeError):
-            messages.error(request, "Discount must be between 1 and 90.")
+            messages.error(request, "Discount must be between 1 and 50.")
             return render(
                 request,
                 "adminpanel/admin_offer_product_form.html",

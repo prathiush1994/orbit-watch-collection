@@ -20,7 +20,7 @@
             <!-- Code -->
             <div class="a-form-group">
                 <label class="a-label">
-                    Coupon Code <span class="text-danger">*</span>
+                    Coupon Code 
                 </label>
                 <input type="text" name="code" class="a-input"
                        value="{{ coupon.code|default:'' }}"
@@ -31,7 +31,7 @@
 
             <!-- Discount Type -->
             <div class="a-form-group">
-                <label class="a-label">Discount Type <span class="text-danger">*</span></label>
+                <label class="a-label">Discount Type </label>
                 <select name="discount_type" class="a-input" id="discountType"
                         onchange="toggleMaxDiscount()">
                     <option value="percentage"
@@ -50,58 +50,40 @@
                 <div class="col-md-6">
                     <div class="a-form-group">
                         <label class="a-label">
-                            Discount Value <span class="text-danger">*</span>
+                            Discount Value 
                         </label>
                         <input type="number" name="discount" class="a-input"
-                               value="{{ coupon.discount|default:'' }}"
-                               min="0" step="0.01" required
-                               placeholder="e.g. 20 for 20% or ₹200">
-                    </div>
-                </div>
-                <div class="col-md-6" id="maxDiscountWrap"
-                     {% if coupon.discount_type == 'fixed' %}style="display:none;"{% endif %}>
-                    <div class="a-form-group">
-                        <label class="a-label">Max Discount Cap (₹)</label>
-                        <input type="number" name="max_discount" class="a-input"
-                               value="{{ coupon.max_discount|default:'' }}"
-                               min="0" step="0.01"
-                               placeholder="Leave blank = no cap">
-                        <small class="text-muted">Only for % coupons</small>
+                            value="{{ coupon.discount|default:'' }}"
+                            min="1"
+                            step="1"
+                            required>
                     </div>
                 </div>
             </div>
 
             <!-- Min Order -->
+
             <div class="a-form-group">
                 <label class="a-label">Minimum Order Amount (₹)</label>
                 <input type="number" name="min_order_amt" class="a-input"
-                       value="{{ coupon.min_order_amt|default:'0' }}"
-                       min="0" step="0.01">
-                <small class="text-muted">Set 0 for no minimum</small>
+                    value="{{ coupon.min_order_amt|default:'500' }}"
+                    min="500"
+                    max="5000"
+                    step="1"
+                    required>
             </div>
 
-            <!-- Usage Limits -->
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="a-form-group">
-                        <label class="a-label">Uses Per User</label>
-                        <input type="number" name="usage_limit" class="a-input"
-                               value="{{ coupon.usage_limit|default:'1' }}"
-                               min="1" required>
-                        <small class="text-muted">How many times one user can apply it</small>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="a-form-group">
-                        <label class="a-label">Total Usage Limit</label>
-                        <input type="number" name="max_total_usage" class="a-input"
-                               value="{{ coupon.max_total_usage|default:'' }}"
-                               min="1"
-                               placeholder="Leave blank = unlimited">
-                        <small class="text-muted">Across all users combined</small>
-                    </div>
-                </div>
+            <!-- Uses Per User -->
+            <div class="a-form-group">
+                <label class="a-label">Uses Per User</label>
+                <input type="number" name="usage_limit" class="a-input"
+                    value="{{ coupon.usage_limit|default:'1' }}"
+                    min="1"
+                    max="3"
+                    step="1"
+                    required>
             </div>
+
 
             <!-- Validity dates -->
             <div class="row">
@@ -143,12 +125,5 @@
     </div>
 </div>
 
-<script>
-function toggleMaxDiscount() {
-    const t = document.getElementById('discountType').value;
-    document.getElementById('maxDiscountWrap').style.display =
-        t === 'fixed' ? 'none' : '';
-}
-</script>
 
 {% endblock %}

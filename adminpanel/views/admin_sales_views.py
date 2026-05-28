@@ -74,7 +74,7 @@ def admin_sales_report(request):
     # Pagination
     from django.core.paginator import Paginator
 
-    paginator = Paginator(orders, 20)
+    paginator = Paginator(orders, 7)
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
     PERIODS = [

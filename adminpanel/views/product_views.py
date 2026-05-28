@@ -54,7 +54,7 @@ def product_list(request):
             | Q(brand__brand_name__icontains=search_query)
         )
 
-    paginator = Paginator(products, 15)
+    paginator = Paginator(products, 7)
     page = request.GET.get("page", 1)
     products = paginator.get_page(page)
 

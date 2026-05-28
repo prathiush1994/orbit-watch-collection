@@ -22,7 +22,7 @@ def user_list(request):
             | Q(email__icontains=search_query)
         )
 
-    paginator = Paginator(users, 10)
+    paginator = Paginator(users, 7)
     page = request.GET.get("page", 1)
     users = paginator.get_page(page)
 

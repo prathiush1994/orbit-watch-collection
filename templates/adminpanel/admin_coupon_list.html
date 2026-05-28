@@ -117,4 +117,41 @@
     </div>
 </div>
 
+  {% if coupons.has_other_pages %}
+  <div style="padding:12px 20px;border-top:1px solid var(--border);">
+    <div class="a-pages">
+      {% if coupons.has_previous %}
+        <a class="a-page" href="?page={{ coupons.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+      {% else %}
+        <span class="a-page dis">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+        </span>
+      {% endif %}
+
+      {% for num in coupons.paginator.page_range %}
+        {% if coupons.number == num %}
+          <span class="a-page cur">{{ num }}</span>
+        {% elif num > coupons.number|add:'-3' and num < coupons.number|add:'3' %}
+          <a class="a-page" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if coupons.has_next %}
+        <a class="a-page" href="?page={{ coupons.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      {% else %}
+        <span class="a-page dis">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
+        </span>
+      {% endif %}
+    </div>
+    <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:8px;">
+      Page {{ coupons.number }} of {{ coupons.paginator.num_pages }}
+    </div>
+  </div>
+  {% endif %}
+
 {% endblock %}

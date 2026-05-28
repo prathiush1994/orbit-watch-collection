@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from orders.models import Coupon
+from django.core.paginator import Paginator
 
 
 @staff_member_required(login_url="admin_login")
@@ -10,12 +11,16 @@ def admin_coupon_list(request):
     coupons = Coupon.objects.all().order_by("-id")
     now = timezone.now()
 
+    paginator = Paginator(coupons, 7)
+    page = request.GET.get("page", 1)
+    coupons = paginator.get_page(page)
+
     return render(
         request,
         "adminpanel/admin_coupon_list.html",
         {
             "coupons": coupons,
-            "now": now, 
+            "now": now,
         },
     )
 
@@ -27,9 +32,7 @@ def admin_coupon_add(request):
         discount_type = request.POST.get("discount_type", "percentage")
         discount = request.POST.get("discount", "0")
         min_order_amt = request.POST.get("min_order_amt", "0")
-        max_discount = request.POST.get("max_discount", "").strip() or None
         usage_limit = request.POST.get("usage_limit", "1")
-        max_total_usage = request.POST.get("max_total_usage", "").strip() or None
         is_active = request.POST.get("is_active") == "on"
         valid_from = request.POST.get("valid_from", "")
         valid_until = request.POST.get("valid_until", "").strip() or None
@@ -48,14 +51,46 @@ def admin_coupon_add(request):
             )
 
         try:
+            discount = float(discount)
+            min_order_amt = float(min_order_amt)
+            usage_limit = int(usage_limit)
+
+            if discount_type == "percentage":
+                if discount < 1 or discount > 25:
+                    raise ValueError("Percentage discount must be between 1 and 25.")
+
+            elif discount_type == "fixed":
+                if discount < 100 or discount > 2000:
+                    raise ValueError("Fixed discount must be between ₹100 and ₹2000.")
+
+            if min_order_amt < 500 or min_order_amt > 5000:
+                raise ValueError("Minimum order amount must be between ₹500 and ₹5000.")
+
+            if usage_limit < 1 or usage_limit > 3:
+                raise ValueError("Uses per user must be between 1 and 3.")
+
+        except ValueError as e:
+            messages.error(request, str(e))
+            return render(
+                request,
+                "adminpanel/admin_coupon_form.html",
+                {
+                    "action": "Add",
+                },
+            )
+
+        try:
+            if discount_type == "percentage":
+                max_discount = 5000
+            else:
+                max_discount = None 
+            
             coupon = Coupon.objects.create(
                 code=code,
                 discount_type=discount_type,
                 discount=discount,
                 min_order_amt=min_order_amt,
-                max_discount=max_discount,
-                usage_limit=int(usage_limit),
-                max_total_usage=int(max_total_usage) if max_total_usage else None,
+                usage_limit=usage_limit,
                 is_active=is_active,
                 valid_from=valid_from or timezone.now(),
                 valid_until=valid_until,
@@ -77,9 +112,7 @@ def admin_coupon_edit(request, coupon_id):
         discount_type = request.POST.get("discount_type", "percentage")
         discount = request.POST.get("discount", "0")
         min_order_amt = request.POST.get("min_order_amt", "0")
-        max_discount = request.POST.get("max_discount", "").strip() or None
         usage_limit = request.POST.get("usage_limit", "1")
-        max_total_usage = request.POST.get("max_total_usage", "").strip() or None
         is_active = request.POST.get("is_active") == "on"
         valid_from = request.POST.get("valid_from", "")
         valid_until = request.POST.get("valid_until", "").strip() or None
@@ -102,14 +135,43 @@ def admin_coupon_edit(request, coupon_id):
             )
 
         try:
+            discount = float(discount)
+            min_order_amt = float(min_order_amt)
+            usage_limit = int(usage_limit)
+
+            if discount_type == "percentage":
+                if discount < 1 or discount > 25:
+                    raise ValueError("Percentage discount must be between 1 and 25.")
+
+            elif discount_type == "fixed":
+                if discount < 100 or discount > 2000:
+                    raise ValueError("Fixed discount must be between ₹100 and ₹2000.")
+
+            if min_order_amt < 500 or min_order_amt > 5000:
+                raise ValueError("Minimum order amount must be between ₹500 and ₹5000.")
+
+            if usage_limit < 1 or usage_limit > 3:
+                raise ValueError("Uses per user must be between 1 and 3.")
+
+        except ValueError as e:
+            messages.error(request, str(e))
+            return render(
+                request,
+                "adminpanel/admin_coupon_form.html",
+                {
+                    "action": "Edit",
+                    "coupon": coupon
+                },
+            )
+
+        try:
             coupon.code = code
             coupon.discount_type = discount_type
             coupon.discount = discount
             coupon.min_order_amt = min_order_amt
-            coupon.max_discount = max_discount
-            coupon.usage_limit = int(usage_limit)
-            coupon.max_total_usage = int(max_total_usage) if max_total_usage else None
+            coupon.usage_limit = usage_limit
             coupon.is_active = is_active
+
             if valid_from:
                 coupon.valid_from = valid_from
             coupon.valid_until = valid_until

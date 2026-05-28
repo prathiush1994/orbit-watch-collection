@@ -48,7 +48,7 @@ def inventory_list(request):
     out_of_stock = all_inv.filter(quantity__lte=0).count()
     low_stock = all_inv.filter(quantity__gt=0, quantity__lte=5).count()
 
-    paginator = Paginator(inventories, 10)
+    paginator = Paginator(inventories, 7)
     page = request.GET.get("page", 1)
     page_obj = paginator.get_page(page)
 
