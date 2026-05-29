@@ -106,6 +106,8 @@ def razorpay_webhook(request):
         return HttpResponse(status=400)
 
     totals = _compute_totals(cart_items, fake_session)
+
+
     payment = Payment.objects.create(
         user=user,
         payment_method="RAZORPAY",
@@ -126,8 +128,6 @@ def razorpay_webhook(request):
         print("WEBHOOK ORDER CREATE ERROR:", str(e))
         return HttpResponse(status=500)
     return HttpResponse(status=200)
-
-
 
 
 @csrf_exempt
