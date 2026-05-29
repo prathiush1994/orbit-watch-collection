@@ -235,3 +235,18 @@ SOCIALACCOUNT_PROVIDERS = {
         "VERIFIED_EMAIL": True,
     }
 }
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "allauth": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
+    },
+}
