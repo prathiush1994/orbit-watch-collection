@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-
+{% load socialaccount %}
 {% block content %}
 
 <section class="section-content padding-y" style="min-height:84vh;">
@@ -10,6 +10,20 @@
         <h4 class="card-title mb-4 text-center">Sign In</h4>
 
         {% include 'includes/alert.html' %}
+
+        <!-- Google Login -->
+        {% get_providers as socialaccount_providers %}
+        {% if socialaccount_providers %}
+        <a href="{% provider_login_url 'google' %}" class="btn btn-block mb-3"
+           style="background:#fff; border:1px solid #ddd; font-weight:500;">
+            <img src="https://developers.google.com/identity/images/g-logo.png"
+                 width="18" style="margin-right:8px; vertical-align:middle;">
+            Continue with Google
+        </a>
+        <div class="text-center text-muted mb-3">
+            <small>─────── or login with email ───────</small>
+        </div>
+        {% endif %}
         
 
         <!-- Email / Password Login -->
