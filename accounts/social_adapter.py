@@ -20,5 +20,6 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
     def is_auto_signup_allowed(self, request, sociallogin):
         print("GOOGLE ADAPTER REACHED")
         print(sociallogin.account.extra_data)
+        print("GOOGLE ADAPTER REACHED")
+        print("EMAIL =", sociallogin.account.extra_data.get("email"))
         return True
-
