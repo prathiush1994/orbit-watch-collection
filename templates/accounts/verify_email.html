@@ -14,7 +14,7 @@
             <strong>{{ user.email }}</strong>
         </p>
 
-
+{% include 'includes/alert.html' %}
 
         {% if not expired %}
         <form method="POST" id="otpForm">

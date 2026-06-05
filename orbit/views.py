@@ -1,18 +1,15 @@
 from django.shortcuts import render
 from store.models import ProductVariant
 from offers.utils import annotate_variants_with_offers
-from django.core.management import call_command
-from django.http import HttpResponse
 
-def load_data(request):
-    call_command("loaddata", "data.json")
-    return HttpResponse("Data loaded")
 
 def home(request):
     men = list(
         ProductVariant.objects.filter(
             product__category__slug="men", is_available=True, 
-            inventory__quantity__gt=0
+            inventory__quantity__gt=0,
+            product__category__status="active",
+            product__brand__status="active",
         )
         .select_related("product", "inventory")
         .prefetch_related(
@@ -24,7 +21,9 @@ def home(request):
     women = list(
         ProductVariant.objects.filter(
             product__category__slug="women", is_available=True, 
-            inventory__quantity__gt=0
+            inventory__quantity__gt=0,
+            product__category__status="active",
+            product__brand__status="active",
         )
         .select_related("product", "inventory")
         .prefetch_related(
@@ -36,7 +35,9 @@ def home(request):
     kids = list(
         ProductVariant.objects.filter(
             product__category__slug="kids", is_available=True, 
-            inventory__quantity__gt=0
+            inventory__quantity__gt=0,
+            product__category__status="active",
+            product__brand__status="active"
         )
         .select_related("product", "inventory")
         .prefetch_related(
@@ -58,6 +59,7 @@ def home(request):
             "kids_products": kids,
         },
     )
+
 
 def error_404(request, exception):
     return render(request, '404.html', status=404)

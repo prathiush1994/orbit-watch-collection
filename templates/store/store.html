@@ -166,96 +166,108 @@
           Items found
         </header>
 
+
         <div class="row">
-          {% for variant in products %}
-          <div class="col-6 col-md-4">
-            <figure class="card card-product-grid h-100">
-              <!-- IMAGE -->
-              <div class="img-wrap position-relative">
-                <a href="{{ variant.get_url }}">
-                  {% if variant.primary_image %}
-                  <img src="{{ variant.primary_image.url }}" />
-                  {% else %}
-                  <img src="{% static 'images/no-image.png' %}" />
-                  {% endif %}
-                </a>
-
-                <!-- OFFER BADGE -->
-                {% if variant.offer_label %}
-                <span class="badge badge-danger offer-badge">{{ variant.offer_label }}</span>
-                {% endif %}
-              </div>
-
-              <!-- CONTENT -->
-              <figcaption class="info-wrap d-flex flex-column">
-                <!-- TITLE -->
-                <a href="{{ variant.get_url }}" class="title">{{ variant.product.product_name }}</a>
-
-                <!-- PRICE -->
-                <div class="price-wrap mt-1 mb-2">
-                  {% if variant.offer_pct > 0 %}
-                  <span class="price text-danger">₹{{ variant.effective_price }}</span>
-                  <small><del>₹{{ variant.original_price }}</del></small>
-                  {% else %}
-                  <span class="price">₹{{ variant.price }}</span>
-                  {% endif %}
-                </div>
-
-                <div class="d-flex gap-1">
-                  <a href="{{ variant.get_url }}" class="btn btn-primary btn-sm w-50">View</a>
-
-                  {% if variant.id in cart_variant_ids %}
-                  <button class="btn btn-secondary btn-sm w-50" disabled>In Cart</button>
-                  {% else %}
-                  <!-- Wishlist -->
-                  <a href="{% url 'toggle_wishlist' variant.id %}?next={{ request.get_full_path|urlencode }}"
-                     class="btn btn-sm w-50 
-                     {% if variant.id in wishlist_ids %}btn-danger{% else %}btn-outline-primary{% endif %}">
-                    ♥
+          {% if products %}
+            {% for variant in products %}
+            <div class="col-6 col-md-4">
+              <figure class="card card-product-grid h-100">
+                <!-- IMAGE -->
+                <div class="img-wrap position-relative">
+                  <a href="{{ variant.get_url }}">
+                    {% if variant.primary_image %}
+                    <img src="{{ variant.primary_image.url }}" />
+                    {% else %}
+                    <img src="{% static 'images/no-image.png' %}" />
+                    {% endif %}
                   </a>
+
+                  <!-- OFFER BADGE -->
+                  {% if variant.offer_label %}
+                  <span class="badge badge-danger offer-badge">{{ variant.offer_label }}</span>
                   {% endif %}
                 </div>
 
-              </figcaption>
-            </figure>
-          </div>
-          {% endfor %}
+                <!-- CONTENT -->
+                <figcaption class="info-wrap d-flex flex-column">
+                  <!-- TITLE -->
+                  <a href="{{ variant.get_url }}" class="title">{{ variant.product.product_name }}</a>
+
+                  <!-- PRICE -->
+                  <div class="price-wrap mt-1 mb-2">
+                    {% if variant.offer_pct > 0 %}
+                    <span class="price text-danger">₹{{ variant.effective_price }}</span>
+                    <small><del>₹{{ variant.original_price }}</del></small>
+                    {% else %}
+                    <span class="price">₹{{ variant.price }}</span>
+                    {% endif %}
+                  </div>
+
+                  <div class="d-flex gap-1">
+                    <a href="{{ variant.get_url }}" class="btn btn-primary btn-sm w-50">View</a>
+
+                    {% if variant.id in cart_variant_ids %}
+                    <button class="btn btn-secondary btn-sm w-50" disabled>In Cart</button>
+                    {% else %}
+                    <!-- Wishlist -->
+                    <a href="{% url 'toggle_wishlist' variant.id %}?next={{ request.get_full_path|urlencode }}"
+                      class="btn btn-sm w-50 
+                      {% if variant.id in wishlist_ids %}btn-danger{% else %}btn-outline-primary{% endif %}">
+                      ♥
+                    </a>
+                    {% endif %}
+                  </div>
+
+                </figcaption>
+              </figure>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="col-12 text-center py-5">
+              <h4>No products found</h4>
+              <p class="text-muted">
+                Try changing your filters or search terms.
+              </p>
+            </div>
+          {% endif %}
         </div>
 
         <!-- Pagination -->
-        <nav class="mt-4 pt-2">
-          <ul class="pagination justify-content-center">
-            {% if products.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href=href="?page={{ products.previous_page_number }}{% if keyword %}&q={{ keyword }}{% endif %}{% for cat in active_categories %}&category={{ cat }}{% endfor %}
-              {% for brand in active_brands %}&brand={{ brand }}{% endfor %}
-              {% if active_min_price %}&min_price={{ active_min_price }}{% endif %}
-              {% if active_max_price %}&max_price={{ active_max_price }}{% endif %}
-              {% if active_sort %}&sort={{ active_sort }}{% endif %}">Previous</a>
-            </li>
-            {% endif %} {% for i in products.paginator.page_range %}
-            <li class="page-item {% if products.number == i %}active{% endif %}">
-              <a class="page-link" 
-              href="?page={{ i }}{% if keyword %}&q={{ keyword }}{% endif %}
-              {% for cat in active_categories %}&category={{ cat }}{% endfor %}
-              {% for brand in active_brands %}&brand={{ brand }}{% endfor %}
-              {% if active_min_price %}&min_price={{ active_min_price }}{% endif %}
-              {% if active_max_price %}&max_price={{ active_max_price }}{% endif %}
-              {% if active_sort %}&sort={{ active_sort }}{% endif %}">{{ i }}</a>
-            </li>
-            {% endfor %} {% if products.has_next %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ products.next_page_number }}
-              {% if keyword %}&q={{ keyword }}{% endif %}
-              {% for cat in active_categories %}&category={{ cat }}{% endfor %}
-              {% for brand in active_brands %}&brand={{ brand }}{% endfor %}
-              {% if active_min_price %}&min_price={{ active_min_price }}{% endif %}
-              {% if active_max_price %}&max_price={{ active_max_price }}{% endif %}
-              {% if active_sort %}&sort={{ active_sort }}{% endif %}">Next</a>
-            </li>
-            {% endif %}
-          </ul>
-        </nav>
+        {% if products.paginator.count > 0 %}
+          <nav class="mt-4 pt-2">
+            <ul class="pagination justify-content-center">
+              {% if products.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href=href="?page={{ products.previous_page_number }}{% if keyword %}&q={{ keyword }}{% endif %}{% for cat in active_categories %}&category={{ cat }}{% endfor %}
+                {% for brand in active_brands %}&brand={{ brand }}{% endfor %}
+                {% if active_min_price %}&min_price={{ active_min_price }}{% endif %}
+                {% if active_max_price %}&max_price={{ active_max_price }}{% endif %}
+                {% if active_sort %}&sort={{ active_sort }}{% endif %}">Previous</a>
+              </li>
+              {% endif %} {% for i in products.paginator.page_range %}
+              <li class="page-item {% if products.number == i %}active{% endif %}">
+                <a class="page-link" 
+                href="?page={{ i }}{% if keyword %}&q={{ keyword }}{% endif %}
+                {% for cat in active_categories %}&category={{ cat }}{% endfor %}
+                {% for brand in active_brands %}&brand={{ brand }}{% endfor %}
+                {% if active_min_price %}&min_price={{ active_min_price }}{% endif %}
+                {% if active_max_price %}&max_price={{ active_max_price }}{% endif %}
+                {% if active_sort %}&sort={{ active_sort }}{% endif %}">{{ i }}</a>
+              </li>
+              {% endfor %} {% if products.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ products.next_page_number }}
+                {% if keyword %}&q={{ keyword }}{% endif %}
+                {% for cat in active_categories %}&category={{ cat }}{% endfor %}
+                {% for brand in active_brands %}&brand={{ brand }}{% endfor %}
+                {% if active_min_price %}&min_price={{ active_min_price }}{% endif %}
+                {% if active_max_price %}&max_price={{ active_max_price }}{% endif %}
+                {% if active_sort %}&sort={{ active_sort }}{% endif %}">Next</a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
       </main>
     </div>
   </div>

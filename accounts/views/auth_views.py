@@ -62,7 +62,7 @@ def login(request):
 
         # Store user id in session temporarily
         request.session["login_user_id"] = user.id
-        messages.success(request, f"OTP sent to {user.email}")
+
         return redirect("verify_login_otp")
 
     return render(request, "accounts/login.html")

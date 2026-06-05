@@ -35,14 +35,28 @@ class RegistrationForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        first_name = cleaned_data.get("first_name")
+        last_name = cleaned_data.get("last_name")
         password = cleaned_data.get("password")
         confirm_password = cleaned_data.get("confirm_password")
+
+        if first_name and not first_name.isalpha():
+            raise forms.ValidationError(
+                "First name can contain only letters."
+            )
+
+        if last_name and not last_name.isalpha():
+            raise forms.ValidationError(
+                "Last name can contain only letters."
+            )
 
         if password and confirm_password:
             if password != confirm_password:
                 raise forms.ValidationError("Passwords do not match")
 
             if len(password) < 8:
-                raise forms.ValidationError("Password must be at least 8 characters")
+                raise forms.ValidationError(
+                    "Password must be at least 8 characters"
+                )
 
         return cleaned_data

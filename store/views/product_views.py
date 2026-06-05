@@ -36,7 +36,7 @@ def product_detail(request, category_slug, variant_slug):
     gallery_images = variant.images.all()
     all_variants = variant.get_all_variants().filter(
     inventory__quantity__gt=0
-)
+    )
 
     # ── Offer
     offer_ctx = get_offer_context(variant.product, variant.price)

@@ -1,13 +1,12 @@
+import nested_admin
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
-import nested_admin
 from . import views
-from .views import load_data
+
 
 urlpatterns = [
-    path("load-data/", load_data),
     path("admin/", admin.site.urls),
     # Nested admin (must be here)
     path("nested_admin/", include("nested_admin.urls")),

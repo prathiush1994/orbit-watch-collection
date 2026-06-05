@@ -35,24 +35,45 @@ def _get_or_create_wishlist(request):
 
 def wishlist(request):
     wishlist = _get_or_create_wishlist(request)
-    items = WishlistItem.objects.filter(wishlist=wishlist).select_related(
+
+    cart = _get_or_create_cart(request)
+
+    cart_variant_ids = set(
+        CartItem.objects.filter(
+            cart=cart,
+            is_active=True
+        ).values_list("variant_id", flat=True)
+    )
+
+    WishlistItem.objects.filter(
+        wishlist=wishlist,
+        variant_id__in=cart_variant_ids
+    ).delete()
+
+    items = WishlistItem.objects.filter(
+        wishlist=wishlist
+    ).select_related(
         "variant",
         "variant__product",
         "variant__product__brand",
     )
-    cart = _get_or_create_cart(request)
-    cart_variant_ids = set(
-        CartItem.objects.filter(cart=cart, is_active=True).values_list(
-            "variant_id", flat=True
-        )
-    )
+
     for item in items:
         item.in_cart = item.variant_id in cart_variant_ids
         item.out_of_stock = item.variant.inventory.quantity <= 0
-        item.unavailable = not item.variant.is_available or (
-            item.variant.product.brand and item.variant.product.brand.status != "active"
+        item.unavailable = (
+            not item.variant.is_available
+            or (
+                item.variant.product.brand
+                and item.variant.product.brand.status != "active"
+            )
         )
-    return render(request, "store/wishlist.html", {"wishlist_items": items})
+
+    return render(
+        request,
+        "store/wishlist.html",
+        {"wishlist_items": items},
+    )
 
 
 def toggle_wishlist(request, variant_id):
@@ -65,14 +86,8 @@ def toggle_wishlist(request, variant_id):
     item = WishlistItem.objects.filter(wishlist=wishlist, variant=variant)
     if item.exists():
         item.delete()
-        messages.success(
-            request, "Removed from wishlist.", extra_tags="wishlist_popup"
-        )
     else:
         WishlistItem.objects.create(wishlist=wishlist, variant=variant)
-        messages.success(
-            request, "Added to wishlist.", extra_tags="wishlist_popup"
-        )
     next_url = request.GET.get("next")
     return redirect(next_url if next_url else request.META.get("HTTP_REFERER", "store"))
 

@@ -34,13 +34,16 @@ def register(request):
             user.save()
 
             sent = send_otp_email(email, user.otp, purpose="register")
-            if sent:
-                messages.success(request, f"Verification code sent to {email}")
-            else:
-                messages.warning(
-                    request, "Account created but email failed. Contact support."
+            if not sent:
+                messages.error(
+                    request,
+                    "Failed to send verification email. Please try again."
                 )
-
+                return render(
+                    request,
+                    "accounts/register.html",
+                    {"form": form}
+                )
             return redirect("verify_email", user_id=user.id)
     else:
         form = RegistrationForm()
@@ -107,9 +110,7 @@ def resend_otp(request, user_id):
     user.save()
 
     sent = send_otp_email(user.email, user.otp, purpose="register")
-    if sent:
-        messages.success(request, "New OTP sent to your email.")
-    else:
+    if not sent:
         messages.error(request, "Failed to send OTP. Please try again.")
 
     return redirect("verify_email", user_id=user.id)

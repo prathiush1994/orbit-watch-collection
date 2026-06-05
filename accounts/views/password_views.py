@@ -24,9 +24,7 @@ def forgot_password(request):
         user.save()
 
         sent = send_otp_email(email, user.otp, purpose="forgot")
-        if sent:
-            messages.success(request, f"OTP sent to {email}.")
-        else:
+        if not sent:
             messages.error(request, "Failed to send OTP. Please try again.")
             return redirect("forgot_password")
 
@@ -87,9 +85,7 @@ def resend_forgot_otp(request, user_id):
     user.save()
 
     sent = send_otp_email(user.email, user.otp, purpose="forgot")
-    if sent:
-        messages.success(request, "New OTP sent to your email.")
-    else:
+    if not sent:
         messages.error(request, "Failed to send OTP. Please try again.")
 
     return redirect("verify_forgot_otp", user_id=user.id)

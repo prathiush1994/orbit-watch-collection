@@ -18,7 +18,18 @@ def add_address(request):
         address_type = request.POST.get("address_type", "Home")
         is_default = request.POST.get("is_default") == "on"
         next_page = request.POST.get("next", "manage_address")
-
+        
+        if not phone.isdigit() or len(phone) != 10:
+            messages.error(request, "phone number must be exactly 10 digits")
+            return render(
+                request,
+                "accounts/add_address.html",
+                {
+                    "next": next_page,
+                    "form_data": request.POST
+                }
+            )
+ 
         # Basic validation
         if not all([full_name, phone, address_line, city, state, pincode]):
             messages.error(request, "Please fill in all required fields.")
@@ -69,6 +80,17 @@ def edit_address(request, address_id):
         address.is_default = request.POST.get("is_default") == "on"
         next_page = request.POST.get("next", "manage_address")
 
+        if not address.phone.isdigit() or len(address.phone) != 10:
+            messages.error(request, "phone number must excatly 10 number")
+            return render(
+                request,
+                "accounts/edit_address.html",
+                {
+                    "next_page": next_page,
+                    "address": address
+                }
+            )
+
         if not all(
             [
                 address.full_name,
@@ -108,7 +130,6 @@ def edit_address(request, address_id):
 
 @login_required(login_url="login")
 def delete_address(request, address_id):
-    """Delete an address (POST only)."""
     address = get_object_or_404(UserAddress, id=address_id, user=request.user)
     if request.method == "POST":
         address.delete()
@@ -121,7 +142,6 @@ def set_default_address(request, address_id):
     """Set an address as default (POST only)."""
     address = get_object_or_404(UserAddress, id=address_id, user=request.user)
     if request.method == "POST":
-        # Remove default from others
         UserAddress.objects.filter(user=request.user).update(is_default=False)
         address.is_default = True
         address.save()
@@ -131,6 +151,5 @@ def set_default_address(request, address_id):
 
 @login_required(login_url="login")
 def manage_address(request):
-    """Dashboard address management page."""
     addresses = UserAddress.objects.filter(user=request.user)
     return render(request, "dashboard/address.html", {"addresses": addresses})

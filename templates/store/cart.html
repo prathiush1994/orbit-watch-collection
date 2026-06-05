@@ -20,12 +20,10 @@
     </div>
     {% endif %}
 
-    {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-{{ message.level_tag }}">
-            {{ message }}
-        </div>
-        {% endfor %}
+    {% if first_message %}
+    <div class="alert alert-warning">
+        {{ first_message }}
+    </div>
     {% endif %}
 
     <div class="row">
@@ -118,28 +116,28 @@
                     <div class="price-wrap text-center">
                         {% if cart_item.variant.has_offer %}
                         <var class="price text-danger fw-bold">
-                            ₹{{ cart_item.variant.effective_price }}
+                            ₹{{ cart_item.variant.effective_price|floatformat:2  }}
                             <small class="text-muted fw-normal">each</small>
                         </var>
                         <small class="text-muted d-block">
-                            <del>₹{{ cart_item.variant.original_price }}</del>
+                            <del>₹{{ cart_item.variant.original_price|floatformat:2  }}</del>
                         </small>
                         <small
                             class="text-danger d-block"
                             id="subtotal-{{ cart_item.variant.id }}">
-                            Subtotal: ₹{{ cart_item.discounted_subtotal }}
+                            Subtotal: ₹{{ cart_item.discounted_subtotal|floatformat:2 }}
                         </small>
                         {% else %}
                         <var class="price">
-                            ₹{{ cart_item.variant.price }}
+                            ₹{{ cart_item.variant.price|floatformat:2  }}
                         </var>
                         <small class="text-muted d-block">
-                            ₹{{ cart_item.variant.price }} each
+                            ₹{{ cart_item.variant.price|floatformat:2  }} each
                         </small>
                         <small
                             class="text-muted d-block"
                             id="subtotal-{{ cart_item.variant.id }}">
-                            Subtotal: ₹{{ cart_item.discounted_subtotal }}
+                            Subtotal: ₹{{ cart_item.discounted_subtotal|floatformat:2  }}
                         </small>
                         {% endif %}
                     </div>
@@ -168,19 +166,19 @@
 
                 <dl class="dlist-align">
                     <dt>Subtotal (after offers):</dt>
-                    <dd id="cart-subtotal">&#8377;{{ total }}</dd>
+                    <dd id="cart-subtotal">&#8377;{{ total|floatformat:2  }}</dd>
                 </dl>
 
                 <dl class="dlist-align">
                     <dt>Tax (18%):</dt>
-                    <dd id="cart-tax">&#8377;{{ tax }}</dd>
+                    <dd id="cart-tax">&#8377;{{ tax|floatformat:2  }}</dd>
                 </dl>
 
                 <dl class="dlist-align">
                     <dt>Total:</dt>
                     <dd>
                         <strong id="cart-grand-total">
-                            &#8377;{{ grand_total }}
+                            &#8377;{{ grand_total|floatformat:2  }}
                         </strong>
                     </dd>
                 </dl>

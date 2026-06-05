@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from offers.utils import annotate_variants_with_offers
 from django.contrib import messages
 from django.contrib.messages import get_messages
 from carts.models import CartItem
@@ -6,6 +7,7 @@ from store.models import ProductVariant
 from .models import Cart
 from django.http import JsonResponse
 from decimal import Decimal
+
 
 CART_MAX_TOTAL = 10
 PRODUCT_MAX_QTY = 3
@@ -87,6 +89,7 @@ def _effective_price(variant):
 
 def cart(request):
     cart_obj = _get_or_create_cart(request)
+
     cart_items = list(
         CartItem.objects.filter(cart=cart_obj, is_active=True)
         .select_related(
@@ -102,26 +105,63 @@ def cart(request):
         )
     )
 
-    # Annotate each variant with offer data (batch — 2 DB queries)
-    from offers.utils import annotate_variants_with_offers
+    removed_any = False
+
+    for item in cart_items:
+
+        invalid = (
+            item.variant.inventory.quantity <= 0
+            or not item.variant.is_available
+            or item.variant.product.brand.status != "active"
+            or not item.variant.product.category.filter(status="active").exists()
+        )
+
+        if invalid:
+            item.delete()
+            removed_any = True
+
+    if removed_any:
+        messages.warning(
+            request,
+            "Some unavailable items were removed from your cart."
+        )
+
+    cart_items = list(
+        CartItem.objects.filter(cart=cart_obj, is_active=True)
+        .select_related(
+            "variant",
+            "variant__product",
+            "variant__product__brand",
+            "variant__inventory",
+        )
+        .prefetch_related(
+            "variant__product__category",
+            "variant__product__offer",
+            "variant__product__category__offer",
+        )
+    )
 
     annotate_variants_with_offers([item.variant for item in cart_items])
 
     total = 0
     quantity = 0
-    has_unavailable = False
 
     for item in cart_items:
-        if item.variant.inventory.quantity <= 0:
-            has_unavailable = True
-            continue
-        # Use effective_price (discounted) for totals
-        item.discounted_subtotal = item.variant.effective_price * item.quantity
+        item.discounted_subtotal = (
+            item.variant.effective_price * item.quantity
+        )
         total += item.discounted_subtotal
         quantity += item.quantity
 
     tax = round(Decimal("0.18") * Decimal(str(total)), 2)
     grand_total = round(Decimal(str(total)) + tax, 2)
+
+    storage = get_messages(request)
+    first_message = None
+
+    for msg in storage:
+        first_message = msg
+        break
 
     return render(
         request,
@@ -132,7 +172,7 @@ def cart(request):
             "quantity": quantity,
             "tax": tax,
             "grand_total": grand_total,
-            "has_unavailable": has_unavailable,
+            "first_message": first_message,
         },
     )
 

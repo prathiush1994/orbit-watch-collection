@@ -66,27 +66,20 @@ class ProductVariant(models.Model):
         return f"{self.product.product_name} \u2013 {self.color_name}"
 
     def get_url(self):
-        """URL for this variant's detail page."""
         category = self.product.category.first()
         if category:
             return reverse("product_detail", args=[category.slug, self.slug])
         return reverse("product_detail", args=["uncategorized", self.slug])
 
     def get_description(self):
-        """
-        Returns description_override if set,
-        otherwise falls back to the base product description.
-        """
         if self.description_override:
             return self.description_override
         return self.product.description
 
     def get_other_variants(self):
-        """All OTHER variants of the same product (for color selector)."""
         return self.product.variants.filter(is_available=True).exclude(pk=self.pk)
 
     def get_all_variants(self):
-        """ALL variants of the same product including self (for swatches)."""
         return self.product.variants.filter(is_available=True)
     
     @property

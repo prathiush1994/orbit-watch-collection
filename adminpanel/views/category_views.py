@@ -38,14 +38,10 @@ def category_list(request):
     page = request.GET.get("page", 1)
     categories = paginator.get_page(page)
 
-    all_category_names = Category.objects.values_list(
-        "category_name", flat=True
-    ).order_by("category_name")
-
     context = {
         "categories": categories,
         "search_query": search_query,
-        "all_category_names": all_category_names,
+
     }
     return render(request, "adminpanel/categories.html", context)
 
