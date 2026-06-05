@@ -1,6 +1,8 @@
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.account.adapter import DefaultAccountAdapter
 
+print("SOCIAL ADAPTER FILE LOADED")
+
 
 class MyAccountAdapter(DefaultAccountAdapter):
 
@@ -8,11 +10,14 @@ class MyAccountAdapter(DefaultAccountAdapter):
         pass
 
     def save_user(self, request, user, form, commit=True):
+
+        print("ACCOUNT SAVE USER")
+
         user = super().save_user(
             request,
             user,
             form,
-            commit=False
+            commit=False,
         )
 
         user.is_active = True
@@ -26,4 +31,13 @@ class MyAccountAdapter(DefaultAccountAdapter):
 class MySocialAccountAdapter(DefaultSocialAccountAdapter):
 
     def is_auto_signup_allowed(self, request, sociallogin):
+        print("AUTO SIGNUP ALLOWED")
         return True
+
+    def pre_social_login(self, request, sociallogin):
+        print("PRE SOCIAL LOGIN")
+        print("EMAIL =", sociallogin.user.email)
+
+    def save_user(self, request, sociallogin, form=None):
+        print("SOCIAL SAVE USER")
+        return super().save_user(request, sociallogin, form)
