@@ -153,62 +153,68 @@ def download_invoice(request, order_number):
         story.append(item_table)
         story.append(Spacer(1, 0.4 * cm))
 
-        actual_total = float(order.order_total)
-        wallet_used = float(order.wallet_used or 0)
-        paid_amount = (
-            float(order.payment.amount_paid or 0)
-            if order.payment
-            else 0
+        subtotal = float(
+            sum(item.product_price * item.quantity for item in order_items)
         )
-
-        subtotal = actual_total - float(order.tax)
-
+        tax = float(order.tax or 0)
+        wallet_used = float(order.wallet_used or 0)
+        discount = float(order.discount or 0)
+        actual_total = subtotal + tax - discount
         totals_data = [
             ["", "Subtotal:", f"Rs.{subtotal:.2f}"],
-            ["", "GST (18%):", f"Rs.{float(order.tax):.2f}"],
+            ["", "GST (18%):", f"Rs.{tax:.2f}"],
         ]
-
         if order.discount and order.discount > 0:
             totals_data.append(
                 [
                     "",
-                    f"Coupon ({order.coupon_code}):",
-                    f"- Rs.{order.discount}",
+                    "Discount:",
+                    f"- Rs.{float(order.discount):.2f}",
+                ]
+            )
+        totals_data.append(["", "Delivery:", "Free"])
+        totals_data.append(
+            [
+                "",
+                "Grand Total:",
+                f"Rs.{actual_total:.2f}",
+            ]
+        )
+        if wallet_used > 0:
+            totals_data.append(
+                [
+                    "",
+                    "Paid via Wallet:",
+                    f"Rs.{wallet_used:.2f}",
+                ]
+            )
+        if order.payment and float(order.payment.amount_paid or 0) > 0:
+            totals_data.append(
+                [
+                    "",
+                    f"Paid via {order.payment.payment_method}:",
+                    f"Rs.{float(order.payment.amount_paid):.2f}",
                 ]
             )
 
-        # show full order value
-        totals_data.append(["", "Order Total:", f"Rs.{actual_total:.2f}"])
-
-        # wallet deduction
-        if wallet_used > 0:
-            totals_data.append(["", "Wallet Used:", f"- Rs.{wallet_used:.2f}"])
-
-        # shipping
-        totals_data.append(["", "Delivery:", "Free"])
-
-        # what user actually paid externally
-        totals_data.append(["", "Amount Paid:", f"Rs.{paid_amount:.2f}"])
-
         totals_table = Table(totals_data, colWidths=[9 * cm, 4 * cm, 3.5 * cm])
-
-        last_row = len(totals_data) - 1
+        grand_total_row = 4 if discount > 0 else 3
 
         totals_table.setStyle(
             TableStyle(
                 [
                     (
                         "FONTNAME",
-                        (1, last_row),
-                        (2, last_row),
+                        (1, grand_total_row),
+                        (2, grand_total_row),
                         "Helvetica-Bold",
                     ),
                     ("FONTSIZE", (0, 0), (-1, -1), 10),
                     ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
                     (
                         "LINEABOVE",
-                        (1, last_row),
-                        (-1, last_row),
+                        (1, grand_total_row),
+                        (-1, grand_total_row),
                         1,
                         colors.HexColor("#3167eb"),
                     ),

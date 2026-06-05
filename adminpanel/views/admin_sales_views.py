@@ -32,9 +32,10 @@ def _get_date_range(period, date_from_str, date_to_str):
 
 
 def _build_report(date_from, date_to):
-    qs = (
+    delivered_qs = (
         Order.objects.filter(
             is_ordered=True,
+            status="Delivered",
             created_at__date__gte=date_from,
             created_at__date__lte=date_to,
         )
@@ -42,7 +43,13 @@ def _build_report(date_from, date_to):
         .order_by("-created_at")
     )
 
-    summary = qs.aggregate(
+    all_orders = Order.objects.filter(
+        is_ordered=True,
+        created_at__date__gte=date_from,
+        created_at__date__lte=date_to,
+    )
+
+    summary = delivered_qs.aggregate(
         total_orders=Count("id"),
         total_revenue=Sum("order_total"),
         total_discount=Sum("discount"),
@@ -54,12 +61,15 @@ def _build_report(date_from, date_to):
             summary[k] = Decimal("0")
 
     # Cancelled/Returned count
-    summary["cancelled_count"] = qs.filter(status="Cancelled").count()
-    summary["returned_count"] = qs.filter(
+    summary["cancelled_count"] = all_orders.filter(
+        status="Cancelled"
+    ).count()
+
+    summary["returned_count"] = all_orders.filter(
         status__in=["Return Requested", "Returned"]
     ).count()
 
-    return qs, summary
+    return delivered_qs, summary
 
 
 @staff_member_required(login_url="admin_login")

@@ -9,6 +9,7 @@ from wallet.models import Wallet
 from orders.models import Order, OrderProduct, Coupon, CouponUsage
 from offers.models import ReferralCode, ReferralUse
 from django.db import transaction
+from offers.utils import get_applicable_offer, apply_discount
 
 
 def _generate_order_number():
@@ -119,23 +120,31 @@ def _build_order_from_session(request, address, payment_obj, totals):
                 order=order,
             )
 
-        for item in cart_items:
-            OrderProduct.objects.create(
-                order=order,
-                user=request.user,
-                variant=item.variant,
-                product_name=item.variant.product.product_name,
-                color_name=item.variant.color_name,
-                product_price=item.variant.price,
-                quantity=item.quantity,
-                ordered=True,
-            )
+    for item in cart_items:
 
-            item.variant.inventory.deduct_stock(
-                qty=item.quantity,
-                reason="order",
-                updated_by=request.user,
-            )
+        pct, _ = get_applicable_offer(item.variant.product)
+
+        effective_price = apply_discount(
+            item.variant.price,
+            pct
+        )
+
+        OrderProduct.objects.create(
+            order=order,
+            user=request.user,
+            variant=item.variant,
+            product_name=item.variant.product.product_name,
+            color_name=item.variant.color_name,
+            product_price=effective_price,
+            quantity=item.quantity,
+            ordered=True,
+        )
+
+        item.variant.inventory.deduct_stock(
+            qty=item.quantity,
+            reason="order",
+            updated_by=request.user,
+        )
 
         cart_items.delete()
 

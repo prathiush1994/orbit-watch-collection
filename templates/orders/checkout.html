@@ -68,7 +68,12 @@
                         <i class="fas fa-money-bill-wave mr-3 text-success" style="font-size:22px;"></i>
                         <div>
                             <div class="font-weight-bold">Cash on Delivery</div>
-                            <small class="text-muted">Pay when your order arrives</small>
+                            <small class="text-muted d-block">
+                                Pay when your order arrives
+                            </small>
+                            <small class="text-danger d-block mt-1">
+                                COD available only for orders up to ₹20,000
+                            </small>
                         </div>
                     </label>
 
@@ -155,7 +160,7 @@
 
                     <!-- Coupon discount row -->
                     <div class="d-flex justify-content-between mb-2" id="rowCouponDiscount" 
-                    {% if not coupon_discount %}style="display:none;" {% endif %}>
+                    {% if not coupon_discount %}style="display:Not Applied;" {% endif %}>
                         <span class="text-success">
                             <i class="fas fa-tag mr-1"></i>
                             Coupon (<span id="appliedCouponCode">{{ coupon_code }}</span>)
@@ -167,7 +172,7 @@
 
                     <!-- Referral discount row -->
                     <div class="d-flex justify-content-between mb-2" id="rowReferralDiscount"
-                        {% if not referral_code %}style="display:none;"{% endif %}>
+                        {% if not referral_code %}style="display:Not Applied;"{% endif %}>
                         <span style="color:#FF6B00;">
                             <i class="fa fa-gift mr-1"></i>
                             Referral (<span id="appliedReferralCode">{{ referral_code|default:"" }}</span>)

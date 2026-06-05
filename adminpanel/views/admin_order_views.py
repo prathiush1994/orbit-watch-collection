@@ -9,7 +9,7 @@ from orders.models import Order, OrderProduct
 from wallet.models import Wallet
 
 STATUS_CHOICES = [
-    "New",
+    "Order Placed",
     "Accepted",
     "Shipped",
     "Delivered",
@@ -72,56 +72,88 @@ def admin_order_detail(request, order_number):
 
     if request.method == "POST":
         new_status = request.POST.get("status", "").strip()
+
         if new_status not in STATUS_CHOICES:
             messages.error(request, "Invalid status.")
             return redirect("admin_order_detail", order_number=order_number)
 
         old_status = order.status
 
-        # ── Admin cancels the whole order ─────────────────
+        # Cancel order
         if new_status == "Cancelled" and old_status not in ["Cancelled", "Returned"]:
-            for item in order.items.filter(item_status="Active").select_related(
-                "variant"
-            ):
-                if item.variant:
-                    item.variant.stock += item.quantity
-                    item.variant.save(update_fields=["stock"])
+
+            for item in order.items.filter(item_status="Active").select_related("variant"):
+
+                if item.variant and hasattr(item.variant, "inventory"):
+                    item.variant.inventory.add_stock(
+                        qty=item.quantity,
+                        reason="order_cancel",
+                        updated_by=request.user,
+                        note=f"Admin cancelled order {order.order_number}",
+                    )
+
                 item.item_status = "Cancelled"
                 item.cancelled_qty = item.quantity
                 item.cancelled_at = timezone.now()
                 item.save(
-                    update_fields=["item_status", "cancelled_qty", "cancelled_at"]
+                    update_fields=[
+                        "item_status",
+                        "cancelled_qty",
+                        "cancelled_at",
+                    ]
                 )
+
             _process_refund(request, order, "Admin cancelled order")
 
-        # ── Admin approves ALL pending return items ────────
-        if new_status == "Returned" and old_status == "Return Requested":
-            for item in order.items.filter(
-                item_status="Return Requested"
-            ).select_related("variant"):
+        # Approve full return
+        elif new_status == "Returned" and old_status == "Return Requested":
+
+            for item in order.items.filter(item_status="Return Requested").select_related(
+                "variant"
+            ):
+
                 qty = item.returned_qty or item.quantity
-                if item.variant:
-                    item.variant.stock += qty
-                    item.variant.save(update_fields=["stock"])
+
+                if item.variant and hasattr(item.variant, "inventory"):
+                    item.variant.inventory.add_stock(
+                        qty=qty,
+                        reason="order_return",
+                        updated_by=request.user,
+                        note=f"Return approved for order {order.order_number}",
+                    )
+
                 item.item_status = "Returned"
                 item.save(update_fields=["item_status"])
+
             _process_refund(request, order, "Return approved by admin")
 
+        # Save status
         order.status = new_status
         order.save(update_fields=["status"])
 
-        # ── Payment status sync ────────────────────────────
+        # Payment sync
         if order.payment:
-            pm = order.payment.payment_method
-            if new_status == "Delivered" and pm == "COD":
+
+            if (
+                new_status == "Delivered"
+                and order.payment.payment_method == "COD"
+            ):
                 order.payment.status = "Completed"
                 order.payment.save(update_fields=["status"])
+
             elif new_status in ["Cancelled", "Returned"]:
                 order.payment.status = "Refunded"
                 order.payment.save(update_fields=["status"])
 
-        messages.success(request, f'Order #{order_number} updated to "{new_status}".')
-        return redirect("admin_order_detail", order_number=order_number)
+        messages.success(
+            request,
+            f'Order #{order_number} updated to "{new_status}".'
+        )
+
+        return redirect(
+            "admin_order_detail",
+            order_number=order_number,
+        )
 
     # ── Count items needing action ─────────────────────────
     pending_returns = order_items.filter(item_status="Return Requested").count()

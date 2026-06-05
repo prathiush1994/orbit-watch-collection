@@ -62,6 +62,7 @@ def apply_coupon(request):
     request.session["coupon_code"] = coupon.code
     request.session["coupon_id"] = coupon.id
     request.session["coupon_discount"] = str(discount)
+    request.session["coupon_cart_total"] = str(grand_total)
 
     # Recalculate wallet if already applied
     wallet_used = Decimal(request.session.get("wallet_used", "0"))

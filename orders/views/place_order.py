@@ -43,6 +43,13 @@ def place_order(request):
     totals = _compute_totals(list(cart_items), request.session)
     payment_method = request.POST.get("payment_method", "COD")
 
+    if payment_method == "COD" and totals["final_total"] > 20000:
+        messages.error(
+            request,
+            "Cash on Delivery is available only for orders up to ₹20,000."
+        )
+        return redirect("checkout")
+
     # Validate wallet
     if totals["wallet_used"] > 0:
         wallet = _get_wallet(request.user)

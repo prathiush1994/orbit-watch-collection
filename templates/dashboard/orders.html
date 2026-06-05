@@ -45,15 +45,17 @@
                     <strong style="color:#3167eb;">
                         #{{ order.order_number }}
                     </strong>
+
                     <span class="text-muted ml-2" style="font-size:13px;">
                         <i class="fa fa-calendar-alt mr-1"></i>
                         {{ order.created_at|date:"d M Y" }}
                     </span>
                 </div>
+                
                 <div class="d-flex align-items-center" style="gap:8px;">
                     <!-- Status badge -->
-                    {% if order.status == 'New' %}
-                        <span class="badge badge-info">New</span>
+                    {% if order.status == 'Order Placed' %}
+                        <span class="badge badge-info">Order Placed</span>
                     {% elif order.status == 'Accepted' %}
                         <span class="badge badge-primary">Accepted</span>
                     {% elif order.status == 'Shipped' %}
@@ -120,47 +122,6 @@
                 <button class="btn btn-sm btn-outline-secondary" disabled>
                     <i class="fa fa-file-pdf mr-1"></i> Invoice
                 </button>
-                {% endif %}
-
-                {% if order.status == 'New' or order.status == 'Accepted' %}
-                <form method="POST" action="{% url 'cancel_order' order.order_number %}"
-                      onsubmit="return confirm('Cancel order #{{ order.order_number }}?');">
-                    {% csrf_token %}
-                    <div class="form-group mb-0">
-                        <select name="cancel_reason" class="form-control form-control-sm d-inline-block"
-                                style="width:auto;">
-                            <option value="">Reason (optional)</option>
-                            <option>Changed my mind</option>
-                            <option>Found better price</option>
-                            <option>Ordered by mistake</option>
-                            <option>Other</option>
-                        </select>
-                        <button type="submit" class="btn btn-sm btn-outline-danger ml-1">
-                            <i class="fa fa-times-circle mr-1"></i> Cancel
-                        </button>
-                    </div>
-                </form>
-                {% endif %}
-
-                <!-- Return — only if Delivered -->
-                {% if order.status == 'Delivered' %}
-                <form method="POST" action="{% url 'return_order' order.order_number %}"
-                      onsubmit="return confirm('Request return for #{{ order.order_number }}?');">
-                    {% csrf_token %}
-                    <div class="form-group mb-0">
-                        <select name="return_reason" class="form-control form-control-sm d-inline-block"
-                                style="width:auto;" required>
-                            <option value="">Reason (required)</option>
-                            <option>Defective product</option>
-                            <option>Wrong product delivered</option>
-                            <option>Not as described</option>
-                            <option>Changed my mind</option>
-                        </select>
-                        <button type="submit" class="btn btn-sm btn-outline-warning ml-1">
-                            <i class="fa fa-undo mr-1"></i> Return
-                        </button>
-                    </div>
-                </form>
                 {% endif %}
 
             </div>

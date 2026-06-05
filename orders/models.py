@@ -108,7 +108,7 @@ class Payment(models.Model):
 
 class Order(models.Model):
     STATUS_CHOICES = (
-        ("New", "New"),
+        ("Order Placed", "Order Placed"),
         ("Accepted", "Accepted"),
         ("Shipped", "Shipped"),
         ("Delivered", "Delivered"),
@@ -149,7 +149,11 @@ class Order(models.Model):
         help_text="Amount paid from wallet balance",
     )
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="New")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="Order Placed"
+    )
     is_ordered = models.BooleanField(default=False)
 
     cancel_reason = models.CharField(max_length=255, blank=True)

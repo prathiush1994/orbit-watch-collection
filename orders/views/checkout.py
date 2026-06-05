@@ -6,6 +6,7 @@ from carts.views import _get_or_create_cart
 from carts.models import CartItem
 from accounts.models import UserAddress
 from .helpers import _compute_totals, _get_wallet
+from decimal import Decimal
 
 
 @login_required(login_url="login")
@@ -69,6 +70,14 @@ def checkout(request):
 
         total += item.sub_total
 
+    saved_total = request.session.get("coupon_cart_total")
+
+    if saved_total and float(saved_total) != float(total):
+        request.session.pop("coupon_code", None)
+        request.session.pop("coupon_id", None)
+        request.session.pop("coupon_discount", None)
+        request.session.pop("coupon_cart_total", None)
+
     totals = _compute_totals(
         cart_items_list,
         request.session
@@ -76,8 +85,6 @@ def checkout(request):
 
     # overwrite subtotal with offer-adjusted subtotal
     totals["subtotal"] = total
-
-    from decimal import Decimal
 
     totals["tax"] = round(
         Decimal("0.18") * Decimal(str(total)),

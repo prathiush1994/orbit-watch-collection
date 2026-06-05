@@ -11,7 +11,7 @@ from .helpers import _get_wallet
 def cancel_order(request, order_number):
     order = get_object_or_404(Order, order_number=order_number, user=request.user)
 
-    if order.status not in ["New", "Accepted"]:
+    if order.status not in ["Order Placed", "Accepted"]:
         messages.error(request, "This order cannot be cancelled.")
         return redirect("order_detail", order_number=order_number)
 
@@ -180,7 +180,7 @@ def cancel_item(request, order_number, item_id):
     order = get_object_or_404(Order, order_number=order_number, user=request.user)
     item = get_object_or_404(OrderProduct, id=item_id, order=order)
 
-    if order.status not in ["New", "Accepted"]:
+    if order.status not in ["Order Placed", "Accepted"]:
         messages.error(request, "Items in this order cannot be cancelled now.")
         return redirect("order_detail", order_number=order_number)
 

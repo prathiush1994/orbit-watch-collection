@@ -27,7 +27,6 @@
     Review each item below and click "Approve Return" to process individually.
 </div>
 {% endif %}
-
 <div class="row">
 
 <!-- ══════════════════════════════════════
@@ -35,49 +34,51 @@
 ══════════════════════════════════════ -->
 <div class="col-md-8">
 
-    <!-- Order-level status control -->
+    <!-- Order Processing -->
     <div class="a-card mb-3">
         <div class="a-card-header">
-            <span class="a-card-title">Update Order Status</span>
-            <!-- Current badge -->
-            {% if order.status == 'New order' %}
-            <span class="abadge ab-pending">New</span>
+            <span class="a-card-title">Order Processing</span>
+
+            {% if order.status == 'Order Placed' %}
+                <span class="abadge ab-pending">Order Placed</span>
             {% elif order.status == 'Accepted' %}
-            <span class="abadge ab-staff">Accepted</span>
+                <span class="abadge ab-staff">Accepted</span>
             {% elif order.status == 'Shipped' %}
-            <span class="abadge ab-processing">Shipped</span>
-            {% elif order.status == 'Delivered' %}
-            <span class="abadge ab-completed">Delivered</span>
+                <span class="abadge ab-processing">Shipped</span>
             {% elif order.status == 'Cancelled' %}
-            <span class="abadge ab-rejected">Cancelled</span>
-            {% elif order.status == 'Return Requested' %}
-            <span class="abadge ab-processing">Return Requested</span>
-            {% elif order.status == 'Returned' %}
-            <span class="abadge ab-blocked">Returned</span>
+                <span class="abadge ab-rejected">Cancelled</span>
             {% endif %}
         </div>
+
         <div class="a-card-body">
-            <form method="POST" class="d-flex align-items-center" style="gap:10px;">
+            <form method="POST" style="display:flex;gap:10px;align-items:center;">
                 {% csrf_token %}
+
                 <select name="status" class="a-input" style="max-width:220px;">
-                    {% for s in status_choices %}
-                    <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>
-                        {{ s }}
-                    </option>
-                    {% endfor %}
+
+                    {% if order.status == 'Order Placed' %}
+                        <option value="Accepted">Accepted</option>
+                        <option value="Cancelled">Cancelled</option>
+
+                    {% elif order.status == 'Accepted' %}
+                        <option value="Shipped">Shipped</option>
+                        <option value="Cancelled">Cancelled</option>
+
+                    {% else %}
+                        <option disabled selected>
+                            No processing actions available
+                        </option>
+                    {% endif %}
+
                 </select>
+
+                {% if order.status == 'Order Placed' or order.status == 'Accepted' %}
                 <button type="submit" class="btn-admin">
-                    <i class="fas fa-save mr-1"></i> Update Status
+                    <i class="fas fa-save mr-1"></i>
+                    Update Status
                 </button>
+                {% endif %}
             </form>
-            {% if order.status == 'Return Requested' %}
-            <p class="text-muted small mt-2 mb-0">
-                <i class="fas fa-info-circle mr-1"></i>
-                Changing to <strong>Returned</strong> will approve ALL pending return items at once,
-                restore their stock, and refund the full amount to wallet.
-                Or approve items individually below.
-            </p>
-            {% endif %}
         </div>
     </div>
 
@@ -177,6 +178,9 @@
             </table>
         </div>
     </div>
+
+
+
 
 </div><!-- /left -->
 
@@ -294,6 +298,51 @@
 
 </div><!-- /right -->
 </div><!-- /row -->
+
+<!-- Delivery & Return Management -->
+<div class="a-card mb-3">
+    <div class="a-card-header">
+        <span class="a-card-title">Delivery & Return Management</span>
+        {% if order.status == 'Shipped' %}
+            <span class="abadge ab-processing">In Transit</span>
+        {% elif order.status == 'Delivered' %}
+            <span class="abadge ab-completed">Delivered</span>
+        {% elif order.status == 'Return Requested' %}
+            <span class="abadge ab-processing">Return Requested</span>
+        {% elif order.status == 'Returned' %}
+            <span class="abadge ab-blocked">Returned</span>
+        {% endif %}
+    </div>
+
+    <div class="a-card-body">
+        <form method="POST" style="display:flex;gap:10px;align-items:center;">
+            {% csrf_token %}
+
+            <select name="status" class="a-input" style="max-width:220px;">
+
+                {% if order.status == 'Shipped' %}
+                    <option value="Delivered">Delivered</option>
+
+                {% elif order.status == 'Return Requested' %}
+                    <option value="Returned">Returned</option>
+
+                {% else %}
+                    <option disabled selected>
+                        No delivery actions available
+                    </option>
+                {% endif %}
+
+            </select>
+
+            {% if order.status == 'Shipped' or order.status == 'Return Requested' %}
+            <button type="submit" class="btn-admin">
+                <i class="fas fa-truck mr-1"></i>
+                Update Status
+            </button>
+            {% endif %}
+        </form>
+    </div>
+</div>
 
 <style>
 @keyframes pulse {

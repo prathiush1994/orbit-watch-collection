@@ -44,7 +44,7 @@
       <!-- Sort -->
       <select name="sort" class="a-input" style="width:auto; padding:7px 12px;"
               onchange="document.getElementById('filterForm').submit()">
-        <option value="-created_at"  {% if sort == '-created_at'  %}selected{% endif %}>Newest First</option>
+        <option value="-created_at"  {% if sort == '-created_at'  %}selected{% endif %}>Order Placedest First</option>
         <option value="created_at"   {% if sort == 'created_at'   %}selected{% endif %}>Oldest First</option>
         <option value="-order_total" {% if sort == '-order_total' %}selected{% endif %}>Amount ↓</option>
         <option value="order_total"  {% if sort == 'order_total'  %}selected{% endif %}>Amount ↑</option>
@@ -153,8 +153,8 @@
 
           <!-- Order status badge -->
           <td>
-            {% if order.status == 'New' %}
-              <span class="abadge ab-staff">New</span>
+            {% if order.status == 'Order Placed' %}
+              <span class="abadge ab-staff">Order Placed</span>
             {% elif order.status == 'Accepted' %}
               <span class="abadge" style="background:#e8edff; color:#3167eb;">Accepted</span>
             {% elif order.status == 'Shipped' %}

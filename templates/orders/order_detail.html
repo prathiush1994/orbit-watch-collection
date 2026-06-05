@@ -38,8 +38,8 @@
         <div class="card mb-3">
             <div class="card-body py-2 d-flex align-items-center justify-content-between">
                 <span class="text-muted">Order Status:</span>
-                {% if order.status == 'New' %}
-                    <span class="badge badge-info px-3 py-2">New</span>
+                {% if order.status == 'Order Placed' %}
+                    <span class="badge badge-info px-3 py-2">Order Placed</span>
                 {% elif order.status == 'Accepted' %}
                     <span class="badge badge-primary px-3 py-2">Accepted</span>
                 {% elif order.status == 'Shipped' %}
@@ -61,7 +61,7 @@
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <strong>Items ({{ order.items.count }})</strong>
                 <!-- Cancel ALL button — only when New/Accepted and not all cancelled -->
-                {% if order.status == 'New' or order.status == 'Accepted' %}
+                {% if order.status == 'Order Placed' or order.status == 'Accepted' %}
                 {% if order.items.filter.is_active %}{% endif %}
                 <button class="btn btn-sm btn-outline-danger"
                         onclick="openCancelAllModal()">
@@ -131,7 +131,7 @@
                         <td class="text-center align-middle">
                             {% if item.item_status == 'Active' %}
 
-                                {% if order.status == 'New' or order.status == 'Accepted' %}
+                                {% if order.status == 'Order Placed' or order.status == 'Accepted' %}
                                 <!-- Cancel item button -->
                                 <button class="btn btn-sm btn-outline-danger"
                                         onclick="openItemCancelModal(
