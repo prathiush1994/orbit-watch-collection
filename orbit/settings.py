@@ -2,28 +2,26 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from decouple import config
+from django.contrib.messages import constants as message_constants
 
-load_dotenv()
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-SECRET_KEY = os.getenv("SECRET_KEY")
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG") == "True"
-
-ALLOWED_HOSTS = ["*"]
-
+load_dotenv()
+SECRET_KEY = config("SECRET_KEY")
+DEBUG = config("DEBUG", default=False, cast=bool)
+ROOT_URLCONF = "orbit.urls"
+ALLOWED_HOSTS = [
+    "orbitwatches.online",
+    "www.orbitwatches.online",
+    "127.0.0.1",
+    "localhost",
+]
 CSRF_TRUSTED_ORIGINS = [
     "https://orbitwatches.online",
     "https://www.orbitwatches.online",
 ]
 
-# Application definition
-
 INSTALLED_APPS = [
+    # ── inbuild apps ----------------
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -31,8 +29,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
-    "cloudinary",
-    "cloudinary_storage",
+    # ── customs apps ----------------
     "category",
     "accounts",
     "store",
@@ -45,12 +42,14 @@ INSTALLED_APPS = [
     "offers",
     "inventory",
     "reviews",
-    # ── Core Auth Settings ───────────────────
+    "adminpanel",
+    # ── Third party installion app ───────────────────
+    "cloudinary",
+    "cloudinary_storage",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
-    "adminpanel",
     "nested_admin",
 ]
 
@@ -66,9 +65,6 @@ MIDDLEWARE = [
     "accounts.middleware.NoCacheMiddleware",
 ]
 
-ROOT_URLCONF = "orbit.urls"
-
-# ── Templates ───────────────────────────────
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -90,9 +86,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "orbit.wsgi.application"
 AUTH_USER_MODEL = "accounts.Account"
 
-
-# ── Database ───────────────────────────────
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -104,9 +97,7 @@ DATABASES = {
     }
 }
 
-
 # ── Password validation ───────────────────────────────
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -122,9 +113,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 
@@ -135,6 +125,9 @@ STATICFILES_DIRS = [
     BASE_DIR / "orbit/static",
 ]
 STATIC_ROOT = BASE_DIR / "static"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 CLOUDINARY_STORAGE = {
     "CLOUD_NAME": os.getenv("CLOUD_NAME"),
@@ -150,10 +143,16 @@ STORAGES = {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
+# ── Django Messages configuration───────────────────────────────────
+MESSAGE_STORAGE = "django.contrib.messages.storage.fallback.FallbackStorage"
 
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
-
+MESSAGE_TAGS = {
+    message_constants.DEBUG: "secondary",
+    message_constants.INFO: "info",
+    message_constants.SUCCESS: "success",
+    message_constants.WARNING: "warning",
+    message_constants.ERROR: "danger",
+}
 
 # ── Session Timeout ───────────────────────────────
 SESSION_COOKIE_AGE = 2400  # 40 minutes
@@ -166,29 +165,20 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = f"Orbit Watch <{EMAIL_HOST_USER}>"
 
-DEFAULT_FROM_EMAIL = "Orbit Watch <prathiush1994@gmail.com>"
-
-
+# ── Razorpay Configuration ───────────────────────────────
 RAZORPAY_KEY_ID = config("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET")
 RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET")
 
-# ── Django Messages ───────────────────────────────────
-from django.contrib.messages import constants as message_constants
+# ── Security Settings ────────────────────────────────────────
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-MESSAGE_STORAGE = "django.contrib.messages.storage.fallback.FallbackStorage"
-
-MESSAGE_TAGS = {
-    message_constants.DEBUG: "secondary",
-    message_constants.INFO: "info",
-    message_constants.SUCCESS: "success",
-    message_constants.WARNING: "warning",
-    message_constants.ERROR: "danger",
-}
-
-
-# ── Core Auth Settings ────────────────────────────────
+# ── Authentication & Google Login ────────────────────────────────
 SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = [
@@ -200,31 +190,21 @@ LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
-
-# ── Allauth Account Settings ──────────────────────────
-ACCOUNT_ADAPTER = "accounts.social_adapter.MyAccountAdapter"
+# ── Allauth Account Settings
 ACCOUNT_LOGIN_METHODS = {"email"}
-ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = "none"
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if not DEBUG else "http"
 
-# ── Social Account Settings ───────────────────────────────────────
-SOCIALACCOUNT_ADAPTER = "accounts.social_adapter.MySocialAccountAdapter"
+# ── Social Account Settings
+SOCIALACCOUNT_ADAPTER = "orbit.social_adapter.MySocialAccountAdapter"
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_QUERY_EMAIL = True
-SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
-SOCIALACCOUNT_LOGIN_ON_GET = True 
+SOCIALACCOUNT_LOGIN_ON_GET = True
 
-SECURE_SSL_REDIRECT = not DEBUG
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
-# ── Google Provider ───────────────────────────────────
+# ── Google Provider
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "SCOPE": ["profile", "email"],
@@ -235,4 +215,3 @@ SOCIALACCOUNT_PROVIDERS = {
         "VERIFIED_EMAIL": True,
     }
 }
-
