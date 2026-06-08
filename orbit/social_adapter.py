@@ -19,6 +19,7 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
         logger.error(f"PROVIDER = {provider}")
         logger.error(f"ERROR = {error}")
         logger.error(f"EXCEPTION = {exception}")
+        logger.error(f"GET = {request.GET.dict()}")
 
         return super().on_authentication_error(
             request,
