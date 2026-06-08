@@ -27,9 +27,16 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
             pass
 
     def save_user(self, request, sociallogin, form=None):
-        logger.warning("SOCIAL SAVE USER")
+        logger.warning("SOCIAL SAVE USER START")
+
         user = super().save_user(request, sociallogin, form)
+
+        logger.warning(f"USER CREATED: {user.email}")
+
         user.is_active = True
         user.email_verified = True
         user.save()
+
+        logger.warning("SOCIAL SAVE USER END")
+
         return user
