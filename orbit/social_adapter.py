@@ -19,7 +19,7 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
         logger.error(f"PROVIDER = {provider}")
         logger.error(f"ERROR = {error}")
         logger.error(f"EXCEPTION = {exception}")
-        logger.error(f"GET = {request.GET.dict()}")
+        logger.error(f"EXTRA_CONTEXT = {extra_context}")
 
         return super().on_authentication_error(
             request,
@@ -28,3 +28,7 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
             exception,
             extra_context,
         )
+    
+    def pre_social_login(self, request, sociallogin):
+    logger.error("PRE SOCIAL LOGIN REACHED")
+    logger.error(f"EMAIL={sociallogin.user.email}")
