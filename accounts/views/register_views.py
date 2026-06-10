@@ -116,7 +116,11 @@ def verify_email(request):
             return render(
                 request,
                 "accounts/verify_email.html",
-                {"user": user, "remaining_time": remaining, "expired": True},
+                {
+                    "user": user,
+                    "remaining_time": remaining,
+                    "expired": expired
+                },
                 status=422
             )
     
