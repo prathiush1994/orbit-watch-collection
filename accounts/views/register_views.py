@@ -112,8 +112,13 @@ def verify_email(request):
             messages.error(
                 request, "Invalid OTP. Please try again.",
                 extra_tags="verify_email_message",
-                status=422
                 )
+            return render(
+                request,
+                "accounts/verify_email.html",
+                {"user": user, "remaining_time": remaining, "expired": True},
+                status=422
+            )
     
     return render(
         request,
