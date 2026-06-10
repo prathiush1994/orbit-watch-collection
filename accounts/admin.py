@@ -12,6 +12,7 @@ class AccountAdmin(UserAdmin):
         "is_active",
         "is_admin",
         "date_joined",
+        "email_verified"
     )
     list_filter = ("is_active", "is_admin", "is_staff")
     search_fields = ("email", "first_name", "last_name")
@@ -25,7 +26,7 @@ class AccountAdmin(UserAdmin):
         ),
         (
             "Permissions",
-            {"fields": ("is_active", "is_admin", "is_staff", "is_superadmin")},
+            {"fields": ("is_active", "is_admin", "is_staff", "is_superadmin", "email_verified")},
         ),
         ("OTP", {"fields": ("otp", "otp_created_at", "otp_purpose")}),
     )

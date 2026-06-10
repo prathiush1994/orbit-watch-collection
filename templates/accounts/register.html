@@ -11,7 +11,22 @@
             <h4 class="card-title">Create Account</h4>
         </header>
 
-        {% include 'includes/alert.html' %}
+        {% for message in messages%}
+            {% if "register_message" in message.tags %}
+                {% include 'includes/alert.html' %}
+            {% endif %}
+        {% endfor %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            </div>
+        {% endif %}
 
         <!-- Google Sign Up -->
          
@@ -31,7 +46,6 @@
         <!-- Registration Form -->
         <form action="{% url 'register' %}" method="POST">
             {% csrf_token %}
-            {{ form.non_field_errors }}
 
             <div class="form-row">
                 <div class="col form-group">
@@ -49,7 +63,11 @@
             <div class="form-group">
                 <label>Email Address</label>
                 {{ form.email }}
-                {{ form.email.errors }}
+                {% if form.email.errors %}
+                    <small class="text-danger d-block mt-1">
+                        {{ form.email.errors.0 }}
+                    </small>
+                {% endif %}
             </div>
 
             <div class="form-row">
@@ -62,7 +80,10 @@
                     {{ form.confirm_password }}
                 </div>
             </div>
-
+            <small class="text-muted d-block mt-2">
+                Use at least 8 characters, including uppercase and lowercase letters,
+                a number, and a special character.
+            </small>
             <div class="form-group mt-2">
                 <button type="submit" class="btn btn-block btn-lg"
                         style="background:#FF6B00; color:#fff; font-weight:600;">
@@ -75,7 +96,10 @@
 </div>
 
 <p class="text-center mt-3">
-    Already have an account? <a href="{% url 'login' %}"><strong>Sign In</strong></a>
+    Already have an account? 
+    <a href="{% url 'login' %}?next={{request.path}}&source=navbar">
+        <strong>Sign In</strong>
+    </a>
 </p>
 <br>
 </section>

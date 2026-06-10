@@ -35,7 +35,9 @@
       <ul class="mobile-menu">
         {% if user.id is None %}
         <li class="menu-title">My Account</li>
-        <li><a href="{% url 'login' %}">Login</a></li>
+        <li><a href="{% url 'login' %}?next={{request.path}}&source=navbar">
+          Login
+        </a></li>
         <li><a href="{% url 'register' %}">Register</a></li>
         {% else %}
         <li class="menu-title">Hello {{ user.first_name }}</li>
@@ -47,11 +49,6 @@
         <li><a href="{% url 'cart' %}">Cart</a></li>
 
         <li class="divider"></li>
-
-        <li class="menu-title">Categories</li>
-        {% for category in links %}
-        <li><a href="{{ category.get_url }}">{{ category.category_name }}</a></li>
-        {% endfor %}
       </ul>
     </div>
 
@@ -99,8 +96,10 @@
         <div class="widget-header text-center mr-3">
           <small class="text-muted">Welcome guest!</small>
           <div>
-            <a href="{% url 'login' %}">Login</a> |
-            <a href="{% url 'register' %}">Register</a>
+            <a href="{% url 'login' %}?next={{request.path}}&source=navbar">
+              Login
+            </a> |
+            <a href="{% url 'register' %}?next={{request.path}}&source=navbar">Register</a>
           </div>
         </div>
         {% else %}

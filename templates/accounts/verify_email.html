@@ -14,8 +14,12 @@
             <strong>{{ user.email }}</strong>
         </p>
 
-{% include 'includes/alert.html' %}
-
+        {% for message in messages%}
+            {% if "verify_email_message" in message.tags%}  
+                {% include 'includes/alert.html' %}
+            {% endif %}
+        {% endfor %}
+        
         {% if not expired %}
         <form method="POST" id="otpForm">
             {% csrf_token %}
