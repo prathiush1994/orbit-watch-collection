@@ -111,7 +111,8 @@ def verify_email(request):
         else:
             messages.error(
                 request, "Invalid OTP. Please try again.",
-                extra_tags="verify_email_message"
+                extra_tags="verify_email_message",
+                status=422
                 )
     
     return render(
