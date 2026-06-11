@@ -1,6 +1,9 @@
 from django.urls import path
 from . import views
-from .views import coupon_views, admin_offer_views, admin_sales_views, admin_order_views
+from .views import (
+    coupon_views, admin_offer_views, 
+    admin_sales_views, admin_order_views
+)
 
 urlpatterns = [
     # ── Auth ─────────────────────────────────────────────
@@ -13,6 +16,11 @@ urlpatterns = [
         "users/toggle/<int:user_id>/",
         views.toggle_user_status,
         name="admin_toggle_user",
+    ),
+    path(
+        "users/suggestions/",
+        views.user_suggestions,
+        name="user_suggestions",
     ),
     # ── Brands ───────────────────────────────────────────
     path("brands/", views.brand_list, name="admin_brand_list"),

@@ -58,7 +58,8 @@ def product_list(request):
     page = request.GET.get("page", 1)
     products = paginator.get_page(page)
 
-    all_product_names = Product.objects.values_list("product_name", flat=True).order_by(
+    all_product_names = Product.objects.values_list(
+        "product_name", flat=True).order_by(
         "product_name"
     )
 
@@ -99,6 +100,31 @@ def product_add(request):
                 request,
                 "adminpanel/product_form.html",
                 {"categories": categories, "brands": brands, "is_edit": False},
+                status=422
+            )
+        if name.isdigit():
+            messages.error(request, "Product name cannot contain only numbers.")
+            return render(
+                request,
+                "adminpanel/product_form.html",
+                {"categories": categories, "brands": brands, "is_edit": False},
+                status=422
+            )
+        if not cat_ids:
+            messages.error(request, "Category is required.")
+            return render(
+                request,
+                "adminpanel/product_form.html",
+                {"categories": categories, "brands": brands, "is_edit": False},
+                status=422
+            )
+        if description.isdigit():
+            messages.error(request, "Description cannot contain only numbers.")
+            return render(
+                request,
+                "adminpanel/product_form.html",
+                {"categories": categories, "brands": brands, "is_edit": False},
+                status=422
             )
 
         if Product.objects.filter(product_name__iexact=name).exists():
@@ -107,6 +133,7 @@ def product_add(request):
                 request,
                 "adminpanel/product_form.html",
                 {"categories": categories, "brands": brands, "is_edit": False},
+                status=402
             )
 
         product = Product(
@@ -114,14 +141,22 @@ def product_add(request):
             slug=_unique_slug_product(name),
             description=description,
         )
-        if brand_id:
-            product.brand = get_object_or_404(Brand, id=brand_id)
+        if not brand_id:
+            messages.error(request, "Brand is required.")
+            return render(
+                request,
+                "adminpanel/product_form.html",
+                {"categories": categories, "brands": brands, "is_edit": False},
+                status=422
+            )
         product.save()
 
         if cat_ids:
             product.category.set(cat_ids)
 
-        messages.success(request, f'Product "{name}" added. Now add variants below.')
+        messages.success(
+            request,
+            f'Product "{name}" added. Now add variants below.')
         return redirect("admin_product_edit", product_id=product.id)
 
     return render(
@@ -148,25 +183,69 @@ def product_edit(request, product_id):
         brand_id = request.POST.get("brand", "")
         cat_ids = request.POST.getlist("category")
 
+        if name.isdigit():
+            messages.error(request, "Product name cannot contain only numbers.")
+            return render(
+                request,
+                "adminpanel/product_form.html",
+                {"categories": categories, "brands": brands, "is_edit": False},
+                status=422
+            )
+        if description.isdigit():
+            messages.error(request, "Description cannot contain only numbers.")
+            return render(
+                request,
+                "adminpanel/product_form.html",
+                {"categories": categories, "brands": brands, "is_edit": False},
+                status=422
+            )
         if not name:
             messages.error(request, "Product name is required.")
+
         elif (
             Product.objects.filter(product_name__iexact=name)
             .exclude(id=product_id)
             .exists()
         ):
             messages.error(request, f'Product "{name}" already exists.')
+        elif not brand_id:
+            messages.error(request, "Brand is required.")
+            return render(
+                request,
+                "adminpanel/product_form.html",
+                {
+                    "categories": categories,
+                    "brands": brands,
+                    "is_edit": True,
+                    "product": product,
+                    "variants": variants,
+                    "selected_categories": list(
+                        product.category.values_list("id", flat=True)
+                    ),
+                },
+                status=422,
+            )
         else:
             product.product_name = name
             product.description = description
+
             new_slug = slugify(name)
             if new_slug != product.slug:
-                product.slug = _unique_slug_product(name, exclude_id=product_id)
-            product.brand = get_object_or_404(Brand, id=brand_id) if brand_id else None
+                product.slug = _unique_slug_product(
+                    name,
+                    exclude_id=product_id,
+                )
+            product.brand = get_object_or_404(Brand, id=brand_id)
             product.save()
             product.category.set(cat_ids)
-            messages.success(request, f'Product "{name}" updated successfully.')
-            return redirect("admin_product_edit", product_id=product_id)
+            messages.success(
+                request,
+                f'Product "{name}" updated successfully.',
+            )
+            return redirect(
+                "admin_product_edit",
+                product_id=product_id,
+            )
 
     context = {
         "product": product,
@@ -187,19 +266,23 @@ def variant_add(request, product_id):
         color_name = request.POST.get("color_name", "").strip()
         color_code = request.POST.get("color_code", "").strip()
         price = request.POST.get("price", "").strip()
-        stock = request.POST.get("stock", "0").strip()
         desc_override = request.POST.get("description_override", "").strip()
         is_available = request.POST.get("is_available") == "on"
         image_data = request.POST.get("primary_image", "")
-
         if not color_name or not price:
             messages.error(request, "Color name and price are required.")
+        elif color_name.isdigit():
+            print("DIGIT VALIDATION TRIGGERED")
+            messages.error(request, "Color name cannot contain only numbers.")
         elif ProductVariant.objects.filter(
             product=product, color_name__iexact=color_name
         ).exists():
             messages.error(
-                request, f'Variant "{color_name}" already exists for this product.'
+                request,
+                f'Variant "{color_name}" already exists for this product.'
             )
+        elif not image_data:
+            messages.error(request, "primary image is required")
         else:
             variant = ProductVariant(
                 product=product,
@@ -210,7 +293,8 @@ def variant_add(request, product_id):
                 is_available=is_available,
                 slug=_unique_slug_variant(f"{product.slug}-{color_name}"),
             )
-            cropped = save_cropped_image(image_data, "photos/variants", "variant")
+            cropped = save_cropped_image(
+                image_data, "photos/variants", "variant")
             if cropped:
                 variant.primary_image = cropped
             variant.save()
@@ -220,7 +304,8 @@ def variant_add(request, product_id):
             for img in images:
                 VariantImage.objects.create(variant=variant, image=img)
 
-            messages.success(request, f'Variant "{color_name}" added successfully.')
+            messages.success(
+                request, f'Variant "{color_name}" added successfully.')
             return redirect("admin_product_edit", product_id=product_id)
 
     context = {
@@ -246,6 +331,8 @@ def variant_edit(request, variant_id):
 
         if not color_name or not price:
             messages.error(request, "Color name and price are required.")
+        elif color_name.isdigit():
+            messages.error(request, "Color name cannot contain only numbers.")
         elif (
             ProductVariant.objects.filter(
                 product=product, color_name__iexact=color_name
@@ -316,16 +403,13 @@ def variant_image_delete(request, image_id):
 
 
 def product_variants(request, product_id):
-
     product = get_object_or_404(Product, id=product_id)
-
     variants = ProductVariant.objects.filter(product=product).order_by("-id")
 
-    paginator = Paginator(variants, 10)
+    paginator = Paginator(variants, 7)
     page = request.GET.get("page")
     variants = paginator.get_page(page)
 
     context = {"product": product, "variants": variants}
-
     return render(request, "adminpanel/variant_view.html", context)
 

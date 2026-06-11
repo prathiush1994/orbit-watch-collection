@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from django.db.models import Count
 from category.models import Category
 from .decorators import admin_required
+import re 
 
 
 def _unique_slug(name, exclude_id=None):
@@ -26,7 +27,6 @@ def _unique_slug(name, exclude_id=None):
 def category_list(request):
     search_query = request.GET.get("q", "").strip()
 
-    # Annotate with product count for the new column
     categories = Category.objects.annotate(
         product_count=Count("product", distinct=True)
     ).order_by("category_name")
@@ -52,7 +52,15 @@ def category_add(request):
         name = request.POST.get("category_name", "").strip()
 
         if not name:
-            messages.error(request, "Category name is required.")
+            messages.error(
+                request, "Category name is required.",
+            )
+            return redirect("admin_category_list")
+        
+        if name.isdigit():
+            messages.error(
+                request, "Category cant be digits",
+            )
             return redirect("admin_category_list")
 
         if Category.objects.filter(category_name__iexact=name).exists():

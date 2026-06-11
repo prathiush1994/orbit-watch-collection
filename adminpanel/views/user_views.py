@@ -48,3 +48,29 @@ def toggle_user_status(request, user_id):
     action = "unblocked" if user.is_active else "blocked"
     messages.success(request, f"{user.get_full_name()} has been {action}.")
     return redirect("admin_user_list")
+
+
+def user_suggestions(request):
+    from django.http import JsonResponse
+
+    q = request.GET.get("q", "").strip()
+    suggestions = []
+
+    if len(q) >= 2:
+        users = Account.objects.filter(
+            Q(first_name__icontains=q)
+            | Q(last_name__icontains=q)
+            | Q(email__icontains=q)
+        )[:8]
+
+    suggestions = []
+
+    for user in users:
+        if q.lower() in user.first_name.lower():
+            suggestions.append(user.first_name)
+        elif q.lower() in user.last_name.lower():
+            suggestions.append(user.last_name)
+        elif q.lower() in user.email.lower():
+            suggestions.append(user.email)
+
+    return JsonResponse({"suggestions": suggestions})

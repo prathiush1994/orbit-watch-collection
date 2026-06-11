@@ -1,6 +1,6 @@
 from .auth_views import admin_login, admin_logout
 from .dashboard_views import dashboard
-from .user_views import user_list, toggle_user_status
+from .user_views import user_list, toggle_user_status, user_suggestions
 from .settings_views import settings
 from .brand_views import (
     brand_list,

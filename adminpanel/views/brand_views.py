@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
 from django.views.decorators.http import require_POST
 from django.utils.text import slugify
 from brands.models import Brand
@@ -33,8 +32,7 @@ def brand_list(request):
     paginator = Paginator(brands, 7)
     page = request.GET.get("page", 1)
     brands = paginator.get_page(page)
-
-    # All names for datalist search hints
+    
     all_brand_names = Brand.objects.values_list("brand_name", flat=True).order_by(
         "brand_name"
     )
@@ -56,6 +54,14 @@ def brand_add(request):
         if not brand_name:
             messages.error(request, "Brand name is required.")
             return redirect("admin_brand_list")
+        
+        if not logo_file:
+            messages.error(request, "Brand logo is required.")
+            return redirect("admin_brand_list")
+        
+        if brand_name.isdigit():
+            messages.error(request, "Brand name cannot contain only numbers.")
+            return redirect("admin_brand_list")
 
         if Brand.objects.filter(brand_name__iexact=brand_name).exists():
             messages.error(request, f'Brand "{brand_name}" already exists.')
@@ -67,9 +73,7 @@ def brand_add(request):
             status="active",
         )
 
-        if logo_file:
-            brand.logo_image = logo_file
-
+        brand.logo_image = logo_file
         brand.save()
         messages.success(request, f'Brand "{brand_name}" added successfully.')
 
@@ -86,6 +90,10 @@ def brand_edit(request, brand_id):
 
         if not brand_name:
             messages.error(request, "Brand name is required.")
+            return redirect("admin_brand_list")
+        
+        if brand_name.isdigit():
+            messages.error(request, "Brand name cannot contain only numbers.")
             return redirect("admin_brand_list")
 
         if (
@@ -119,7 +127,8 @@ def brand_toggle(request, brand_id):
     brand.save()
 
     messages.success(
-        request, f'Brand "{brand.brand_name}" has been {brand.status} successfully.'
+        request,
+        f'Brand "{brand.brand_name}" has been {brand.status} successfully.'
     )
     return redirect("admin_brand_list")
 

@@ -7,9 +7,7 @@ def wishlist_counter(request):
         return {}
     try:
         wishlist = _get_or_create_wishlist(request)
-
         wishlist_count = WishlistItem.objects.filter(wishlist=wishlist).count()
-
     except Exception:
         wishlist_count = 0
 

@@ -9,29 +9,52 @@
 <div class="a-card" style="margin-bottom:16px;">
   <div style="padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
 
-    <form method="GET" action="{% url 'admin_user_list' %}" style="display:flex;align-items:center;gap:8px;">
-      <div class="search-wrap">
-        <svg class="s-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" name="q" id="searchInput" class="search-input"
-               value="{{ search_query }}" placeholder="Search by name or email…" autocomplete="off">
-        {% if search_query %}
-          <button type="button" class="search-clear" id="clearBtn" onclick="window.location='{% url 'admin_user_list' %}'">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        {% endif %}
-      </div>
-      <button type="submit" class="btn-admin" style="padding:7px 14px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Search
-      </button>
-      {% if search_query %}
-        <a href="{% url 'admin_user_list' %}"
-           style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border:1px solid #E2E8F0;border-radius:6px;font-size:13px;color:#475569;text-decoration:none;background:#fff;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Clear
-        </a>
-      {% endif %}
-    </form>
+  <form method="GET"
+        action="{% url 'admin_user_list' %}"
+        id="searchForm"
+        autocomplete="off"
+        style="display:flex;align-items:center;gap:8px;position:relative;">
+
+    <div class="search-wrap">
+      <svg class="s-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+
+      <input type="text"
+            name="q"
+            id="searchInput"
+            class="search-input"
+            value="{{ search_query }}"
+            placeholder="Search by name or email…"
+            autocomplete="off">
+
+
+    </div>
+
+    <ul id="searchSuggestions"
+        style="display:none;position:absolute;top:100%;left:0;min-width:260px;
+              background:#fff;border:1px solid var(--border);
+              border-radius:0 0 6px 6px;list-style:none;margin:0;padding:0;
+              z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+    </ul>
+
+    <button type="submit" class="btn-admin" style="padding:7px 14px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      Search
+    </button>
+
+    {% if search_query %}
+    <a href="{% url 'admin_user_list' %}"
+      style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border:1px solid #E2E8F0;border-radius:6px;font-size:13px;color:#475569;text-decoration:none;background:#fff;">
+      Clear
+    </a>
+    {% endif %}
+
+  </form>
 
     <div style="font-size:13px;color:#94A3B8;">
       {% if search_query %}
@@ -227,5 +250,61 @@ if (si) {
     if (cb) cb.style.display = this.value ? 'flex' : 'none';
   });
 }
+
+const searchInput = document.getElementById('searchInput');
+const suggestionBox = document.getElementById('searchSuggestions');
+let debounceTimer = null;
+
+function hideSuggestions() {
+  suggestionBox.style.display = 'none';
+  suggestionBox.innerHTML = '';
+}
+
+searchInput.addEventListener('input', function () {
+  const val = this.value.trim();
+
+  clearTimeout(debounceTimer);
+
+  if (val.length < 2) {
+    hideSuggestions();
+    return;
+  }
+
+  debounceTimer = setTimeout(function () {
+
+    fetch('{% url "user_suggestions" %}?q=' + encodeURIComponent(val))
+      .then(r => r.json())
+      .then(data => {
+
+        suggestionBox.innerHTML = '';
+
+        if (!data.suggestions.length) {
+          hideSuggestions();
+          return;
+        }
+
+        data.suggestions.forEach(function (user) {
+          const li = document.createElement('li');
+
+          li.textContent = user;
+
+          li.style.cssText =
+            'padding:9px 14px;cursor:pointer;font-size:13.5px;' +
+            'border-bottom:1px solid #eee;';
+
+          li.addEventListener('mousedown', function () {
+            searchInput.value = user;
+            hideSuggestions();
+            document.getElementById('searchForm').submit();
+          });
+
+          suggestionBox.appendChild(li);
+        });
+
+        suggestionBox.style.display = 'block';
+      });
+  }, 250);
+});
+
 </script>
 {% endblock %}
