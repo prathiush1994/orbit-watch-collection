@@ -6,13 +6,19 @@ from ..models import Order
 @login_required(login_url="login")
 def order_detail(request, order_number):
     order = get_object_or_404(Order, order_number=order_number, user=request.user)
-    order_items = order.items.select_related("variant", "variant__product").all()
+    order_items = order.items.select_related(
+        "variant", "variant__product").all()
+    subtotal = sum(
+        item.product_price * item.quantity
+        for item in order_items
+    )
     return render(
         request,
         "orders/order_detail.html",
         {
             "order": order,
             "order_items": order_items,
+            "subtotal": subtotal,
         },
     )
 

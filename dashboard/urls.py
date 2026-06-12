@@ -19,7 +19,10 @@ urlpatterns = [
     # Coupons
     path("coupons/", views.dashboard_coupons, name="dashboard_coupons"),
     # Change Password
-    path("change-password/", views.change_password, name="dashboard_change_password"),
+    path(
+        "change-password/",
+        views.change_password,
+        name="dashboard_change_password"),
     path(
         "change-password/verify/",
         views.verify_change_password,

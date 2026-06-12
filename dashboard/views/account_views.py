@@ -2,12 +2,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages, auth
 from django.utils import timezone
-from datetime import timedelta
 from accounts.models import Account
 from accounts.email_utils import generate_otp, send_otp_email
-import base64
-import uuid
-from django.core.files.base import ContentFile
 from .utils import _otp_remaining
 
 @login_required(login_url="login")
@@ -132,7 +128,6 @@ def resend_change_email_otp(request):
     send_otp_email(pending_email, otp, purpose="change_email")
     messages.success(request, "New OTP sent.", extra_tags="change_email")
     return redirect("dashboard_change_email")
-
 
 
 @login_required(login_url="login")

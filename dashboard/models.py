@@ -17,7 +17,6 @@ class Order(models.Model):
     order_number = models.CharField(max_length=20, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
 
-    # Delivery info
     full_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20)
     address = models.TextField()

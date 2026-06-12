@@ -2,7 +2,9 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from offers.models import ReferralCode
-import random, string
+import random
+import string
+import re
 import uuid
 import base64
 from django.core.files.base import ContentFile
@@ -11,13 +13,10 @@ from django.core.files.base import ContentFile
 @login_required(login_url="login")
 def profile(request):
     user = request.user
-
-    # Auto-generate referral code on first profile visit
     referral_code = None
     try:
         referral_code = user.referral_code
     except Exception:
-        # User has no code yet — create one now
         while True:
             code = "ORB" + "".join(
                 random.choices(string.ascii_uppercase + string.digits, k=5)
@@ -27,11 +26,9 @@ def profile(request):
         referral_code = ReferralCode.objects.create(
             user=user,
             code=code,
-            referee_discount=100,  # ₹100 wallet credit for new user
-            referrer_reward=50,  # ₹50 wallet reward for referrer
+            referee_discount=300,
+            referrer_reward=50,
         )
-
-    # Stats: how many people used this code
     times_used = (
         ReferralCode.objects.filter(user=user)
         .values_list("times_used", flat=True)
@@ -65,6 +62,18 @@ def edit_profile(request):
             if user.profile_photo:
                 user.profile_photo.delete(save=False)
                 user.profile_photo = None
+
+        if not re.match(r"^[A-Za-z ]+$", user.first_name):
+            messages.error(request, "First name must contain only letters.")
+            return redirect("dashboard_edit_profile")
+
+        if not re.match(r"^[A-Za-z ]+$", user.last_name):
+            messages.error(request, "Last name must contain only letters.")
+            return redirect("dashboard_edit_profile")
+        
+        if not user.phone_number.isdigit():
+            messages.error(request, "Phone number must contain only digits.")
+            return redirect("dashboard_edit_profile")
 
         # Handle cropped photo (base64 from JS cropper)
         cropped_photo = request.POST.get("cropped_photo", "").strip()
