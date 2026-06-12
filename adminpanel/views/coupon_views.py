@@ -56,15 +56,18 @@ def admin_coupon_add(request):
             usage_limit = int(usage_limit)
 
             if discount_type == "percentage":
-                if discount < 1 or discount > 25:
+                min_order_amt = 0
+                if discount < 1 or discount > 100:
                     raise ValueError("Percentage discount must be between 1 and 25.")
 
             elif discount_type == "fixed":
-                if discount < 100 or discount > 2000:
-                    raise ValueError("Fixed discount must be between ₹100 and ₹2000.")
+                if discount < 100 or discount > 5000:
+                    raise ValueError("Fixed discount must be between ₹100 and ₹5000.")
 
-            if min_order_amt < 500 or min_order_amt > 5000:
-                raise ValueError("Minimum order amount must be between ₹500 and ₹5000.")
+                if min_order_amt <= discount:
+                    raise ValueError(
+                        "Minimum order amount must be greater than the fixed discount."
+                    )
 
             if usage_limit < 1 or usage_limit > 3:
                 raise ValueError("Uses per user must be between 1 and 3.")
@@ -141,15 +144,18 @@ def admin_coupon_edit(request, coupon_id):
             usage_limit = int(usage_limit)
 
             if discount_type == "percentage":
-                if discount < 1 or discount > 25:
-                    raise ValueError("Percentage discount must be between 1 and 25.")
+                min_order_amt = 0
+                if discount < 1 or discount > 100:
+                    raise ValueError("Percentage discount must be between 1 and 100.")
 
             elif discount_type == "fixed":
-                if discount < 100 or discount > 2000:
-                    raise ValueError("Fixed discount must be between ₹100 and ₹2000.")
+                if discount < 100 or discount > 5000:
+                    raise ValueError("Fixed discount must be between ₹100 and ₹5000.")
 
-            if min_order_amt < 500 or min_order_amt > 5000:
-                raise ValueError("Minimum order amount must be between ₹500 and ₹5000.")
+                if min_order_amt <= discount:
+                    raise ValueError(
+                        "Minimum order amount must be greater than the fixed discount."
+                    )
 
             if usage_limit < 1 or usage_limit > 3:
                 raise ValueError("Uses per user must be between 1 and 3.")

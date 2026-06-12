@@ -16,7 +16,6 @@
     <div class="a-card-body">
         <form method="POST">
             {% csrf_token %}
-
             <!-- Code -->
             <div class="a-form-group">
                 <label class="a-label">
@@ -26,33 +25,34 @@
                        value="{{ coupon.code|default:'' }}"
                        placeholder="e.g. ORBIT20"
                        style="text-transform:uppercase;" required>
-                <small class="text-muted">Auto-uppercased. Users enter this at checkout.</small>
             </div>
 
-            <!-- Discount Type -->
-            <div class="a-form-group">
-                <label class="a-label">Discount Type </label>
-                <select name="discount_type" class="a-input" id="discountType"
-                        onchange="toggleMaxDiscount()">
-                    <option value="percentage"
-                        {% if coupon.discount_type == 'percentage' or not coupon %}selected{% endif %}>
-                        Percentage (%)
-                    </option>
-                    <option value="fixed"
-                        {% if coupon.discount_type == 'fixed' %}selected{% endif %}>
-                        Fixed Amount (₹)
-                    </option>
-                </select>
-            </div>
-
-            <!-- Discount Value -->
             <div class="row">
                 <div class="col-md-6">
                     <div class="a-form-group">
-                        <label class="a-label">
-                            Discount Value 
-                        </label>
-                        <input type="number" name="discount" class="a-input"
+                        <label class="a-label">Discount Type</label>
+                        <select name="discount_type"
+                                class="a-input"
+                                id="discountType"
+                                onchange="toggleMinOrder()">
+                            <option value="percentage"
+                                {% if coupon.discount_type == 'percentage' or not coupon %}selected{% endif %}>
+                                Percentage (%)
+                            </option>
+                            <option value="fixed"
+                                {% if coupon.discount_type == 'fixed' %}selected{% endif %}>
+                                Fixed Amount (₹)
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="a-form-group">
+                        <label class="a-label">Discount Value</label>
+                        <input type="number"
+                            name="discount"
+                            class="a-input"
                             value="{{ coupon.discount|default:'' }}"
                             min="1"
                             step="1"
@@ -61,27 +61,29 @@
                 </div>
             </div>
 
-            <!-- Min Order -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="a-form-group">
+                        <label class="a-label">Uses Per User</label>
+                        <select name="usage_limit" class="a-input" required>
+                            <option value="1" {% if coupon.usage_limit == 1 or not coupon %}selected{% endif %}>1</option>
+                            <option value="2" {% if coupon.usage_limit == 2 %}selected{% endif %}>2</option>
+                            <option value="3" {% if coupon.usage_limit == 3 %}selected{% endif %}>3</option>
+                        </select>
+                    </div>
+                </div>
 
-            <div class="a-form-group">
-                <label class="a-label">Minimum Order Amount (₹)</label>
-                <input type="number" name="min_order_amt" class="a-input"
-                    value="{{ coupon.min_order_amt|default:'500' }}"
-                    min="500"
-                    max="5000"
-                    step="1"
-                    required>
-            </div>
-
-            <!-- Uses Per User -->
-            <div class="a-form-group">
-                <label class="a-label">Uses Per User</label>
-                <input type="number" name="usage_limit" class="a-input"
-                    value="{{ coupon.usage_limit|default:'1' }}"
-                    min="1"
-                    max="3"
-                    step="1"
-                    required>
+                <div class="col-md-6" id="minOrderGroup">
+                    <div class="a-form-group">
+                        <label class="a-label">Minimum Order Amount (₹)</label>
+                        <input type="number"
+                            name="min_order_amt"
+                            class="a-input"
+                            value="{{ coupon.min_order_amt|default:'1000' }}"
+                            min="1000"
+                            step="1">
+                    </div>
+                </div>
             </div>
 
 
@@ -125,5 +127,18 @@
     </div>
 </div>
 
+<script>
+function toggleMinOrder() {
+    const type = document.getElementById("discountType").value;
+    const minOrderGroup = document.getElementById("minOrderGroup");
+
+    if (type === "fixed") {
+        minOrderGroup.style.display = "block";
+    } else {
+        minOrderGroup.style.display = "none";
+    }
+}
+document.addEventListener("DOMContentLoaded", toggleMinOrder);
+</script>
 
 {% endblock %}

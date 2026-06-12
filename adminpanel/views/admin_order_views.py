@@ -192,7 +192,6 @@ def admin_approve_item_return(request, order_number, item_id):
             note=f"Return approved for order {order.order_number}",
         )
 
-    # 2. Proportional wallet refund based on item value vs order total
     order_subtotal = sum(i.product_price * i.quantity for i in order.items.all())
     item_value = item.product_price * return_qty
     proportion = (item_value / order_subtotal) if order_subtotal > 0 else Decimal("0")
@@ -210,11 +209,9 @@ def admin_approve_item_return(request, order_number, item_id):
 
     total_refund = wallet_portion + online_portion
 
-    # 3. Update item status → Returned
     item.item_status = "Returned"
     item.save(update_fields=["item_status"])
 
-    # 4. Credit wallet
     if total_refund > 0 and order.user:
         wallet, _ = Wallet.objects.get_or_create(user=order.user)
         wallet.credit(
@@ -231,8 +228,6 @@ def admin_approve_item_return(request, order_number, item_id):
     else:
         messages.success(request, f'✓ Return approved for "{item.product_name}".')
 
-    # 5. Check if ALL items are now Returned or Cancelled
-    #    If so → set order status to Returned
     still_active = order.items.filter(item_status="Active").exists()
     still_pending = order.items.filter(item_status="Return Requested").exists()
 
@@ -244,8 +239,6 @@ def admin_approve_item_return(request, order_number, item_id):
             payment.save(update_fields=["status"])
         messages.info(request, "All items returned — order marked as Returned.")
 
-    # 6. If some items still Active (partial return) → keep order Delivered
-    #    The order stays at whatever status it was (Delivered or Return Requested)
     elif still_active and not still_pending:
         # All return requests processed, some items still delivered normally
         order.status = "Delivered"

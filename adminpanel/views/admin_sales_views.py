@@ -4,8 +4,19 @@ from decimal import Decimal
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count
 from orders.models import Order
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import (
+        SimpleDocTemplate,
+        Table,
+        TableStyle,
+        Paragraph,
+        Spacer,
+    )
+from reportlab.lib.units import cm
 
 
 def _get_date_range(period, date_from_str, date_to_str):
@@ -108,18 +119,6 @@ def admin_sales_report(request):
 
 @staff_member_required(login_url="admin_login")
 def admin_sales_pdf(request):
-    from reportlab.lib.pagesizes import A4, landscape
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.platypus import (
-        SimpleDocTemplate,
-        Table,
-        TableStyle,
-        Paragraph,
-        Spacer,
-    )
-    from reportlab.lib.units import cm
-
     period = request.GET.get("period", "monthly")
     date_from_s = request.GET.get("date_from", "")
     date_to_s = request.GET.get("date_to", "")

@@ -221,3 +221,4 @@ class OrderProduct(models.Model):
 
     def __str__(self):
         return f"{self.product_name} ({self.color_name}) × {self.quantity}"
+
