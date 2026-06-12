@@ -13,9 +13,7 @@ def cart_counter(request):
             cart = Cart.objects.get(user=request.user)
         else:
             cart = Cart.objects.get(cart_id=_cart_id(request))
-
         cart_items = CartItem.objects.filter(cart=cart, is_active=True)
-
         cart_count = cart_items.count()
 
     except Cart.DoesNotExist:

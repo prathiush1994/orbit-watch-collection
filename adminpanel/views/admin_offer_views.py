@@ -166,6 +166,9 @@ def admin_product_offer_edit(request, offer_id):
         active_offer_exists = ProductOffer.objects.filter(
             product=offer.product,
             is_active=True,
+        ).filter(
+            Q(valid_until__isnull=True) |
+            Q(valid_until__gt=timezone.now())
         ).exclude(id=offer.id).exists()
 
         if is_active and active_offer_exists:

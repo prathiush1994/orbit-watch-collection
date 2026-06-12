@@ -8,5 +8,8 @@ urlpatterns = [
         views.inventory_add_stock,
         name="admin_inventory_add_stock",
     ),
-    path("<int:inventory_id>/log/", views.inventory_log, name="admin_inventory_log"),
+    path(
+        "<int:inventory_id>/log/",
+        views.inventory_log,
+        name="admin_inventory_log"),
 ]

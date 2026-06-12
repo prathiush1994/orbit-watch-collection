@@ -43,8 +43,8 @@ def store(request, category_slug=None):
         .select_related("product", "product__brand", "inventory")
         .prefetch_related(
             "product__category",
-            "product__offer",
-            "product__category__offer",
+            "product__offers",
+            "product__category__offers",
         )
     )
     
@@ -80,14 +80,11 @@ def store(request, category_slug=None):
     else:
         variants = variants.order_by("id")
 
-    # ── Pagination ──────────────────────────
     paginator = Paginator(variants, 15)
     paged_variants = paginator.get_page(request.GET.get("page"))
 
-    # ── Offer annotation ────────────────────
     annotate_variants_with_offers(list(paged_variants.object_list))
 
-    # ── Cart IDs ────────────────────────────
     cart = _get_or_create_cart(request)
 
     cart_variant_ids = set(
@@ -96,7 +93,6 @@ def store(request, category_slug=None):
         )
     )
 
-    # ── Wishlist IDs (guest + user) ─────────
     wishlist = _get_or_create_wishlist(request)
 
     wishlist_ids = set(
@@ -105,7 +101,6 @@ def store(request, category_slug=None):
         )
     )
 
-    # ── Sidebar data ────────────────────────
     all_categories = Category.objects.filter(status="active")
 
     all_brands = Brand.objects.filter(

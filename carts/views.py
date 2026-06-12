@@ -29,7 +29,6 @@ def _get_or_create_cart(request):
     if request.user.is_authenticated:
         user_cart, _ = Cart.objects.get_or_create(user=request.user)
         session_key = _cart_id(request)
-        # prevent repeated merge
         if not request.session.get("cart_merged", False):
             session_cart = Cart.objects.filter(cart_id=session_key).first()
             if session_cart and session_cart.user is None:
@@ -41,7 +40,7 @@ def _get_or_create_cart(request):
 
 def _merge_carts(user_cart, session_cart):
     if session_cart == user_cart:
-        return  # safety
+        return 
     existing_total = sum(
         i.quantity for i in CartItem.objects.filter(cart=user_cart, is_active=True)
     )
@@ -100,8 +99,8 @@ def cart(request):
         )
         .prefetch_related(
             "variant__product__category",
-            "variant__product__offer",
-            "variant__product__category__offer",
+            "variant__product__offers",
+            "variant__product__category__offers",
         )
     )
 
@@ -136,8 +135,8 @@ def cart(request):
         )
         .prefetch_related(
             "variant__product__category",
-            "variant__product__offer",
-            "variant__product__category__offer",
+            "variant__product__offers",
+            "variant__product__category__offers",
         )
     )
 

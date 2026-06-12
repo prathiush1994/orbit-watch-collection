@@ -9,12 +9,17 @@ User = get_user_model()
 class Review(models.Model):
     RATING_CHOICES = [(i, str(i)) for i in range(1, 6)]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reviews")
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="reviews"
+    )
     variant = models.ForeignKey(
         ProductVariant, on_delete=models.CASCADE, related_name="reviews"
     )
     rating = models.PositiveSmallIntegerField(
-        choices=RATING_CHOICES, validators=[MinValueValidator(1), MaxValueValidator(5)]
+        choices=RATING_CHOICES, 
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
     title = models.CharField(max_length=120, blank=True)
     body = models.TextField(max_length=1000)
@@ -31,5 +36,4 @@ class Review(models.Model):
 
     @property
     def stars_range(self):
-        """Returns (filled, empty) counts for template rendering."""
         return range(self.rating), range(5 - self.rating)

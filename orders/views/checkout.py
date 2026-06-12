@@ -26,8 +26,8 @@ def checkout(request):
         )
         .prefetch_related(
             "variant__product__category",
-            "variant__product__offer",
-            "variant__product__category__offer",
+            "variant__product__offers",
+            "variant__product__category__offers",
         )
     )
 

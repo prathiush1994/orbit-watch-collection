@@ -13,7 +13,9 @@ def home(request):
         )
         .select_related("product", "inventory")
         .prefetch_related(
-            "product__category", "product__offer", "product__category__offer"
+            "product__category",
+            "product__offers",
+            "product__category__offers"
         )
         .order_by("-price")[:6]
     )
@@ -27,7 +29,9 @@ def home(request):
         )
         .select_related("product", "inventory")
         .prefetch_related(
-            "product__category", "product__offer", "product__category__offer"
+            "product__category",
+            "product__offers",
+            "product__category__offers"
         )
         .order_by("-price")[:6]
     )
@@ -41,7 +45,9 @@ def home(request):
         )
         .select_related("product", "inventory")
         .prefetch_related(
-            "product__category", "product__offer", "product__category__offer"
+            "product__category",
+            "product__offers",
+            "product__category__offers"
         )
         .order_by("-price")[:6]
     )

@@ -9,6 +9,7 @@ from offers.utils import get_offer_context
 from reviews.models import Review
 from reviews.forms import ReviewForm
 from reviews.views import _user_has_purchased
+from offers.utils import annotate_variants_with_offers
 
 
 def product_detail(request, category_slug, variant_slug):
@@ -35,14 +36,11 @@ def product_detail(request, category_slug, variant_slug):
 
     gallery_images = variant.images.all()
     all_variants = variant.get_all_variants().filter(
-    inventory__quantity__gt=0
+        inventory__quantity__gt=0
     )
 
     # ── Offer
     offer_ctx = get_offer_context(variant.product, variant.price)
-
-    # ── Annotate all_variants with offer info (for swatch prices)
-    from offers.utils import annotate_variants_with_offers
 
     all_variants_list = list(all_variants)
     annotate_variants_with_offers(all_variants_list)
@@ -98,13 +96,11 @@ def product_detail(request, category_slug, variant_slug):
             "all_variants": all_variants_list,
             "in_cart": in_cart,
             "in_wishlist": in_wishlist,
-            # Offer context unpacked from get_offer_context dict
             "has_offer": offer_ctx["has_offer"],
             "offer_pct": offer_ctx["offer_pct"],
             "offer_type": offer_ctx["offer_type"],
             "effective_price": offer_ctx["effective_price"],
             "savings": offer_ctx["savings"],
-            # Review context
             "reviews": reviews,
             "avg_rating": avg_rating,
             "review_count": review_count,

@@ -8,11 +8,9 @@ from store.models import ProductVariant
 
 
 def _sync_inventories():
-    """Create missing Inventory rows for any variant that doesn't have one yet."""
     for variant in ProductVariant.objects.select_related("inventory").all():
         inv, created = Inventory.objects.get_or_create(variant=variant)
         if created:
-            # Bootstrap quantity from the legacy stock field (one-time migration)
             if variant.stock and variant.stock > 0:
                 inv.quantity = variant.stock
                 inv.save(update_fields=["quantity"])
@@ -23,7 +21,7 @@ def inventory_list(request):
     _sync_inventories()
 
     q = request.GET.get("q", "").strip()
-    filter_stock = request.GET.get("stock", "")  # 'low' | 'out' | ''
+    filter_stock = request.GET.get("stock", "") 
 
     inventories = Inventory.objects.select_related(
         "variant", "variant__product", "variant__product__brand"
@@ -37,12 +35,10 @@ def inventory_list(request):
         )
 
     if filter_stock == "low":
-        # quantity > 0 and quantity <= threshold — approximate (threshold=5 default)
         inventories = inventories.filter(quantity__gt=0, quantity__lte=5)
     elif filter_stock == "out":
         inventories = inventories.filter(quantity__lte=0)
 
-    # Summary counts
     all_inv = Inventory.objects.all()
     total_items = all_inv.count()
     out_of_stock = all_inv.filter(quantity__lte=0).count()

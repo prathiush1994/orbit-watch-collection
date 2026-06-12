@@ -4,20 +4,12 @@ from store.models import Product, ProductVariant, VariantImage
 
 
 class VariantImageInline(nested_admin.NestedTabularInline):
-    """Gallery images — nested inside the variant inline."""
-
     model = VariantImage
     extra = 3
     fields = ("image", "alt_text", "order")
 
 
 class ProductVariantInline(nested_admin.NestedStackedInline):
-    """
-    Variants — shown inside the Product admin page.
-    Each variant has VariantImageInline nested inside it.
-    One page, one save — no separate steps needed.
-    """
-
     model = ProductVariant
     extra = 1
     fields = (
