@@ -6,8 +6,10 @@ import uuid
 
 
 class ProductOffer(models.Model):
-    product = models.OneToOneField(
-        "store.Product", on_delete=models.CASCADE, related_name="offer"
+    product = models.ForeignKey(
+        "store.Product",
+        on_delete=models.CASCADE,
+        related_name="offers"
     )
     discount_pct = models.DecimalField(
         max_digits=5, decimal_places=2,
@@ -37,8 +39,10 @@ class ProductOffer(models.Model):
 
 
 class CategoryOffer(models.Model):
-    category = models.OneToOneField(
-        "category.Category", on_delete=models.CASCADE, related_name="offer"
+    category = models.ForeignKey(
+        "category.Category",
+        on_delete=models.CASCADE,
+        related_name="offers"
     )
     discount_pct = models.DecimalField(
         max_digits=5, decimal_places=2,

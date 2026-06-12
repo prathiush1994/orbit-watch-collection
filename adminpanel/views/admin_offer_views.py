@@ -3,37 +3,32 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from django.core.paginator import Paginator
-
+from accounts.models import Account
+from django.db.models import Prefetch
+from store.models import Product
+from category.models import Category
+from category.models import Category as Cat
 from offers.models import ProductOffer, CategoryOffer, ReferralCode
+from django.db.models import Q
+from django.urls import reverse
 
 
 def _get_products():
-    from store.models import Product
-
     try:
         return Product.objects.filter(is_available=True).order_by("product_name")
     except Exception:
-        from store.models import Product
-
         return Product.objects.all().order_by("product_name")
 
 
 def _get_categories():
-    """Only return categories where offers are allowed."""
-    from category.models import Category
-
     return Category.objects.filter(status="active", is_offer_applicable=True).order_by(
         "category_name"
     )
 
 
 @staff_member_required(login_url="admin_login")
-def admin_offer_list(request):
-    
-    from accounts.models import Account
-    from django.db.models import Prefetch
-    
-    active_tab = request.GET.get("tab")
+def admin_offer_list(request):    
+    active_tab = request.GET.get("tab", "product")
 
     if "category_page" in request.GET:
         active_tab = "category"
@@ -79,10 +74,7 @@ def admin_offer_list(request):
 
 @staff_member_required(login_url="admin_login")
 def admin_product_offer_add(request):
-    from store.models import Product
-
     products = _get_products()
-
     if request.method == "POST":
         product_id = request.POST.get("product_id", "").strip()
         discount_pct = request.POST.get("discount_pct", "").strip()
@@ -96,6 +88,7 @@ def admin_product_offer_add(request):
                 request,
                 "adminpanel/admin_offer_product_form.html",
                 {"products": products, "action": "Add"},
+                status=422
             )
         try:
             disc = float(discount_pct)
@@ -110,15 +103,24 @@ def admin_product_offer_add(request):
             )
 
         product = get_object_or_404(Product, id=product_id)
-        if ProductOffer.objects.filter(product=product).exists():
+        active_offer_exists = ProductOffer.objects.filter(
+            product=product,
+            is_active=True,
+        ).filter(
+            Q(valid_until__isnull=True) |
+            Q(valid_until__gt=timezone.now())
+        ).exists()
+
+        if active_offer_exists:
             messages.error(
                 request,
-                f'"{product.product_name}" already has an offer. Edit it instead.',
+                f'"{product.product_name}" already has an active offer.'
             )
             return render(
                 request,
                 "adminpanel/admin_offer_product_form.html",
                 {"products": products, "action": "Add"},
+                status=422
             )
 
         ProductOffer.objects.create(
@@ -158,17 +160,37 @@ def admin_product_offer_edit(request, offer_id):
                 request,
                 "adminpanel/admin_offer_product_form.html",
                 {"offer": offer, "products": products, "action": "Edit"},
+                status=422
+            )
+
+        active_offer_exists = ProductOffer.objects.filter(
+            product=offer.product,
+            is_active=True,
+        ).exclude(id=offer.id).exists()
+
+        if is_active and active_offer_exists:
+            messages.error(
+                request,
+                f'"{offer.product.product_name}" already has another active offer.'
+            )
+            return render(
+                request,
+                "adminpanel/admin_offer_product_form.html",
+                {"offer": offer, "products": products, "action": "Edit"},
+                status=422
             )
 
         offer.discount_pct = disc
         offer.is_active = is_active
+
         if valid_from:
             offer.valid_from = valid_from
+
         offer.valid_until = valid_until
         offer.save()
+
         messages.success(request, "Product offer updated.")
         return redirect("admin_offer_list")
-
     return render(
         request,
         "adminpanel/admin_offer_product_form.html",
@@ -224,10 +246,8 @@ def admin_category_offer_add(request):
                 request,
                 "adminpanel/admin_offer_category_form.html",
                 {"categories": categories, "action": "Add"},
+                status=422
             )
-
-        from category.models import Category as Cat
-
         category = get_object_or_404(Cat, id=category_id)
 
         if not category.is_offer_applicable:
@@ -240,17 +260,27 @@ def admin_category_offer_add(request):
                 request,
                 "adminpanel/admin_offer_category_form.html",
                 {"categories": categories, "action": "Add"},
+                status=422
             )
 
-        if CategoryOffer.objects.filter(category=category).exists():
+        active_offer_exists = CategoryOffer.objects.filter(
+            category=category,
+            is_active=True,
+        ).filter(
+            Q(valid_until__isnull=True) |
+            Q(valid_until__gt=timezone.now())
+        ).exists()
+
+        if active_offer_exists:
             messages.error(
                 request,
-                f'"{category.category_name}" already has an offer. Edit it instead.',
+                f'"{category.category_name}" already has an active offer. Edit it instead.',
             )
             return render(
                 request,
                 "adminpanel/admin_offer_category_form.html",
                 {"categories": categories, "action": "Add"},
+                status=422
             )
 
         CategoryOffer.objects.create(
@@ -261,7 +291,9 @@ def admin_category_offer_add(request):
             valid_until=valid_until,
         )
         messages.success(request, f'Offer added for "{category.category_name}".')
-        return redirect("admin_offer_list")
+        from django.urls import reverse
+
+        return redirect(f"{reverse('admin_offer_list')}?tab=category")
 
     return render(
         request,
@@ -290,8 +322,31 @@ def admin_category_offer_edit(request, offer_id):
                 request,
                 "adminpanel/admin_offer_category_form.html",
                 {"offer": offer, "categories": categories, "action": "Edit"},
+                status=422
             )
+        active_offer_exists = CategoryOffer.objects.filter(
+            category=offer.category,
+            is_active=True,
+        ).filter(
+            Q(valid_until__isnull=True) |
+            Q(valid_until__gt=timezone.now())
+        ).exclude(id=offer.id).exists()
 
+        if active_offer_exists:
+            messages.error(
+                request,
+                f'"{offer.category.category_name}" already has an active offer.'
+            )
+            return render(
+                request,
+                "adminpanel/admin_offer_category_form.html",
+                {
+                    "offer": offer,
+                    "categories": categories,
+                    "action": "Edit",
+                },
+                status=422
+            )
         offer.discount_pct = disc
         offer.is_active = is_active
         if valid_from:
@@ -299,7 +354,7 @@ def admin_category_offer_edit(request, offer_id):
         offer.valid_until = valid_until
         offer.save()
         messages.success(request, "Category offer updated.")
-        return redirect("admin_offer_list")
+        return redirect(f"{reverse('admin_offer_list')}?tab=category")
 
     return render(
         request,
