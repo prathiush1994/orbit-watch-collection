@@ -36,13 +36,23 @@ def profile(request):
         or 0
     )
 
-    referral_url = f"{request.scheme}://{request.get_host()}/accounts/register/?ref={referral_code.token}"
+    referral_url = f"{request.scheme}://{request.get_host()}/user/orbit-watch/register/?ref={referral_code.token}"
+    referral_message = (
+        f"Get ₹{referral_code.referee_discount} OFF on your first order at Orbit Watch Collection.\n\n"
+        f"1. Create an account using the link below.\n"
+        f"2. Apply the referral code during checkout of your first order.\n"
+        f"3. Get ₹{referral_code.referee_discount} OFF instantly.\n\n"
+        f"Referral Code: {referral_code.code}\n\n"
+        f"Register Here:\n"
+        f"{referral_url}"
+    )
 
     return render(
         request,
         "dashboard/profile.html",
         {
             "referral_code": referral_code,
+            "referral_message": referral_message,
             "referral_url": referral_url,
             "times_used": times_used,
         },
@@ -70,7 +80,7 @@ def edit_profile(request):
         if not re.match(r"^[A-Za-z ]+$", user.last_name):
             messages.error(request, "Last name must contain only letters.")
             return redirect("dashboard_edit_profile")
-        
+
         if not user.phone_number.isdigit():
             messages.error(request, "Phone number must contain only digits.")
             return redirect("dashboard_edit_profile")
@@ -94,4 +104,3 @@ def edit_profile(request):
         return redirect("dashboard_profile")
 
     return render(request, "dashboard/edit_profile.html")
-

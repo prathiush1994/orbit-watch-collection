@@ -6,13 +6,13 @@ from accounts.models import Account
 from accounts.email_utils import generate_otp, send_otp_email
 from .utils import _otp_remaining
 
+
 @login_required(login_url="login")
 def change_email(request):
     user = request.user
 
     if request.method == "POST":
         action = request.POST.get("action")
-
         if action == "send_otp":
             new_email = request.POST.get("new_email", "").strip().lower()
 
@@ -20,15 +20,16 @@ def change_email(request):
                 messages.error(
                     request,
                     "Please enter a valid email address.",
-                    extra_tags="change_email",
+                    extra_tags="email_message",
                 )
+
                 return redirect("dashboard_change_email")
 
             if new_email == user.email:
                 messages.error(
                     request,
                     "New email is the same as your current email.",
-                    extra_tags="change_email",
+                    extra_tags="email_message",
                 )
                 return redirect("dashboard_change_email")
 
@@ -115,7 +116,7 @@ def resend_change_email_otp(request):
 
     if not pending_email:
         messages.error(
-            request, "Session expired. Please start again.", extra_tags="change_email"
+            request, "Session expired. Please start again.", extra_tags="email_message"
         )
         return redirect("dashboard_change_email")
 
@@ -328,4 +329,3 @@ def resend_delete_account_otp(request):
     else:
         messages.error(request, "Failed to send OTP.", extra_tags="delete_account")
     return redirect("dashboard_verify_delete_account")
-
