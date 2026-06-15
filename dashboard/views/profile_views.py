@@ -8,6 +8,7 @@ import re
 import uuid
 import base64
 from django.core.files.base import ContentFile
+from collections import Counter
 
 
 @login_required(login_url="login")
@@ -85,7 +86,15 @@ def edit_profile(request):
             messages.error(request, "Phone number must contain only digits.")
             return redirect("dashboard_edit_profile")
 
-        # Handle cropped photo (base64 from JS cropper)
+        if len(user.phone_number) != 10:
+            messages.error(request, "Phone number must contain 10 digits.")
+            return redirect("dashboard_edit_profile")
+
+        counts = Counter(user.phone_number)
+        if max(counts.values()) > 3:
+            messages.error(request, "Enter a valid phone number")
+            return redirect("dashboard_edit_profile")
+
         cropped_photo = request.POST.get("cropped_photo", "").strip()
         if cropped_photo and cropped_photo.startswith("data:image"):
             try:
