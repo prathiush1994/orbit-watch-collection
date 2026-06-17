@@ -27,58 +27,29 @@ def wallet_dashboard(request):
         },
     )
 
+
 @login_required(login_url="login")
 def apply_wallet(request):
-
-    if request.method != "POST":
-        return JsonResponse(
-            {"success": False, "message": "Invalid request."}
-        )
-
     wallet = get_or_create_wallet(request.user)
-
     cart = _get_or_create_cart(request)
-
     cart_items = CartItem.objects.filter(
         cart=cart,
         is_active=True
-    ).select_related(
-        "variant",
-        "variant__product"
-    )
-
-    totals = _compute_totals(
-        cart_items,
-        request.session
-    )
-
+        ).select_related("variant", "variant__product")
+    totals = _compute_totals(cart_items, request.session)
     final_total = totals["final_total"]
-
-    print("final_total =", final_total)
-    print("wallet_balance =", wallet.balance)
-
     if wallet.balance <= 0:
         return JsonResponse({
-            "success": False,
-            "message": "Your wallet balance is ₹0."
+            "success": False, "message": "Your wallet balance is ₹0."
         })
-
     if final_total <= 0:
         return JsonResponse({
-            "success": False,
-            "message": "Nothing left to pay."
+            "success": False, "message": "Nothing left to pay."
         })
-
     wallet_used = min(wallet.balance, final_total)
-
-    amount_to_pay = round(
-        final_total - wallet_used,
-        2
-    )
-
+    amount_to_pay = round(final_total - wallet_used, 2)
     request.session["wallet_used"] = str(wallet_used)
     request.session["wallet_applied"] = True
-
     return JsonResponse(
         {
             "success": True,
@@ -93,13 +64,10 @@ def apply_wallet(request):
 def remove_wallet(request):
     if request.method != "POST":
         return JsonResponse({"success": False, "message": "Invalid request."})
-
     data = json.loads(request.body)
     final_total = Decimal(str(data.get("final_total", "0")))
-
     request.session.pop("wallet_used", None)
     request.session.pop("wallet_applied", None)
-    print("remove_wallet final_total =", final_total)
     return JsonResponse(
         {
             "success": True,
