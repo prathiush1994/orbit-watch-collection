@@ -6,9 +6,14 @@ from ..forms import RegistrationForm
 from ..email_utils import generate_otp, send_otp_email, send_welcome_email
 from .otp_data import _otp_remaining
 from urllib.parse import urlencode
+from offers.models import ReferralCode, ReferralUse
 
 
 def register(request):
+    ref = request.GET.get("ref")
+    if ref:
+        request.session["ref"] = ref
+    print("Referral token:", ref)
     if request.user.is_authenticated:
         return redirect("home")
     next_page = request.GET.get("next", "login")
@@ -72,6 +77,7 @@ def register(request):
 def verify_email(request):
     user_id = request.session.get("user_id")
     user = get_object_or_404(Account, id=user_id)
+    token = request.session.get("ref")
 
     if user.is_active and user.email_verified:
         return redirect("login")
@@ -102,6 +108,16 @@ def verify_email(request):
             user.otp_purpose = None
             user.save()
             request.session.pop("user_id", None)
+            if token:
+                try:
+                    ref_code = ReferralCode.objects.get(token=token)
+                    ReferralUse.objects.get_or_create(
+                        referral_code=ref_code,
+                        referee=user
+                    )
+                    request.session.pop("ref", None)
+                except ReferralCode.DoesNotExist:
+                    pass
             send_welcome_email(user.email, user.first_name)
             messages.success(
                 request, "Email verified! You can now login.",

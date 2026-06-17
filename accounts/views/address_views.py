@@ -15,22 +15,30 @@ def add_address(request):
             address = form.save(commit=False)
             address.user = request.user
             address.save()
+
             messages.success(
-                request, "Address added successfully!",
+                request,
+                "Address added successfully!",
                 extra_tags="add_address_message"
-                )
+            )
+
             next_page = request.POST.get("next", "manage_address")
+
             if next_page == "checkout":
                 return redirect("checkout")
+
             return redirect("manage_address")
+
         else:
+            print(form.errors)
+
             return render(
                 request,
                 "accounts/add_address.html",
                 {
                     "form": form,
                     "next": next_page,
-                }, 
+                },
                 status=422,
             )
     else:

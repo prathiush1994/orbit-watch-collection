@@ -79,7 +79,6 @@ class RegistrationForm(forms.ModelForm):
                 raise forms.ValidationError(
                     "Password must contain at least one special character."
                 )
-
         return cleaned_data
 
 
@@ -113,7 +112,6 @@ class AddressForm(forms.ModelForm):
                 "rows": 3,
                 "placeholder": "House Name, House Number, Locality"
             })
-
 
     def clean_full_name(self):
         full_name = self.cleaned_data["full_name"].strip()
