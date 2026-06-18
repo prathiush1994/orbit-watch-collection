@@ -73,6 +73,11 @@ def checkout(request):
         request.session["referral_discount"] = str(
             ref_use.referral_code.referee_discount
         )
+        request.session["referral_id"] = ref_use.referral_code.id
+    else:
+        request.session.pop("referral_code", None)
+        request.session.pop("referral_discount", None)
+        request.session.pop("referral_id", None)
     totals = _compute_totals(cart_items_list, request.session)
     totals["subtotal"] = total
     totals["tax"] = round(Decimal("0.18") * Decimal(str(total)), 2)

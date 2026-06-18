@@ -162,7 +162,7 @@
                     {% if not coupon_discount %}style="display:none;"{% endif %}>
                         <span class="text-success">
                             <i class="fas fa-tag mr-1"></i>
-                            Coupon (<span id="appliedCouponCode">{{ coupon_code }}</span>)
+                            Coupon 
                         </span>
                         <span class="text-success font-weight-bold">
                             &#8722;&nbsp;&#8377;<span id="couponDiscountAmt">{{ coupon_discount }}</span>
@@ -170,18 +170,19 @@
                     </div>
 
                     <!-- Referral discount row -->
-                    <div class="d-flex justify-content-between mb-2"
-                        id="rowReferralDiscount"
-                        {% if not referral_code %}style="display:none;"{% endif %}>
-                        <span style="color:#FF6B00;">
-                            <i class="fa fa-gift mr-1"></i>
-                            Referral (<span id="appliedReferralCode">{{ referral_code }}</span>)
-                        </span>
+                    {% if show_referral_section and referral_code %}
+                        <div class="d-flex justify-content-between mb-2"
+                            id="rowReferralDiscount">
+                            <span style="color:#FF6B00;">
+                                <i class="fa fa-gift mr-1"></i>
+                                Referral (<span id="appliedReferralCode">{{ referral_code }}</span>)
+                            </span>
 
-                        <span class="font-weight-bold" style="color:#FF6B00;">
-                            - ₹<span id="referralDiscountAmt">{{ referral_discount }}</span>
-                        </span>
-                    </div>
+                            <span class="font-weight-bold" style="color:#FF6B00;">
+                                - ₹<span id="referralDiscountAmt">{{ referral_discount }}</span>
+                            </span>
+                        </div>
+                    {% endif %}
 
                     <!-- Wallet deduction row -->
                     <div class="d-flex justify-content-between mb-2" id="rowWalletDeduct" 
