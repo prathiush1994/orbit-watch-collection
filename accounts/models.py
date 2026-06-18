@@ -43,11 +43,9 @@ class Account(AbstractBaseUser):
     profile_photo = models.ImageField(upload_to="photos/profile", blank=True, null=True)
     email_verified = models.BooleanField(default=False)
 
-    # OTP fields
     otp = models.CharField(max_length=6, null=True, blank=True)
     otp_created_at = models.DateTimeField(null=True, blank=True)
-    otp_purpose = models.CharField(max_length=20, null=True, blank=True)
-    # purposes: 'register' | 'forgot' | 'login' | 'change_password' | 'delete_account'
+    otp_purpose = models.CharField(max_length=100, null=True, blank=True)
 
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(auto_now=True)

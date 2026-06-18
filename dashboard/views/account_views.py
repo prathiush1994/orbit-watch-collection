@@ -11,6 +11,26 @@ from .utils import _otp_remaining
 def change_email(request):
     user = request.user
 
+    def get_context():
+        pending_email = request.session.get("pending_new_email", "")
+        remaining = (
+            _otp_remaining(user.otp_created_at)
+            if user.otp_created_at
+            else 0
+        )
+
+        return {
+            "step": (
+                "verify_otp"
+                if pending_email
+                and user.otp_purpose == "change_email"
+                and remaining > 0
+                else "enter_email"
+            ),
+            "pending_email": pending_email,
+            "remaining_time": remaining,
+        }
+
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "send_otp":
@@ -23,7 +43,12 @@ def change_email(request):
                     extra_tags="email_message",
                 )
 
-                return redirect("dashboard_change_email")
+                return render(
+                    request,
+                    "dashboard/change_email.html",
+                    get_context(),
+                    status=422,
+                )
 
             if new_email == user.email:
                 messages.error(
@@ -31,7 +56,13 @@ def change_email(request):
                     "New email is the same as your current email.",
                     extra_tags="email_message",
                 )
-                return redirect("dashboard_change_email")
+
+                return render(
+                    request,
+                    "dashboard/change_email.html",
+                    get_context(),
+                    status=422,
+                )
 
             if Account.objects.filter(email=new_email).exclude(pk=user.pk).exists():
                 messages.error(
@@ -39,7 +70,13 @@ def change_email(request):
                     "This email is already registered with another account.",
                     extra_tags="change_email",
                 )
-                return redirect("dashboard_change_email")
+
+                return render(
+                    request,
+                    "dashboard/change_email.html",
+                    get_context(),
+                    status=422,
+                )
 
             otp = generate_otp()
             user.otp = otp
@@ -67,7 +104,13 @@ def change_email(request):
                     "Session expired. Please start again.",
                     extra_tags="change_email",
                 )
-                return redirect("dashboard_change_email")
+                
+                return render(
+                    request,
+                    "dashboard/change_email.html",
+                    get_context(),
+                    status=422,
+                )
 
             if remaining <= 0:
                 messages.error(
@@ -75,13 +118,26 @@ def change_email(request):
                     "OTP has expired. Please request a new one.",
                     extra_tags="change_email",
                 )
-                return redirect("dashboard_change_email")
+                
+                return render(
+                    request,
+                    "dashboard/change_email.html",
+                    get_context(),
+                    status=422,
+                )
 
             if entered_otp != user.otp or user.otp_purpose != "change_email":
                 messages.error(
-                    request, "Invalid OTP. Please try again.", extra_tags="change_email"
+                    request, "Invalid OTP. Please try again.",
+                    extra_tags="change_email"
                 )
-                return redirect("dashboard_change_email")
+                
+                return render(
+                    request,
+                    "dashboard/change_email.html",
+                    get_context(),
+                    status=422,
+                )
 
             user.email = pending_email
             user.otp = None
@@ -96,17 +152,7 @@ def change_email(request):
                 extra_tags="profile",
             )
             return redirect("dashboard_profile")
-
-    pending_email = request.session.get("pending_new_email", "")
-    remaining = _otp_remaining(user.otp_created_at) if user.otp_created_at else 0
-    is_otp_step = pending_email and user.otp_purpose == "change_email" and remaining > 0
-
-    context = {
-        "step": "verify_otp" if is_otp_step else "enter_email",
-        "pending_email": pending_email,
-        "remaining_time": remaining,
-    }
-    return render(request, "dashboard/change_email.html", context)
+    return render(request, "dashboard/change_email.html", get_context())
 
 
 @login_required(login_url="login")
@@ -143,7 +189,8 @@ def change_password(request):
         sent = send_otp_email(user.email, user.otp, purpose="change_password")
         if sent:
             messages.success(
-                request, f"OTP sent to {user.email}", extra_tags="change_password"
+                request, f"OTP sent to {user.email}",
+                extra_tags="change_password"
             )
             return redirect("dashboard_verify_change_password")
         else:
@@ -184,12 +231,15 @@ def verify_change_password(request):
                     request, "dashboard/change_password.html", {"otp_verified": True}
                 )
             else:
-                messages.error(request, "Invalid OTP.", extra_tags="change_password")
+                messages.error(
+                    request, "Invalid OTP.",
+                    extra_tags="change_password")
 
         elif action == "set_password":
             if user.otp_purpose != "change_password_verified":
                 messages.error(
-                    request, "Please verify OTP first.", extra_tags="change_password"
+                    request, "Please verify OTP first.",
+                    extra_tags="change_password"
                 )
                 return redirect("dashboard_change_password")
 
@@ -198,10 +248,12 @@ def verify_change_password(request):
 
             if new_password != confirm_password:
                 messages.error(
-                    request, "Passwords do not match.", extra_tags="change_password"
+                    request, "Passwords do not match.",
+                    extra_tags="change_password"
                 )
                 return render(
-                    request, "dashboard/change_password.html", {"otp_verified": True}
+                    request, "dashboard/change_password.html",
+                    {"otp_verified": True}
                 )
 
             if len(new_password) < 8:
@@ -211,7 +263,8 @@ def verify_change_password(request):
                     extra_tags="change_password",
                 )
                 return render(
-                    request, "dashboard/change_password.html", {"otp_verified": True}
+                    request, "dashboard/change_password.html",
+                    {"otp_verified": True}
                 )
 
             user.set_password(new_password)
@@ -219,10 +272,12 @@ def verify_change_password(request):
             user.save()
 
             auth.login(
-                request, user, backend="django.contrib.auth.backends.ModelBackend"
+                request, user,
+                backend="django.contrib.auth.backends.ModelBackend"
             )
             messages.success(
-                request, "Password changed successfully.", extra_tags="profile"
+                request, "Password changed successfully.",
+                extra_tags="profile"
             )
             return redirect("dashboard_profile")
 
@@ -246,9 +301,13 @@ def resend_change_password_otp(request):
 
     sent = send_otp_email(user.email, user.otp, purpose="change_password")
     if sent:
-        messages.success(request, "New OTP sent.", extra_tags="change_password")
+        messages.success(
+            request, "New OTP sent.",
+            extra_tags="change_password")
     else:
-        messages.error(request, "Failed to send OTP.", extra_tags="change_password")
+        messages.error(
+            request, "Failed to send OTP.",
+            extra_tags="change_password")
     return redirect("dashboard_verify_change_password")
 
 
@@ -264,7 +323,8 @@ def delete_account(request):
         sent = send_otp_email(user.email, user.otp, purpose="delete_account")
         if sent:
             messages.success(
-                request, f"OTP sent to {user.email}", extra_tags="delete_account"
+                request, f"OTP sent to {user.email}",
+                extra_tags="delete_account"
             )
             return redirect("dashboard_verify_delete_account")
         else:
@@ -297,12 +357,25 @@ def verify_delete_account(request):
             auth.logout(request)
             user.delete()
             messages.success(
-                request, "Your account has been deleted.", extra_tags="delete_account"
+                request, "Your account has been deleted.",
+                extra_tags="delete_account"
             )
             return redirect("register")
         else:
             messages.error(
-                request, "Invalid OTP. Please try again.", extra_tags="delete_account"
+                request,
+                "Invalid OTP. Please try again.",
+                extra_tags="delete_account",
+            )
+
+            return render(
+                request,
+                "dashboard/verify_delete_account.html",
+                {
+                    "remaining_time": remaining,
+                    "expired": expired,
+                },
+                status=422,
             )
 
     return render(
@@ -325,7 +398,11 @@ def resend_delete_account_otp(request):
 
     sent = send_otp_email(user.email, user.otp, purpose="delete_account")
     if sent:
-        messages.success(request, "New OTP sent.", extra_tags="delete_account")
+        messages.success(
+            request, "New OTP sent.",
+            extra_tags="delete_account")
     else:
-        messages.error(request, "Failed to send OTP.", extra_tags="delete_account")
+        messages.error(
+            request, "Failed to send OTP.",
+            extra_tags="delete_account")
     return redirect("dashboard_verify_delete_account")
