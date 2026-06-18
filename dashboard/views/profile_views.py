@@ -27,7 +27,7 @@ def profile(request):
         referral_code = ReferralCode.objects.create(
             user=user,
             code=code,
-            referee_discount=300,
+            referee_discount=500,
             referrer_reward=50,
         )
     times_used = (

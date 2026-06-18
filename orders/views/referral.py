@@ -2,6 +2,8 @@ import json
 from decimal import Decimal
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from offers.models import ReferralCode, ReferralUse
+from orders.models import Order
 
 
 @login_required(login_url="login")
@@ -9,13 +11,11 @@ def apply_referral(request):
     if request.method != "POST":
         return JsonResponse({"success": False, "message": "Invalid request."})
 
-    from offers.models import ReferralCode, ReferralUse
-
     data = json.loads(request.body)
     code = data.get("code", "").strip().upper()
     grand_total = Decimal(str(data.get("grand_total", "0")))
 
-    # Already applied in this session?
+
     if request.session.get("referral_code"):
         return JsonResponse(
             {
@@ -24,28 +24,21 @@ def apply_referral(request):
             }
         )
 
-    # Also block if coupon is applied (one discount type at a time is fine,
-    # but referral stacks with coupon — both can apply together)
-
-    # Fetch code
     try:
         ref_code = ReferralCode.objects.select_related("user").get(code=code)
     except ReferralCode.DoesNotExist:
         return JsonResponse({"success": False, "message": "Invalid referral code."})
 
-    # Must be active
     if not ref_code.is_active:
         return JsonResponse(
             {"success": False, "message": "This referral code is no longer active."}
         )
 
-    # Cannot use your own code
     if ref_code.user == request.user:
         return JsonResponse(
             {"success": False, "message": "You can't use your own referral code."}
         )
 
-    # Has this user ALREADY used any referral code before?
     if ReferralUse.objects.filter(referee=request.user).exists():
         return JsonResponse(
             {
@@ -53,9 +46,6 @@ def apply_referral(request):
                 "message": "Referral codes can only be used on your very first order.",
             }
         )
-
-    # Has this user already placed any orders? (first-order-only rule)
-    from orders.models import Order
 
     if Order.objects.filter(user=request.user, is_ordered=True).exists():
         return JsonResponse(
@@ -65,16 +55,13 @@ def apply_referral(request):
             }
         )
 
-    # Calculate discount — fixed ₹ amount from the code
     discount = min(ref_code.referee_discount, grand_total)
     after_ref = round(grand_total - discount, 2)
 
-    # Save in session
     request.session["referral_code"] = ref_code.code
     request.session["referral_id"] = ref_code.id
     request.session["referral_discount"] = str(discount)
 
-    # Recalculate wallet if already applied
     wallet_used = Decimal(request.session.get("wallet_used", "0"))
     if wallet_used > 0:
         wallet_used = min(wallet_used, after_ref)

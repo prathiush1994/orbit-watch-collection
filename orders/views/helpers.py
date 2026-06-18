@@ -37,21 +37,17 @@ def _razorpay_client():
 
 
 def _build_order_from_session(request, address, payment_obj, totals):
-
     cart = _get_or_create_cart(request)
     cart_items = CartItem.objects.filter(cart=cart, is_active=True).select_related(
         "variant", "variant__product"
     )
-
     for item in cart_items:
         inventory = getattr(item.variant, "inventory", None)
         if not inventory or inventory.quantity < item.quantity:
             raise ValueError(
                 f"{item.variant} is out of stock or insufficient quantity."
             )
-
     with transaction.atomic():
-
         order = Order.objects.create(
             user=request.user,
             payment=payment_obj,
@@ -70,47 +66,51 @@ def _build_order_from_session(request, address, payment_obj, totals):
             wallet_used=totals["wallet_used"],
             is_ordered=True,
         )
-
         if totals["coupon_id"]:
             try:
                 coupon_obj = Coupon.objects.get(id=totals["coupon_id"])
                 order.coupon = coupon_obj
                 order.save(update_fields=["coupon"])
-
                 usage, _ = CouponUsage.objects.get_or_create(
                     coupon=coupon_obj, user=request.user
                 )
                 usage.used_count += 1
                 usage.save()
-
                 coupon_obj.total_usage += 1
                 coupon_obj.save(update_fields=["total_usage"])
-
             except Coupon.DoesNotExist:
                 pass
-
         if totals["referral_id"]:
+            print(request.session.get("referral_id"))
+            print(request.session.get("referral_code"))
+            print(request.session.get("referral_discount"))
             try:
                 ref_code = ReferralCode.objects.get(id=totals["referral_id"])
 
-                ReferralUse.objects.get_or_create(
+                ref_use, created = ReferralUse.objects.get_or_create(
                     referral_code=ref_code,
                     referee=request.user,
-                    defaults={"reward_given": True},
                 )
 
-                referrer_wallet, _ = Wallet.objects.get_or_create(user=ref_code.user)
-                referrer_wallet.credit(
-                    amount=ref_code.referrer_reward,
-                    description=f"Referral reward — {request.user.email} used {ref_code.code}",
-                    order=order,
-                )
+                if not ref_use.reward_given:
+                    referrer_wallet, _ = Wallet.objects.get_or_create(
+                        user=ref_code.user
+                    )
 
-                ref_code.times_used += 1
-                ref_code.save(update_fields=["times_used"])
+                    referrer_wallet.credit(
+                        amount=ref_code.referrer_reward,
+                        description=f"Referral reward — {request.user.email} used {ref_code.code}",
+                        order=order,
+                    )
 
-            except Exception:
-                pass
+                    ref_use.reward_given = True
+                    ref_use.save(update_fields=["reward_given"])
+
+                    ref_code.times_used += 1
+                    ref_code.save(update_fields=["times_used"])
+
+            except Exception as e:
+                print("REFERRAL ERROR:", e)
 
         if totals["wallet_used"] > 0:
             wallet, _ = Wallet.objects.get_or_create(user=request.user)
@@ -121,14 +121,11 @@ def _build_order_from_session(request, address, payment_obj, totals):
             )
 
     for item in cart_items:
-
         pct, _ = get_applicable_offer(item.variant.product)
-
         effective_price = apply_discount(
             item.variant.price,
             pct
         )
-
         OrderProduct.objects.create(
             order=order,
             user=request.user,
@@ -139,15 +136,12 @@ def _build_order_from_session(request, address, payment_obj, totals):
             quantity=item.quantity,
             ordered=True,
         )
-
         item.variant.inventory.deduct_stock(
             qty=item.quantity,
             reason="order",
             updated_by=request.user,
         )
-
         cart_items.delete()
-
         for key in [
             "coupon_code",
             "coupon_id",
@@ -161,7 +155,6 @@ def _build_order_from_session(request, address, payment_obj, totals):
             "pending_razorpay_order_id",
         ]:
             request.session.pop(key, None)
-
     return order
 
 
@@ -174,8 +167,6 @@ def checkout_context_additions(totals):
 
 
 def _compute_totals(cart_items, session):
-    from offers.utils import get_applicable_offer, apply_discount
-
     subtotal = Decimal("0")
     for item in cart_items:
         inventory = getattr(item.variant, "inventory", None)
@@ -223,4 +214,3 @@ def _compute_totals(cart_items, session):
         "final_total": final_total,
         "actual_total": actual_total,
     }
-

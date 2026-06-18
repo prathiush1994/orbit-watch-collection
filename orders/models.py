@@ -14,31 +14,16 @@ class Coupon(models.Model):
     discount_type = models.CharField(
         max_length=10, choices=DISCOUNT_TYPE_CHOICES, default="percentage"
     )
-    discount = models.DecimalField(
-        max_digits=6, decimal_places=2, help_text="Value: % or fixed ₹ amount"
-    )
+    discount = models.DecimalField(max_digits=6, decimal_places=2)
     min_order_amt = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0,
-        help_text="Minimum cart value to apply coupon",
+        max_digits=10, decimal_places=2, default=0,
     )
     max_discount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        help_text="Max cap for percentage coupons",
+        max_digits=10, decimal_places=2, null=True, blank=True,
     )
-    usage_limit = models.PositiveIntegerField(
-        default=1, help_text="Max times ONE user can use this"
-    )
-    total_usage = models.PositiveIntegerField(
-        default=0, help_text="Total uses across all users (auto)"
-    )
-    max_total_usage = models.PositiveIntegerField(
-        null=True, blank=True, help_text="Overall limit (blank = unlimited)"
-    )
+    usage_limit = models.PositiveIntegerField(default=1)
+    total_usage = models.PositiveIntegerField(default=0)
+    max_total_usage = models.PositiveIntegerField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     valid_from = models.DateTimeField(default=timezone.now)
     valid_until = models.DateTimeField(null=True, blank=True)
@@ -66,7 +51,7 @@ class Coupon(models.Model):
                 amount = min(amount, self.max_discount)
         else:
             amount = self.discount
-        return min(amount, subtotal)  # discount can never exceed bill
+        return min(amount, subtotal) 
 
 
 class CouponUsage(models.Model):
@@ -76,6 +61,7 @@ class CouponUsage(models.Model):
     )
     used_count = models.PositiveIntegerField(default=0)
     last_used = models.DateTimeField(auto_now=True)
+    
     class Meta:
         unique_together = ("coupon", "user")
 
@@ -87,7 +73,7 @@ class Payment(models.Model):
     PAYMENT_METHOD_CHOICES = (
         ("COD", "Cash on Delivery"),
         ("RAZORPAY", "Razorpay"),
-        ("WALLET", "Wallet"),  # fully paid by wallet
+        ("WALLET", "Wallet"),  
     )
     STATUS_CHOICES = (
         ("Pending", "Pending"),
@@ -96,9 +82,13 @@ class Payment(models.Model):
         ("Refunded", "Refunded"),
     )
     user = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True)
-    payment_method = models.CharField(max_length=20,choices=PAYMENT_METHOD_CHOICES)
+    payment_method = models.CharField(
+        max_length=20, choices=PAYMENT_METHOD_CHOICES
+    )
     amount_paid = models.CharField(max_length=100)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="Pending"
+    )
     transaction_id = models.CharField(max_length=100, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -116,13 +106,11 @@ class Order(models.Model):
         ("Return Requested", "Return Requested"),
         ("Returned", "Returned"),
     )
-
     user = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True)
     payment = models.ForeignKey(
         Payment, on_delete=models.SET_NULL, blank=True, null=True
     )
     coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True)
-
     full_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20)
     address_line = models.TextField(max_length=300)
@@ -130,7 +118,6 @@ class Order(models.Model):
     state = models.CharField(max_length=100)
     pincode = models.CharField(max_length=10)
     address_type = models.CharField(max_length=10, default="Home")
-
     order_number = models.CharField(max_length=20, unique=True)
     order_total = models.DecimalField(
         max_digits=10, decimal_places=2, help_text="Final amount actually charged"
@@ -148,17 +135,14 @@ class Order(models.Model):
         default=0,
         help_text="Amount paid from wallet balance",
     )
-
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default="Order Placed"
     )
     is_ordered = models.BooleanField(default=False)
-
     cancel_reason = models.CharField(max_length=255, blank=True)
     return_reason = models.CharField(max_length=255, blank=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -190,7 +174,6 @@ class OrderProduct(models.Model):
         ("Return Requested", "Return Requested"),
         ("Returned", "Returned"),
     )
-
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     user = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True)
     variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, null=True)
@@ -221,4 +204,3 @@ class OrderProduct(models.Model):
 
     def __str__(self):
         return f"{self.product_name} ({self.color_name}) × {self.quantity}"
-

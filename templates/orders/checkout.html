@@ -6,7 +6,6 @@
     <div class="container">
 
         <h3 class="mb-4 font-weight-bold">Checkout</h3>
-
         {% if messages %}
         {% for message in messages %}
         <div class="alert alert-{{ message.tags }}">{{ message }}</div>
@@ -160,7 +159,7 @@
 
                     <!-- Coupon discount row -->
                     <div class="d-flex justify-content-between mb-2" id="rowCouponDiscount" 
-                    {% if not coupon_discount %}style="display:Not Applied;" {% endif %}>
+                    {% if not coupon_discount %}style="display:none;"{% endif %}>
                         <span class="text-success">
                             <i class="fas fa-tag mr-1"></i>
                             Coupon (<span id="appliedCouponCode">{{ coupon_code }}</span>)
@@ -171,14 +170,16 @@
                     </div>
 
                     <!-- Referral discount row -->
-                    <div class="d-flex justify-content-between mb-2" id="rowReferralDiscount"
-                        {% if not referral_code %}style="display:Not Applied;"{% endif %}>
+                    <div class="d-flex justify-content-between mb-2"
+                        id="rowReferralDiscount"
+                        {% if not referral_code %}style="display:none;"{% endif %}>
                         <span style="color:#FF6B00;">
                             <i class="fa fa-gift mr-1"></i>
-                            Referral (<span id="appliedReferralCode">{{ referral_code|default:"" }}</span>)
+                            Referral (<span id="appliedReferralCode">{{ referral_code }}</span>)
                         </span>
+
                         <span class="font-weight-bold" style="color:#FF6B00;">
-                            &#8722;&nbsp;&#8377;<span id="referralDiscountAmt">{{ referral_discount }}</span>
+                            - ₹<span id="referralDiscountAmt">{{ referral_discount }}</span>
                         </span>
                     </div>
 
@@ -256,40 +257,61 @@
                     </div>
 
                     <!-- ── REFERRAL CODE SECTION ────────────────── -->
+                    {% if show_referral_section %}
                     <div class="mb-3">
+
                         <p class="font-weight-bold mb-2" style="font-size:14px;">
-                            <i class="fa fa-gift mr-1" style="color:#FF6B00;"></i>Have a referral code?
-                            <small class="text-muted font-weight-normal ml-1">(First order only)</small>
+                            <i class="fa fa-gift mr-1" style="color:#FF6B00;"></i>
+                            Referral Discount
                         </p>
-                        <div class="input-group" id="referralInputGroup" {% if referral_code %}style="display:none;" {% endif %}>
-                            <input type="text" id="referralCodeInput" class="form-control"
-                                placeholder="Enter referral code" style="text-transform:uppercase;"
-                                onkeydown="if(event.key==='Enter'){event.preventDefault();applyReferral();}">
-                            <div class="input-group-append">
-                                <button class="btn" type="button" onclick="applyReferral()"
-                                    style="background:#FF6B00;color:#fff;border-color:#FF6B00;">
-                                    Apply
-                                </button>
+
+                        <div id="referralInputGroup"
+                            {% if referral_code %}style="display:none;"{% endif %}>
+
+                            <div class="input-group">
+                                <input type="text"
+                                    id="referralCodeInput"
+                                    class="form-control"
+                                    placeholder="Enter referral code"
+                                    style="text-transform:uppercase;"
+                                    onkeydown="if(event.key==='Enter'){event.preventDefault();applyReferral();}">
+
+                                <div class="input-group-append">
+                                    <button class="btn"
+                                            type="button"
+                                            onclick="applyReferral()"
+                                            style="background:#FF6B00;color:#fff;border-color:#FF6B00;">
+                                        Apply
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-
-
-                        <!-- BADGE -->
                         <div id="referralAppliedBadge"
-                            class="{% if referral_code %}d-flex{% else %}d-none{% endif %}
-                                    align-items-center justify-content-between p-2 rounded"
-                            style="border:1px solid #FF6B00;">
-                            <span style="font-size:14px;color:#FF6B00;">
+                            {% if not referral_code %}style="display:none;"{% endif %}
+                            class="border border-success rounded p-2 d-flex justify-content-between align-items-center">
+
+                            <span class="text-success">
                                 <i class="fa fa-check-circle mr-1"></i>
-                                Referral <strong><span id="referralBadgeCode">{{ referral_code }}</span></strong> applied!
+                                Referral Code
+                                <strong id="referralBadgeCode">{{ referral_code }}</strong>
+                                
                             </span>
-                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                    onclick="removeReferral()">Remove</button>
+
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger"
+                                    onclick="removeReferral()">
+                                Remove
+                            </button>
                         </div>
 
-                        <small id="referralMsg" class="d-block mt-1" style="font-size:13px;"></small>
+                        <small id="referralMsg"
+                            class="d-block mt-1"
+                            style="font-size:13px;">
+                        </small>
+
                     </div>
+                    {% endif %}
 
                     <!-- ── WALLET SECTION ──────────────────────── -->
                     <div class="mb-4">

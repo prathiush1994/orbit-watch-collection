@@ -10,8 +10,12 @@
         <strong><i class="fa fa-envelope mr-2"></i>Change Email</strong>
     </div>
     <div class="card-body">
-
-        {% include 'includes/alert.html' %}
+        
+        {% for message in messages %}
+            {% if "email_message" in message.tags %}
+                {% include 'includes/alert.html' %}
+            {% endif %}
+        {% endfor %}
 
         {# ── STEP 1: Enter new email ── #}
         {% if step == 'enter_email' %}

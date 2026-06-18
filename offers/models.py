@@ -85,7 +85,7 @@ class ReferralCode(models.Model):
     referee_discount = models.DecimalField(
         max_digits=5,
         decimal_places=2,
-        default=Decimal("100.00"),
+        default=Decimal("500.00"),
         help_text="₹ discount new user gets on first order",
     )
     referrer_reward = models.DecimalField(

@@ -107,10 +107,10 @@ def cart(request):
     removed_any = False
 
     for item in cart_items:
-
         invalid = (
             item.variant.inventory.quantity <= 0
             or not item.variant.is_available
+            or item.variant.product.brand is None
             or item.variant.product.brand.status != "active"
             or not item.variant.product.category.filter(status="active").exists()
         )

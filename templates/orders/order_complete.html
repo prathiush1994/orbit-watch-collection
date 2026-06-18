@@ -86,14 +86,18 @@
                 Order Summary
             </h6>
             {% if order.discount > 0 %}
-            <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted">
-                    Coupon ({{ order.coupon_code }})
-                </span>
-                <span class="text-success">
-                    − ₹{{ order.discount }}
-                </span>
-            </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">
+                        {% if order.coupon_code %}
+                            Coupon ({{ order.coupon_code }})
+                        {% else %}
+                            Referral Discount
+                        {% endif %}
+                    </span>
+                    <span class="text-success">
+                        − ₹{{ order.discount }}
+                    </span>
+                </div>
             {% endif %}
             {% if order.wallet_used > 0 %}
             <div class="d-flex justify-content-between mb-2">

@@ -87,10 +87,6 @@
                     <span class="font-weight-bold" style="color:#FF6B00;">
                         <i class="fa fa-gift mr-1"></i>Refer &amp; Earn
                     </span>
-                    <small class="text-muted ml-2">
-                        Your friend gets <strong>&#8377;{{ referral_code.referee_discount }}</strong> off,
-                        you get <strong>&#8377;{{ referral_code.referrer_reward }}</strong> in wallet.
-                    </small>
                 </div>
                 <small class="text-muted">{{ times_used }} used</small>
             </div>
@@ -108,12 +104,22 @@
                                white-space:nowrap;padding:8px 16px;">
                     <i class="fa fa-copy mr-1"></i>Copy
                 </button>
-                <a href="https://wa.me/?text=Hey!%20⌚%0A%0AUse%20my%20referral%20code%20*{{ referral_code.code }}*%0Aand%20get%20₹{{ referral_code.referee_discount }}%20OFF%20on%20your%20first%20order%20at%20*Orbit%20Watch%20Collection*!%0A%0A👉%20Register%20here:%20{{ referral_url|urlencode }}%0A%0ADon’t%20miss%20it!"
+                
+                <a href="https://wa.me/?text={{ referral_message|urlencode }}"
                 target="_blank"
                 class="btn btn-sm font-weight-bold"
                 style="background:#25D366;color:#fff;border-radius:6px;white-space:nowrap;padding:8px 14px;">
                     <i class="fab fa-whatsapp mr-1"></i>Share
                 </a>
+            </div>
+            <div class="mt-3">
+                <h6>How Referrals Work</h6>
+                <small class="text-muted">
+                    1. Share your referral code with a friend.<br>
+                    2. Your friend applies the referral code during checkout of their first order.<br>
+                    3. Your friend receives <strong>₹{{ referral_code.referee_discount }}</strong> OFF instantly.<br>
+                    4. Once the order is successfully completed, <strong>₹{{ referral_code.referrer_reward }}</strong> is credited to your wallet.
+                </small>
             </div>
         </div>
     </div>

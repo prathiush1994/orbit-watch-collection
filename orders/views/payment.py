@@ -1,24 +1,20 @@
 import json
 import hmac
 import hashlib
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse, JsonResponse
-from django.contrib import messages
 from django.conf import settings
-
-from carts.views import _get_or_create_cart
 from carts.models import CartItem
+from ..models import Payment, Order
 from accounts.models import UserAddress
 from .helpers import (
     _compute_totals,
     _build_order_from_session,
     _razorpay_client,
 )
-from ..models import Payment, Order
 
 
 @login_required(login_url="login")
@@ -57,9 +53,9 @@ def razorpay_webhook(request):
         # Return 200 for other events so Razorpay doesn't retry
         return HttpResponse(status=200)
     payment_entity = payload["payload"]["payment"]["entity"]
-    rz_payment_id  = payment_entity["id"]               # pay_xxxxx
-    rz_order_id    = payment_entity["order_id"]          # order_xxxxx
-    amount_paise   = payment_entity["amount"]            # e.g. 50000
+    rz_payment_id  = payment_entity["id"]               
+    rz_order_id    = payment_entity["order_id"]          
+    amount_paise   = payment_entity["amount"]            
     if Order.objects.filter(payment__transaction_id=rz_payment_id).exists():
         return HttpResponse(status=200)  # already processed, tell Razorpay OK
     rz_client = _razorpay_client()
@@ -67,13 +63,11 @@ def razorpay_webhook(request):
         rz_order = rz_client.order.fetch(rz_order_id)
     except Exception:
         return HttpResponse(status=500)
-
     notes       = rz_order.get("notes", {})
     address_id  = notes.get("address_id")
     user_id     = notes.get("user_id")
 
     if not address_id or not user_id:
-        # Notes missing — can't create order without address/user
         return HttpResponse(status=400)
 
     # ── Step 7: Fetch Django objects ──────────────────────────
@@ -106,8 +100,6 @@ def razorpay_webhook(request):
         return HttpResponse(status=400)
 
     totals = _compute_totals(cart_items, fake_session)
-
-
     payment = Payment.objects.create(
         user=user,
         payment_method="RAZORPAY",
@@ -115,6 +107,7 @@ def razorpay_webhook(request):
         status="Completed",
         transaction_id=rz_payment_id,
     )
+
     class FakeRequest:
         def __init__(self, user, session):
             self.user    = user
@@ -189,7 +182,6 @@ def razorpay_callback(request):
         "wallet_applied":    notes.get("wallet_applied", False),
     }
 
-    # Step 5: Fake request so _get_or_create_cart works
     class FakeRequest:
         def __init__(self, u, s):
             self.user = u
@@ -206,8 +198,7 @@ def razorpay_callback(request):
             return None
 
     fake_request = FakeRequest(user, fake_session)
-
-
+    
     # Step 6: Get cart and compute totals
     try:
         from carts.models import Cart
@@ -242,10 +233,6 @@ def razorpay_callback(request):
 
 @login_required(login_url="login")
 def payment_processing(request):
-    """
-    Shown if browser arrives before webhook creates the order.
-    Page auto-polls /orders/check-order-status/ every 2 seconds.
-    """
     payment_id = request.session.get("pending_payment_id", "")
     return render(request, "orders/payment_processing.html", {
         "payment_id": payment_id,
@@ -254,25 +241,26 @@ def payment_processing(request):
 
 @login_required(login_url="login")
 def check_order_status(request):
-    """
-    AJAX endpoint polled by payment_processing.html
-    Returns JSON: {status: 'ready', order_number: 'ORBxxxxxxxx'}
-               or {status: 'pending'}
-    """
     payment_id = request.GET.get("payment_id", "")
     try:
         order = Order.objects.get(
             payment__transaction_id=payment_id,
             user=request.user,
         )
-        return JsonResponse({"status": "ready", "order_number": order.order_number})
+        return JsonResponse(
+            {"status": "ready", "order_number": order.order_number}
+        )
     except Order.DoesNotExist:
         return JsonResponse({"status": "pending"})
 
 
 def payment_success(request, order_number):
-    order = get_object_or_404(Order, order_number=order_number, user=request.user)
-    order_items = order.items.select_related("variant", "variant__product").all()
+    order = get_object_or_404(
+        Order, order_number=order_number,
+        user=request.user
+    )
+    order_items = order.items.select_related(
+        "variant", "variant__product").all()
     return render(request, "orders/payment_success.html", {
         "order": order,
         "order_items": order_items,

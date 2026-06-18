@@ -119,7 +119,6 @@ def annotate_variants_with_offers(variants):
         }
     for variant in variants:
         pid = variant.product_id
-
         product_pct = product_offer_map.get(pid, Decimal("0"))
         category_pct = Decimal("0")
 

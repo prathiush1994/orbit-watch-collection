@@ -14,7 +14,7 @@
             </h5>
         </div>
         <div class="card-body">
-
+            <p>{{ next }}</p>
             {% for message in messages%}
                 {% if "add_address_message" in message.tags %}
                     {% include 'includes/alert.html' %}
@@ -31,7 +31,7 @@
                 </div>
             {% endif %}
             <!-- Address Form -->
-            <form method="POST" action="{% url 'add_address' %}">
+            <form method="POST" action="{% url 'add_address' %}?next={{ next }}">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{{ next }}">
 

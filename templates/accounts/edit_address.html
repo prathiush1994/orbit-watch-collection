@@ -15,13 +15,13 @@
         </div>
         <div class="card-body">
 
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
+            {% for message in messages%}
+                {% if "edit_address_message" in message.tags %}
+                    {% include 'includes/alert.html' %}
+                {% endif %}
+            {% endfor %}
 
-            <form method="POST" action="{% url 'edit_address' address.id %}">
+            <form method="POST" action="{% url 'edit_address' address.id %}?next={{ next }}">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{{ next }}">
 
