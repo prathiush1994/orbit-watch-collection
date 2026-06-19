@@ -55,6 +55,13 @@ def brand_add(request):
             messages.error(request, "Brand name is required.")
             return redirect("admin_brand_list")
         
+        if not re.match(r"^[A-Za-z0-9& ]+$", brand_name):
+            messages.error(
+                request, 
+                "Brand name can only contain letters, numbers, spaces and & symbol."
+            )
+            return redirect("admin_brand_list")
+
         if not logo_file:
             messages.error(request, "Brand logo is required.")
             return redirect("admin_brand_list")
