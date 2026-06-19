@@ -5,6 +5,7 @@ from django.views.decorators.http import require_POST
 from django.utils.text import slugify
 from brands.models import Brand
 from .decorators import admin_required
+import re
 
 
 def _unique_slug(brand_name, exclude_id=None):
@@ -99,6 +100,12 @@ def brand_edit(request, brand_id):
             messages.error(request, "Brand name is required.")
             return redirect("admin_brand_list")
         
+        if not re.match(r"^[A-Za-z0-9& ]+$", brand_name):
+            messages.error(
+                request, 
+                "Brand name can only contain letters, numbers, spaces and & symbol."
+            )
+            return redirect("admin_brand_list")
         if brand_name.isdigit():
             messages.error(request, "Brand name cannot contain only numbers.")
             return redirect("admin_brand_list")
