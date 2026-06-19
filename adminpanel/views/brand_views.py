@@ -106,6 +106,11 @@ def brand_edit(request, brand_id):
                 "Brand name can only contain letters, numbers, spaces and & symbol."
             )
             return redirect("admin_brand_list")
+
+        if not logo_file:
+            messages.error(request, "Brand logo is required.")
+            return redirect("admin_brand_list")
+        
         if brand_name.isdigit():
             messages.error(request, "Brand name cannot contain only numbers.")
             return redirect("admin_brand_list")
