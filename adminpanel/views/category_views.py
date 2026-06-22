@@ -62,6 +62,13 @@ def category_add(request):
                 request, "Category cant be digits",
             )
             return redirect("admin_category_list")
+        
+        if not re.match(r"^[A-Z][A-Za-z0-9\s_-]*$", name):
+            messages.error(
+                request,
+                "Category must start with a capital letter."
+            )
+            return redirect("admin_category_list")
 
         if Category.objects.filter(category_name__iexact=name).exists():
             messages.error(request, f'Category "{name}" already exists.')
