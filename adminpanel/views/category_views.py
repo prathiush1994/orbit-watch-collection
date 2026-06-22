@@ -94,6 +94,13 @@ def category_edit(request, category_id):
         if not name:
             messages.error(request, "Category name is required.")
             return redirect("admin_category_list")
+            
+        if not re.match(r"^[A-Z][A-Za-z0-9\s_-]*$", name):
+            messages.error(
+                request,
+                "Category must start with a capital letter."
+            )
+            return redirect("admin_category_list")
 
         if (
             Category.objects.filter(category_name__iexact=name)
