@@ -63,7 +63,7 @@ def category_add(request):
             )
             return redirect("admin_category_list")
         
-        if not re.search(r"^[!@#$%^&*()]*$", name):
+        if re.search(r"[!@#$%^&*()]", name):
             messages.error(
                 request,
                 "Special characters are not allowed in category names."
@@ -102,7 +102,7 @@ def category_edit(request, category_id):
             messages.error(request, "Category name is required.")
             return redirect("admin_category_list")
 
-        if re.search(r"^[!@#$%^&*()]$", name):
+        if re.search(r"[!@#$%^&*()]", name):
             messages.error(
                 request,
                 "Special characters are not allowed in category names."
