@@ -102,6 +102,7 @@ def product_add(request):
                 {"categories": categories, "brands": brands, "is_edit": False},
                 status=422
             )
+    
         if name.isdigit():
             messages.error(request, "Product name cannot contain only numbers.")
             return render(
@@ -110,6 +111,7 @@ def product_add(request):
                 {"categories": categories, "brands": brands, "is_edit": False},
                 status=422
             )
+        
         if not cat_ids:
             messages.error(request, "Category is required.")
             return render(
@@ -118,6 +120,7 @@ def product_add(request):
                 {"categories": categories, "brands": brands, "is_edit": False},
                 status=422
             )
+            
         if description.isdigit():
             messages.error(request, "Description cannot contain only numbers.")
             return render(
@@ -188,15 +191,51 @@ def product_edit(request, product_id):
             return render(
                 request,
                 "adminpanel/product_form.html",
-                {"categories": categories, "brands": brands, "is_edit": False},
+                {
+                    "product": product,
+                    "categories": categories,
+                    "brands": brands,
+                    "variants": variants,
+                    "is_edit": True,
+                    "selected_categories": list(
+                        product.category.values_list("id", flat=True)
+                    ),
+                },
                 status=422
             )
+        if not cat_ids:
+            messages.error(request, "Category is required.")
+            return render(
+                request,
+                "adminpanel/product_form.html",
+                {
+                    "product": product,
+                    "categories": categories,
+                    "brands": brands,
+                    "variants": variants,
+                    "is_edit": True,
+                    "selected_categories": list(
+                        product.category.values_list("id", flat=True)
+                    ),
+                },
+                status=422
+            )
+
         if description.isdigit():
             messages.error(request, "Description cannot contain only numbers.")
             return render(
                 request,
                 "adminpanel/product_form.html",
-                {"categories": categories, "brands": brands, "is_edit": False},
+                {
+                    "product": product,
+                    "categories": categories,
+                    "brands": brands,
+                    "variants": variants,
+                    "is_edit": True,
+                    "selected_categories": list(
+                        product.category.values_list("id", flat=True)
+                    ),
+                },
                 status=422
             )
         if not name:

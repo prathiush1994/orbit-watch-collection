@@ -62,7 +62,6 @@
     <div class="a-card-header">
         <div class="a-card-title">All Products</div>
     </div>
-
     <div style="overflow-x:auto;">
         <table class="a-table" style="table-layout:fixed;width:100%;">
           <thead>
@@ -75,12 +74,10 @@
           </thead>
           <tbody>
             {% for product in products %}
-
             <tr>
               <td style="color:var(--text-muted);font-size:12px;">
                 {{ forloop.counter|add:products.start_index|add:"-1" }}
               </td>
-
               <td>
                 <div style="font-weight:600;color:var(--text);font-size:14px;">{{ product.product_name }}</div>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
@@ -97,7 +94,6 @@
                   Edit product
                 </a>
               </td>
-
               <td>
                 {% for cat in product.category.all %}
                   <span class="abadge ab-staff" style="margin:1px 2px;">{{ cat.category_name }}</span>
@@ -105,7 +101,6 @@
                   <span style="color:var(--text-muted);font-size:12px;">—</span>
                 {% endfor %}
               </td>
-
               <td>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                   <a href="{% url 'admin_variant_add' product.id %}" class="btn-admin" style="padding:5px 12px;font-size:12.5px;">
@@ -136,9 +131,6 @@
                 </div>
               </td>
             </tr>
-
-
-
             {% empty %}
             <tr>
               <td colspan="4" style="text-align:center;padding:48px;color:var(--text-muted);">

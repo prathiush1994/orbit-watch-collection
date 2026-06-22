@@ -185,7 +185,7 @@ def change_password(request):
         user.otp_created_at = timezone.now()
         user.otp_purpose = "change_password"
         user.save()
-
+        
         sent = send_otp_email(user.email, user.otp, purpose="change_password")
         if sent:
             messages.success(
