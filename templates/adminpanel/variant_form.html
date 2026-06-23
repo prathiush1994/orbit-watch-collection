@@ -253,88 +253,58 @@ textBox.addEventListener('input', function() {
 });
 const galleryInput = document.getElementById('galleryFileInput');
 const previewWrap = document.getElementById('newGalleryWrap');
-
 let selectedFiles = [];
-
 if (galleryInput) {
-
   galleryInput.addEventListener('change', function () {
-
     Array.from(this.files).forEach(file => {
-
       selectedFiles.push(file);
-
     });
-
     renderGalleryPreviews();
-
     this.value = '';
-
   });
-
 }
-
 function renderGalleryPreviews() {
-
   previewWrap.innerHTML = '';
-
   selectedFiles.forEach((file, index) => {
-
     const reader = new FileReader();
-
     reader.onload = function(e) {
-
       const wrap = document.createElement('div');
-
       wrap.className = 'gal-wrap';
-
       wrap.innerHTML = `
         <img src="${e.target.result}" class="gal-thumb">
-
         <button type="button"
                 class="gal-del"
                 data-index="${index}">
           ✕
         </button>
       `;
-
       previewWrap.appendChild(wrap);
-
     };
-
     reader.readAsDataURL(file);
-
   });
-
 }
-
 document.addEventListener('click', function(e) {
-
   if (e.target.classList.contains('gal-del')) {
-
     const index = parseInt(e.target.dataset.index);
-
     selectedFiles.splice(index, 1);
-
     renderGalleryPreviews();
-
   }
-
 });
-
 document.querySelector('form').addEventListener('submit', function () {
-
   const dt = new DataTransfer();
-
   selectedFiles.forEach(file => {
-
     dt.items.add(file);
-
   });
-
   galleryInput.files = dt.files;
-
 });
+function deleteGalleryImage(url) {
+  if (!confirm("Delete this image?")) {
+    return;
+  }
+  const form = document.getElementById("deleteGalleryForm");
+  form.action = url;
+  form.submit();
+}
 </script>
 
 {% endblock %}

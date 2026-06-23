@@ -434,11 +434,11 @@ def variant_image_add(request, variant_id):
 @require_POST
 def variant_image_delete(request, image_id):
     img = get_object_or_404(VariantImage, id=image_id)
-    product_id = img.variant.product.id
+    variant_id = img.variant.id
     img.image.delete(save=False)
     img.delete()
     messages.success(request, "Gallery image removed.")
-    return redirect("admin_product_edit", product_id=product_id)
+    return redirect("admin_variant_edit", variant_id=variant_id)
 
 
 def product_variants(request, product_id):
