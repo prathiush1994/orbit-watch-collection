@@ -12,7 +12,7 @@
   <!-- ================= MEN ================= -->
   <div class="section-block">
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <h5>Men’s</h5>
+      <h5>Men's</h5>
     </div>
 
     <div class="scroll-wrapper">
@@ -20,36 +20,36 @@
 
       <div class="scroll-row">
         {% for variant in men_products|slice:":11" %}
-<div class="card-item">
+        <div class="card-item">
 
-  <div class="img-box">   <!-- ADD THIS -->
+          <div class="img-box">
 
-    <a href="{{ variant.get_url }}">
-      {% if variant.primary_image %}
-      <img src="{{ variant.primary_image.url }}" />
-      {% endif %}
+            <a href="{{ variant.get_url }}">
+              {% if variant.primary_image %}
+              <img src="{{ variant.primary_image.url }}" />
+              {% endif %}
 
-      {% if variant.has_offer %}
-      <span class="offer-badge">{{ variant.offer_label }}</span>
-      {% endif %}
-    </a>
+              {% if variant.has_offer %}
+              <span class="offer-badge">{{ variant.offer_label }}</span>
+              {% endif %}
+            </a>
 
-  </div>
+          </div>
 
-  <div class="card-body">
-    <p class="title">{{ variant.product.product_name }}</p>
+          <div class="card-body">
+            <p class="title">{{ variant.product.product_name }}</p>
 
-    <p class="price">
-      {% if variant.has_offer %}
-      <span class="text-danger">₹ {{ variant.effective_price }}</span>
-      <small><del>₹ {{ variant.original_price }}</del></small>
-      {% else %}
-      ₹ {{ variant.price }}
-      {% endif %}
-    </p>
-  </div>
+            <p class="price">
+              {% if variant.has_offer %}
+              <span class="text-danger">₹ {{ variant.effective_price }}</span>
+              <small><del>₹ {{ variant.original_price }}</del></small>
+              {% else %}
+              ₹ {{ variant.price }}
+              {% endif %}
+            </p>
+          </div>
 
-</div>
+        </div>
         {% endfor %}
       </div>
 
@@ -60,33 +60,39 @@
   <!-- ================= WOMEN ================= -->
   <div class="section-block">
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <h5>Women’s</h5>
+      <h5>Women's</h5>
     </div>
 
     <div class="scroll-wrapper">
       <button class="scroll-btn left" onclick="scrollRow(this, -1)">‹</button>
 
       <div class="scroll-row">
-        {% for variant in women_products|slice:":8" %}
+        {% for variant in women_products|slice:":10" %}
         <div class="card-item">
-          <a href="{{ variant.get_url }}" class="position-relative">
-            {% if variant.primary_image %}
-            <img src="{{ variant.primary_image.url }}" />
-            {% endif %} {% if variant.has_offer %}
-            <span class="offer-badge">{{ variant.offer_label }}</span>
-            {% endif %}
+          <div class="img-box">   
 
-            <div class="card-body">
-              <p class="title">{{ variant.product.product_name }}</p>
+            <a href="{{ variant.get_url }}">
+              {% if variant.primary_image %}
+              <img src="{{ variant.primary_image.url }}" />
+              {% endif %}
+              {% if variant.has_offer %}
+              <span class="offer-badge">{{ variant.offer_label }}</span>
+              {% endif %}
+            </a>
 
-              <p class="price">
-                {% if variant.has_offer %}
-                <span class="text-danger">₹ {{ variant.effective_price }}</span>
-                <small><del>₹ {{ variant.original_price }}</del></small>
-                {% else %} ₹ {{ variant.price }} {% endif %}
-              </p>
-            </div>
-          </a>
+          </div>
+
+          <div class="card-body">
+            <p class="title">{{ variant.product.product_name }}</p>
+
+            <p class="price">
+              {% if variant.has_offer %}
+              <span class="text-danger">₹ {{ variant.effective_price }}</span>
+              <small><del>₹ {{ variant.original_price }}</del></small>
+              {% else %} ₹ {{ variant.price }} {% endif %}
+            </p>
+          </div>
+
         </div>
         {% endfor %}
       </div>
@@ -107,24 +113,25 @@
       <div class="scroll-row">
         {% for variant in kids_products|slice:":8" %}
         <div class="card-item">
-          <a href="{{ variant.get_url }}" class="position-relative">
+          <div class="img-box">   
+            <a href="{{ variant.get_url }}">
             {% if variant.primary_image %}
             <img src="{{ variant.primary_image.url }}" />
-            {% endif %} {% if variant.has_offer %}
+            {% endif %}
+            {% if variant.has_offer %}
             <span class="offer-badge">{{ variant.offer_label }}</span>
             {% endif %}
-
-            <div class="card-body">
-              <p class="title">{{ variant.product.product_name }}</p>
-
-              <p class="price">
-                {% if variant.has_offer %}
-                <span class="text-danger">₹ {{ variant.effective_price }}</span>
-                <small><del>₹ {{ variant.original_price }}</del></small>
-                {% else %} ₹ {{ variant.price }} {% endif %}
-              </p>
-            </div>
-          </a>
+            </a>
+          </div>
+          <div class="card-body">
+            <p class="title">{{ variant.product.product_name }}</p>
+            <p class="price">
+            {% if variant.has_offer %}
+            <span class="text-danger">₹ {{ variant.effective_price }}</span>
+            <small><del>₹ {{ variant.original_price }}</del></small>
+            {% else %} ₹ {{ variant.price }} {% endif %}
+            </p>
+          </div>  
         </div>
         {% endfor %}
       </div>
