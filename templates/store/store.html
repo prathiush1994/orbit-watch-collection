@@ -1,4 +1,4 @@
-{% extends 'base.html' %} {% load static %} {% block content %}
+  {% extends 'base.html' %} {% load static %} {% block content %}
 <section class="section-pagetop bg">
   <div class="container">
     <h2 class="title-page">Our Store</h2>
@@ -140,6 +140,28 @@
                           onchange="this.form.submit()"
                           {% if active_sort == "price_desc" %}checked{% endif %}>
                     <span>High → Low</span>
+                  </label>
+                </div>
+
+                <div class="form-check">
+                  <label class="d-flex align-items-center" style="gap: 8px; cursor: pointer">
+                    <input type="radio"
+                          name="sort"
+                          value="name_asc"
+                          onchange="this.form.submit()"
+                          {% if active_sort == "name_asc" %}checked{% endif %}>
+                    <span>A → Z</span>
+                  </label>
+                </div>
+
+                <div class="form-check">
+                  <label class="d-flex align-items-center" style="gap: 8px; cursor: pointer">
+                    <input type="radio"
+                          name="sort"
+                          value="name_desc"
+                          onchange="this.form.submit()"
+                          {% if active_sort == "name_desc" %}checked{% endif %}>
+                    <span>Z → A</span>
                   </label>
                 </div>
 

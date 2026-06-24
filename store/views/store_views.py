@@ -77,6 +77,14 @@ def store(request, category_slug=None):
         variants = variants.order_by("price")
     elif sort == "price_desc":
         variants = variants.order_by("-price")
+    elif sort == "name_asc":
+        variants = variants.order_by(
+            "product__product_name",
+            "color_name")
+    elif sort == "name_desc":
+        variants = variants.order_by(
+            "-product__product_name",
+            "-color_name")
     else:
         variants = variants.order_by("id")
 
