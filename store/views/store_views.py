@@ -27,7 +27,8 @@ def store(request, category_slug=None):
     )
 
     if category_slug:
-        category_obj = get_object_or_404(Category, slug=category_slug, status="active")
+        category_obj = get_object_or_404(
+            Category, slug=category_slug, status="active")
         variants = ProductVariant.objects.filter(
             product__category=category_obj, **base_qs_kwargs
         )
@@ -109,10 +110,14 @@ def store(request, category_slug=None):
         )
     )
 
-    all_categories = Category.objects.filter(status="active")
+    all_categories = Category.objects.filter(
+        status="active",
+        product__variants__in=variants,
+    ).distinct()
 
     all_brands = Brand.objects.filter(
-        status="active", product__variants__inventory__quantity__gt=0
+        status="active",
+        product__variants__in=variants,
     ).distinct()
 
     price_bounds = ProductVariant.objects.filter(
