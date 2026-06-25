@@ -2,7 +2,7 @@ import json
 from decimal import Decimal
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from offers.models import ReferralCode, ReferralUse
+from .models import ReferralCode, ReferralUse
 from orders.models import Order
 
 
@@ -15,7 +15,6 @@ def apply_referral(request):
     code = data.get("code", "").strip().upper()
     grand_total = Decimal(str(data.get("grand_total", "0")))
 
-
     if request.session.get("referral_code"):
         return JsonResponse(
             {
@@ -27,16 +26,27 @@ def apply_referral(request):
     try:
         ref_code = ReferralCode.objects.select_related("user").get(code=code)
     except ReferralCode.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Invalid referral code."})
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "Invalid referral code."
+            }
+        )
 
     if not ref_code.is_active:
         return JsonResponse(
-            {"success": False, "message": "This referral code is no longer active."}
+            {
+                "success": False,
+                "message": "This referral code is no longer active."
+            }
         )
 
     if ref_code.user == request.user:
         return JsonResponse(
-            {"success": False, "message": "You can't use your own referral code."}
+            {
+                "success": False,
+                "message": "You can't use your own referral code."
+            }
         )
 
     if ReferralUse.objects.filter(referee=request.user).exists():
@@ -92,14 +102,12 @@ def remove_referral(request):
     request.session.pop("referral_id", None)
     request.session.pop("referral_discount", None)
 
-    # Recalculate wallet
     coupon_discount = Decimal(request.session.get("coupon_discount", "0"))
     after_coupon = round(grand_total - coupon_discount, 2)
     wallet_used = Decimal(request.session.get("wallet_used", "0"))
     if wallet_used > 0:
         wallet_used = min(wallet_used, after_coupon)
         request.session["wallet_used"] = str(wallet_used)
-
     final = max(after_coupon - wallet_used, Decimal("0"))
 
     return JsonResponse(

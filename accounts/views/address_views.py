@@ -114,7 +114,6 @@ def delete_address(request, address_id):
 
 @login_required(login_url="login")
 def set_default_address(request, address_id):
-    """Set an address as default (POST only)."""
     address = get_object_or_404(UserAddress, id=address_id, user=request.user)
     if request.method == "POST":
         UserAddress.objects.filter(user=request.user).update(is_default=False)

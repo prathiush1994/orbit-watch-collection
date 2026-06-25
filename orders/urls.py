@@ -25,10 +25,6 @@ urlpatterns = [
     path("apply-coupon/",       views.apply_coupon,       name="apply_coupon"),
     path("remove-coupon/",      views.remove_coupon,      name="remove_coupon"),
 
-    # Referral (AJAX)
-    path("apply-referral/",     views.apply_referral,     name="apply_referral"),
-    path("remove-referral/",    views.remove_referral,    name="remove_referral"),
-
     # Result pages
     path("complete/<str:order_number>/", views.order_complete,   name="order_complete"),
     path("success/<str:order_number>/",  views.payment_success,  name="payment_success"),

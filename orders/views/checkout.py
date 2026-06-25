@@ -8,7 +8,7 @@ from accounts.models import UserAddress
 from .helpers import _compute_totals, _get_wallet
 from decimal import Decimal
 from offers.utils import annotate_variants_with_offers
-from offers.models import ReferralUse
+from referral.models import ReferralUse
 from ..models import Order
 
 

@@ -74,9 +74,6 @@ def place_order(request):
         amount_paise = int(totals["final_total"] * 100)
         rz_client = _razorpay_client()
 
-        # KEY CHANGE: Store all order info in Razorpay order notes
-        # Webhook will read these notes to create the Django order
-        # without needing browser session
         rz_order = rz_client.order.create({
             "amount":          amount_paise,
             "currency":        "INR",

@@ -6,7 +6,7 @@ from ..forms import RegistrationForm
 from ..email_utils import generate_otp, send_otp_email, send_welcome_email
 from .otp_data import _otp_remaining
 from urllib.parse import urlencode
-from offers.models import ReferralCode, ReferralUse
+from referral.models import ReferralCode, ReferralUse
 
 
 def register(request):

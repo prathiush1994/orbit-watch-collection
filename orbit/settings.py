@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "wallet",
     "offers",
     "inventory",
+    "referral",
     "reviews",
     "adminpanel",
     # ── Third party installion app ───────────────────

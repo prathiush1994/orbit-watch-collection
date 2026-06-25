@@ -8,7 +8,8 @@ from django.db.models import Prefetch
 from store.models import Product
 from category.models import Category
 from category.models import Category as Cat
-from offers.models import ProductOffer, CategoryOffer, ReferralCode
+from offers.models import ProductOffer, CategoryOffer
+from referral.models import ReferralCode
 from django.db.models import Q
 from django.urls import reverse
 
