@@ -1,5 +1,4 @@
 from .checkout import *
-from .coupon import *
 from .order_views import *
 from .item_actions import *
 from .invoice import *

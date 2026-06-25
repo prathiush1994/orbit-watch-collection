@@ -24,6 +24,7 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("reviews/", include("reviews.urls")),
     path("referral/", include("referral.urls")),
+    path("coupons/", include("coupons.urls")),
 ]
 
 handler404 = 'orbit.views.error_404'

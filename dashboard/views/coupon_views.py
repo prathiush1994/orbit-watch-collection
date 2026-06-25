@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from orders.models import Coupon, CouponUsage
+from coupons.models import Coupon, CouponUsage
 from django.utils import timezone
 from django.shortcuts import render
 

@@ -50,7 +50,7 @@ class ProductVariantAdmin(nested_admin.NestedModelAdmin):
     inlines = [VariantImageInline]
 
     def in_stock(self, obj):
-        return obj.is_in_stock()
+        return obj.is_in_stock
 
     in_stock.boolean = True
     in_stock.short_description = "In Stock"

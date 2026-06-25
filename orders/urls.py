@@ -21,10 +21,6 @@ urlpatterns = [
     # Invoice
     path("invoice/<str:order_number>/", views.download_invoice, name="download_invoice"),
 
-    # Coupon (AJAX)
-    path("apply-coupon/",       views.apply_coupon,       name="apply_coupon"),
-    path("remove-coupon/",      views.remove_coupon,      name="remove_coupon"),
-
     # Result pages
     path("complete/<str:order_number>/", views.order_complete,   name="order_complete"),
     path("success/<str:order_number>/",  views.payment_success,  name="payment_success"),

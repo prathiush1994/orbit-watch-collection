@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "offers",
     "inventory",
     "referral",
+    "coupons",
     "reviews",
     "adminpanel",
     # ── Third party installion app ───────────────────

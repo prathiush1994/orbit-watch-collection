@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
-from orders.models import Coupon
+from coupons.models import Coupon
 from django.core.paginator import Paginator
 
 
@@ -64,7 +64,7 @@ def admin_coupon_add(request):
                 if discount < 100 or discount > 5000:
                     raise ValueError("Fixed discount must be between ₹100 and ₹5000.")
 
-                if min_order_amt >= discount:
+                if min_order_amt <= discount:
                     raise ValueError(
                         "Minimum order amount must be greater than the fixed discount."
                     )

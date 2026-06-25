@@ -158,16 +158,17 @@
                     </div>
 
                     <!-- Coupon discount row -->
-                    <div class="d-flex justify-content-between mb-2" id="rowCouponDiscount" 
-                    {% if not coupon_discount %}style="display:none;"{% endif %}>
+
+                    <div class="d-flex justify-content-between mb-2" id="rowCouponDiscount">
                         <span class="text-success">
                             <i class="fas fa-tag mr-1"></i>
-                            Coupon 
+                            Coupon
                         </span>
                         <span class="text-success font-weight-bold">
-                            &#8722;&nbsp;&#8377;<span id="couponDiscountAmt">{{ coupon_discount }}</span>
+                            - ₹<span id="couponDiscountAmt">{{ coupon_discount }}</span>
                         </span>
                     </div>
+
 
                     <!-- Referral discount row -->
                     {% if show_referral_section and referral_code %}

@@ -2,10 +2,10 @@ import json
 from decimal import Decimal
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from ..models import Coupon, CouponUsage
+from coupons.models import Coupon, CouponUsage
 from carts.views import _get_or_create_cart
 from carts.models import CartItem
-from .helpers import _compute_totals
+from orders.views.helpers import _compute_totals
 
 
 @login_required(login_url="login")

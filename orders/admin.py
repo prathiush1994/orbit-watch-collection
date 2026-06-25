@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Payment, Order, OrderProduct, Coupon, CouponUsage
+from .models import Payment, Order, OrderProduct
+from coupons.models import Coupon, CouponUsage
 
 
 @admin.register(Payment)

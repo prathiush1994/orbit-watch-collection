@@ -6,7 +6,8 @@ from django.conf import settings
 from carts.views import _get_or_create_cart
 from carts.models import CartItem
 from wallet.models import Wallet
-from orders.models import Order, OrderProduct, Coupon, CouponUsage
+from orders.models import Order, OrderProduct
+from coupons.models import Coupon, CouponUsage
 from referral.models import ReferralCode, ReferralUse
 from django.db import transaction
 from offers.utils import get_applicable_offer, apply_discount
