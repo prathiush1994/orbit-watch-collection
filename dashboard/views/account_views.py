@@ -10,7 +10,17 @@ from .utils import _otp_remaining
 @login_required(login_url="login")
 def change_email(request):
     user = request.user
-
+    if request.GET.get("reset"):
+        request.session.pop("pending_new_email", None)
+        user.otp = None
+        user.otp_created_at = None
+        user.otp_purpose = None
+        user.save(update_fields=[
+            "otp",
+            "otp_created_at",
+            "otp_purpose",
+        ])
+        
     def get_context():
         pending_email = request.session.get("pending_new_email", "")
         remaining = (
