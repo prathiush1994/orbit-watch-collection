@@ -52,13 +52,48 @@
 
             <!-- DETAILS -->
             <div class="col-md-6">
+
                 <h6 class="mb-1">
-                    {{ item.variant.product.product_name }}
+                    <a href="{{ item.variant.get_url }}" class="text-dark">
+                        {{ item.variant.product.product_name }}
+                    </a>
                 </h6>
-                <p class="mb-1 text-muted">
-                    ₹ {{ item.variant.price }}
+
+                <p class="text-muted small mb-2">
+                    Color: {{ item.variant.color_name }}<br>
+                    Brand: {{ item.variant.product.brand }}
                 </p>
+
+                {% if item.variant.has_offer %}
+                    <span class="badge badge-danger mb-2">
+                        {{ item.variant.offer_label }}
+                    </span>
+                {% endif %}
+
+                {% if item.variant.inventory.quantity <= 0 %}
+                    <span class="badge badge-secondary mb-2">
+                        Out of Stock
+                    </span>
+                {% endif %}
+
+                <div class="mt-2">
+
+                    {% if item.variant.has_offer %}
+                        <h5 class="text-danger mb-0">
+                            ₹{{ item.variant.effective_price|floatformat:2 }}
+                        </h5>
+
+                        <small class="text-muted">
+                            <del>₹{{ item.variant.original_price|floatformat:2 }}</del>
+                        </small>
+                    {% else %}
+                        <h5 class="mb-0">
+                            ₹{{ item.variant.price|floatformat:2 }}
+                        </h5>
+                    {% endif %}
+                </div>
             </div>
+
 
             <!-- ACTIONS -->
             <div class="col-md-4 text-right">

@@ -5,6 +5,7 @@ from store.models import ProductVariant
 from .models import Wishlist, WishlistItem
 from carts.models import CartItem
 from carts.views import _get_or_create_cart, PRODUCT_MAX_QTY
+from offers.utils import annotate_variants_with_offers
 
 
 def _wishlist_id(request):
@@ -35,9 +36,7 @@ def _get_or_create_wishlist(request):
 
 def wishlist(request):
     wishlist = _get_or_create_wishlist(request)
-
     cart = _get_or_create_cart(request)
-
     cart_variant_ids = set(
         CartItem.objects.filter(
             cart=cart,
@@ -50,12 +49,22 @@ def wishlist(request):
         variant_id__in=cart_variant_ids
     ).delete()
 
-    items = WishlistItem.objects.filter(
-        wishlist=wishlist
-    ).select_related(
-        "variant",
-        "variant__product",
-        "variant__product__brand",
+    items = list(
+        WishlistItem.objects.filter(
+            wishlist=wishlist
+        ).select_related(
+            "variant",
+            "variant__product",
+            "variant__product__brand",
+        ).prefetch_related(
+            "variant__product__category",
+            "variant__product__offers",
+            "variant__product__category__offers",
+        )
+    )
+
+    annotate_variants_with_offers(
+        [item.variant for item in items]
     )
 
     for item in items:
