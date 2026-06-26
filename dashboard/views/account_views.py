@@ -178,7 +178,7 @@ def resend_change_email_otp(request):
 
 
 @login_required(login_url="login")
-def change_password(request):
+def send_change_password_otp(request):
     if request.method == "POST":
         user = request.user
         user.otp = generate_otp()
@@ -204,7 +204,7 @@ def change_password(request):
 
 
 @login_required(login_url="login")
-def verify_change_password(request):
+def verify_otp_and_update_password(request):
     user = request.user
     remaining = _otp_remaining(user.otp_created_at)
     expired = (remaining == 0) or (user.otp_purpose != "change_password")
@@ -292,7 +292,7 @@ def verify_change_password(request):
 
 
 @login_required(login_url="login")
-def resend_change_password_otp(request):
+def resend_password_change_otp(request):
     user = request.user
     user.otp = generate_otp()
     user.otp_created_at = timezone.now()
@@ -312,7 +312,7 @@ def resend_change_password_otp(request):
 
 
 @login_required(login_url="login")
-def delete_account(request):
+def send_delete_account_otp(request):
     if request.method == "POST":
         user = request.user
         user.otp = generate_otp()
@@ -338,7 +338,7 @@ def delete_account(request):
 
 
 @login_required(login_url="login")
-def verify_delete_account(request):
+def verify_otp_and_delete_account(request):
     user = request.user
     remaining = _otp_remaining(user.otp_created_at)
     expired = (remaining == 0) or (user.otp_purpose != "delete_account")
