@@ -39,7 +39,8 @@ def _razorpay_client():
 
 def _build_order_from_session(request, address, payment_obj, totals):
     cart = _get_or_create_cart(request)
-    cart_items = CartItem.objects.filter(cart=cart, is_active=True).select_related(
+    cart_items = CartItem.objects.filter(
+        cart=cart, is_active=True).select_related(
         "variant", "variant__product"
     )
     for item in cart_items:
@@ -60,7 +61,7 @@ def _build_order_from_session(request, address, payment_obj, totals):
             pincode=address.pincode,
             address_type=address.address_type,
             order_number=_generate_order_number(),
-            order_total=totals["a_total"],
+            order_total=totals["grand_total"],
             tax=totals["tax"],
             discount=totals["coupon_discount"] + totals["referral_discount"],
             coupon_code=totals["coupon_code"],
