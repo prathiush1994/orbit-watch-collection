@@ -21,7 +21,7 @@ def apply_coupon(request):
         "variant", "variant__product"
     )
     totals = _compute_totals(cart_items, request.session)
-    grand_total = totals["grand_total"]
+    subtotal = totals["subtotal"]
 
     if request.session.get("coupon_code"):
         return JsonResponse(
@@ -41,7 +41,7 @@ def apply_coupon(request):
     if not valid:
         return JsonResponse({"success": False, "message": msg})
 
-    if grand_total < coupon.min_order_amt:
+    if subtotal < coupon.min_order_amt:
         return JsonResponse(
             {
                 "success": False,
@@ -56,27 +56,31 @@ def apply_coupon(request):
             {"success": False, "message": "You have already used this coupon."}
         )
 
-    discount = coupon.calculate_discount(grand_total)
-    after_coup = max(round(grand_total - discount, 2), Decimal("0"))
+    discount = coupon.calculate_discount(subtotal)
+    after_coup = max(round(subtotal - discount, 2), Decimal("0"))
 
     request.session["coupon_code"] = coupon.code
     request.session["coupon_id"] = coupon.id
     request.session["coupon_discount"] = str(discount)
-    request.session["coupon_cart_total"] = str(grand_total)
+    request.session["coupon_cart_total"] = str(subtotal)
 
-    # Recalculate wallet if already applied
-    wallet_used = Decimal(request.session.get("wallet_used", "0"))
+    totals = _compute_totals(cart_items, request.session)
+
+    wallet_used = totals["wallet_used"]
     if wallet_used > 0:
-        wallet_used = min(wallet_used, after_coup)
+        wallet_used = min(wallet_used, totals["grand_total"])
         request.session["wallet_used"] = str(wallet_used)
 
-    final = max(after_coup - wallet_used, Decimal("0"))
+    final = totals["final_total"]
+
     return JsonResponse(
         {
             "success": True,
             "message": f'Coupon "{coupon.code}" applied! You saved ₹{discount}.',
             "discount": str(discount),
             "after_coup": str(after_coup),
+            "tax": str(totals["tax"]),
+            "grand_total": str(totals["grand_total"]),
             "final": str(final),
         }
     )
@@ -86,31 +90,33 @@ def apply_coupon(request):
 def remove_coupon(request):
     if request.method != "POST":
         return JsonResponse({"success": False, "message": "Invalid request."})
-    data = json.loads(request.body)
+
+    request.session.pop("coupon_code", None)
+    request.session.pop("coupon_id", None)
+    request.session.pop("coupon_discount", None)
+    request.session.pop("coupon_cart_total", None)
+
     cart = _get_or_create_cart(request)
     cart_items = CartItem.objects.filter(
         cart=cart, is_active=True).select_related(
         "variant", "variant__product"
     )
     totals = _compute_totals(cart_items, request.session)
-    grand_total = totals["grand_total"]
 
-    request.session.pop("coupon_code", None)
-    request.session.pop("coupon_id", None)
-    request.session.pop("coupon_discount", None)
-
-    wallet_used = Decimal(request.session.get("wallet_used", "0"))
+    wallet_used = totals["wallet_used"]
     if wallet_used > 0:
-        wallet_used = min(wallet_used, grand_total)
+        wallet_used = min(wallet_used, totals["grand_total"])
         request.session["wallet_used"] = str(wallet_used)
 
-    final = max(grand_total - wallet_used, Decimal("0"))
+    final = totals["final_total"]
 
     return JsonResponse(
         {
             "success": True,
             "message": "Coupon removed.",
-            "after_coup": str(grand_total),
+            "after_coup": str(totals["subtotal"]),
+            "tax": str(totals["tax"]),
+            "grand_total": str(totals["grand_total"]),
             "final": str(final),
         }
     )

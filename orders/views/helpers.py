@@ -60,7 +60,7 @@ def _build_order_from_session(request, address, payment_obj, totals):
             pincode=address.pincode,
             address_type=address.address_type,
             order_number=_generate_order_number(),
-            order_total=totals["actual_total"],
+            order_total=totals["a_total"],
             tax=totals["tax"],
             discount=totals["coupon_discount"] + totals["referral_discount"],
             coupon_code=totals["coupon_code"],
@@ -142,20 +142,20 @@ def _build_order_from_session(request, address, payment_obj, totals):
             reason="order",
             updated_by=request.user,
         )
-        cart_items.delete()
-        for key in [
-            "coupon_code",
-            "coupon_id",
-            "coupon_discount",
-            "referral_code",
-            "referral_id",
-            "referral_discount",
-            "wallet_used",
-            "wallet_applied",
-            "pending_address_id",
-            "pending_razorpay_order_id",
+    cart_items.delete()
+    for key in [
+        "coupon_code",
+        "coupon_id",
+        "coupon_discount",
+        "referral_code",
+        "referral_id",
+        "referral_discount",
+        "wallet_used",
+        "wallet_applied",
+        "pending_address_id",
+        "pending_razorpay_order_id",
         ]:
-            request.session.pop(key, None)
+        request.session.pop(key, None)
     return order
 
 
@@ -179,24 +179,19 @@ def _compute_totals(cart_items, session):
         except Exception as e:
             ep = Decimal(str(item.variant.price))
         subtotal += ep * item.quantity
-
-    tax = round(Decimal("0.18") * subtotal, 2)
-    grand_total = round(subtotal + tax, 2)
-
     coupon_discount = Decimal(str(session.get("coupon_discount", "0")))
     coupon_code = session.get("coupon_code", "")
     coupon_id = session.get("coupon_id")
-    after_coupon = max(round(grand_total - coupon_discount, 2), Decimal("0"))
-
+    after_coupon = max(round(subtotal - coupon_discount, 2), Decimal("0"))
     referral_discount = Decimal(str(session.get("referral_discount", "0")))
     referral_code = session.get("referral_code", "")
     referral_id = session.get("referral_id")
     after_referral = max(round(after_coupon - referral_discount, 2), Decimal("0"))
-
+    tax = round(Decimal("0.18") * after_referral, 2)
+    grand_total = round(after_referral + tax, 2)
     wallet_used = Decimal(str(session.get("wallet_used", "0")))
     wallet_applied = session.get("wallet_applied", False)
-    actual_total = after_referral
-    final_total = max(round(actual_total - wallet_used, 2), Decimal("0"))
+    final_total = max(round(grand_total - wallet_used, 2), Decimal("0"))
 
     return {
         "subtotal": subtotal,
@@ -213,5 +208,4 @@ def _compute_totals(cart_items, session):
         "wallet_used": wallet_used,
         "wallet_applied": wallet_applied,
         "final_total": final_total,
-        "actual_total": actual_total,
     }

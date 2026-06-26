@@ -4,7 +4,9 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from .models import ReferralCode, ReferralUse
 from orders.models import Order
-
+from carts.views import _get_or_create_cart
+from carts.models import CartItem
+from orders.views.helpers import _compute_totals
 
 @login_required(login_url="login")
 def apply_referral(request):
@@ -13,7 +15,13 @@ def apply_referral(request):
 
     data = json.loads(request.body)
     code = data.get("code", "").strip().upper()
-    grand_total = Decimal(str(data.get("grand_total", "0")))
+
+    cart = _get_or_create_cart(request)
+    cart_items = CartItem.objects.filter(
+        cart=cart, is_active=True
+    ).select_related("variant", "variant__product")
+    totals = _compute_totals(cart_items, request.session)
+    grand_total = totals["after_coupon"]
 
     if request.session.get("referral_code"):
         return JsonResponse(
@@ -72,19 +80,19 @@ def apply_referral(request):
     request.session["referral_id"] = ref_code.id
     request.session["referral_discount"] = str(discount)
 
-    wallet_used = Decimal(request.session.get("wallet_used", "0"))
-    if wallet_used > 0:
-        wallet_used = min(wallet_used, after_ref)
-        request.session["wallet_used"] = str(wallet_used)
-
-    final = max(after_ref - wallet_used, Decimal("0"))
+    totals = _compute_totals(cart_items, request.session)
+    
+    wallet_used = totals["wallet_used"]
+    final = totals["final_total"]
 
     return JsonResponse(
         {
             "success": True,
             "message": f"Referral code applied! You save ₹{discount} on this order.",
             "discount": str(discount),
-            "after_ref": str(after_ref),
+            "after_referral": str(after_ref),
+            "tax": str(totals["tax"]),
+            "grand_total": str(totals["grand_total"]),
             "final": str(final),
         }
     )
@@ -102,18 +110,18 @@ def remove_referral(request):
     request.session.pop("referral_id", None)
     request.session.pop("referral_discount", None)
 
-    coupon_discount = Decimal(request.session.get("coupon_discount", "0"))
-    after_coupon = round(grand_total - coupon_discount, 2)
-    wallet_used = Decimal(request.session.get("wallet_used", "0"))
-    if wallet_used > 0:
-        wallet_used = min(wallet_used, after_coupon)
-        request.session["wallet_used"] = str(wallet_used)
-    final = max(after_coupon - wallet_used, Decimal("0"))
+    cart = _get_or_create_cart(request)
+    cart_items = CartItem.objects.filter(
+        cart=cart, is_active=True
+    ).select_related("variant", "variant__product")
+    totals = _compute_totals(cart_items, request.session)
 
     return JsonResponse(
         {
             "success": True,
             "message": "Referral code removed.",
-            "final": str(final),
+            "tax": str(totals["tax"]),
+            "grand_total": str(totals["grand_total"]),
+            "final": str(totals["final_total"]),
         }
     )

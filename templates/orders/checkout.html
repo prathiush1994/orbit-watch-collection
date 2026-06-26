@@ -148,17 +148,13 @@
                         <span class="text-muted">Subtotal (after offers)</span>
                         <span>&#8377;{{ total }}</span>
                     </div>
+
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Delivery fee</span>
                         <span class="text-success font-weight-bold">Free</span>
                     </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted">GST (18%)</span>
-                        <span>&#8377;{{ tax }}</span>
-                    </div>
 
-                    <!-- Coupon discount row -->
-
+                    <!-- Coupon discount -->
                     <div class="d-flex justify-content-between mb-2" id="rowCouponDiscount">
                         <span class="text-success">
                             <i class="fas fa-tag mr-1"></i>
@@ -169,41 +165,59 @@
                         </span>
                     </div>
 
+                    <!-- Referral discount -->
+  
+                    <div class="d-flex justify-content-between mb-2" id="rowReferralDiscount">
+                        <span style="color:#FF6B00;">
+                            <i class="fa fa-gift mr-1"></i>
+                            Referral (<span id="appliedReferralCode">{{ referral_code }}</span>)
+                        </span>
 
-                    <!-- Referral discount row -->
-                    {% if show_referral_section and referral_code %}
-                        <div class="d-flex justify-content-between mb-2"
-                            id="rowReferralDiscount">
-                            <span style="color:#FF6B00;">
-                                <i class="fa fa-gift mr-1"></i>
-                                Referral (<span id="appliedReferralCode">{{ referral_code }}</span>)
-                            </span>
+                        <span class="font-weight-bold" style="color:#FF6B00;">
+                            - ₹<span id="referralDiscountAmt">{{ referral_discount }}</span>
+                        </span>
+                    </div>
+      
 
-                            <span class="font-weight-bold" style="color:#FF6B00;">
-                                - ₹<span id="referralDiscountAmt">{{ referral_discount }}</span>
-                            </span>
-                        </div>
-                    {% endif %}
+                    <hr>
 
-                    <!-- Wallet deduction row -->
-                    <div class="d-flex justify-content-between mb-2" id="rowWalletDeduct" 
-                    {% if not wallet_used %}style="display:none;" {% endif %}>
+                    <!-- GST after discounts -->
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">GST (18%)</span>
+                        <span>&#8377;<span id="taxAmt">{{ tax }}</span></span>
+                    </div>
+
+                    <!-- Grand Total -->
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="font-weight-bold">Grand Total</span>
+                        <span class="font-weight-bold">
+                            &#8377;<span id="grandTotalAmt">{{ grand_total }}</span>
+                        </span>
+                    </div>
+
+                    <!-- Wallet deduction -->
+                    <div class="d-flex justify-content-between mb-2" id="rowWalletDeduct"
+                    {% if not wallet_used %}style="display:none;"{% endif %}>
                         <span class="text-primary">
                             <i class="fas fa-wallet mr-1"></i>Wallet Used
                         </span>
                         <span class="text-primary font-weight-bold">
-                            &#8722;&nbsp;&#8377;<span id="walletUsedAmt">{{ wallet_used }}</span>
-                        </span>
-                    </div>
-                    <hr>
-                    <div class="d-flex justify-content-between mb-4">
-                        <span class="font-weight-bold" style="font-size:1.05rem;">Total Payment</span>
-                        <span class="font-weight-bold" style="font-size:1.2rem;color:#3167eb;">
-                            &#8377;<span id="finalTotalAmt">{{ final_total }}</span>
+                            - ₹<span id="walletUsedAmt">{{ wallet_used }}</span>
                         </span>
                     </div>
 
-                    <!-- Hidden values JS reads -->
+                    <hr>
+
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="font-weight-bold" style="font-size:1.05rem;">
+                            Total Payment
+                        </span>
+                        <span class="font-weight-bold" style="font-size:1.2rem;color:#3167eb;">
+                            ₹<span id="finalTotalAmt">{{ final_total }}</span>
+                        </span>
+                    </div>
+
+                    <!-- Hidden values -->
                     <input type="hidden" id="hGrandTotal" value="{{ grand_total }}">
                     <input type="hidden" id="hAfterCoupon" value="{{ after_coupon }}">
                     <input type="hidden" id="hAfterReferral" value="{{ after_referral }}">
@@ -219,43 +233,47 @@
                                 (Maximum discount up to ₹5000)
                             </small>
                         </p>
-                        <div class="input-group" id="couponInputGroup" 
-                        {% if coupon_code %}style="display:none;" {% endif %}>
-                            <input type="text" id="couponCodeInput" class="form-control" placeholder="Enter coupon code"
+
+                        <div class="input-group">
+                            <input
+                                type="text"
+                                id="couponCodeInput"
+                                class="form-control"
+                                placeholder="Enter coupon code"
                                 style="text-transform:uppercase;"
-                                onkeydown="if(event.key==='Enter'){event.preventDefault();applyCoupon();}">
+                                value="{{ coupon_code|default_if_none:'' }}"
+                                {% if coupon_code %}readonly{% endif %}
+                                onkeydown="if(event.key==='Enter'){event.preventDefault();applyCoupon();}"
+                            >
+
                             <div class="input-group-append">
-                                <button class="btn btn-outline-primary" type="button" onclick="applyCoupon()">
+                                <button
+                                    id="couponApplyBtn"
+                                    class="btn btn-outline-primary"
+                                    type="button"
+                                    onclick="applyCoupon()"
+                                    {% if coupon_code %}disabled{% endif %}
+                                >
                                     Apply
+                                </button>
+
+                                <button
+                                    id="couponRemoveBtn"
+                                    class="btn btn-outline-danger"
+                                    type="button"
+                                    onclick="removeCoupon()"
+                                    {% if not coupon_code %}disabled{% endif %}
+                                >
+                                    Remove
                                 </button>
                             </div>
                         </div>
-                        
-                        <!-- ── Coupon Input (when NOT applied) ── -->
-                        <div id="couponInputGroup"
-                            class="{% if coupon_code %}d-flex{% else %}d-none{% endif %} 
-                                    align-items-center justify-content-between border border-success rounded p-2">
 
-                            <span class="text-success" style="font-size:14px;">
-                                <i class="fas fa-check-circle mr-1"></i>
-                                applied the Coupon 
-                            </span>
-                        </div>
-
-
-                        <!-- ── Coupon Applied Badge ── -->
-                        <div id="couponAppliedBadge"
-                            class="{% if coupon_code %}d-flex{% else %}d-none{% endif %} 
-                                    align-items-center justify-content-between border border-success rounded p-2">
-                            <span class="text-success" style="font-size:14px;">
-                                <i class="fas fa-check-circle mr-1"></i>
-                                Coupon <strong><span id="couponBadgeCode">{{ coupon_code }}</span></strong> applied
-                            </span>
-                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                    onclick="removeCoupon()">Remove</button>
-                        </div>
-    
-                        <small id="couponMsg" class="d-block mt-1" style="font-size:13px;"></small>
+                        <small id="couponMsg" class="d-block mt-2" style="font-size:13px;">
+                            {% if coupon_code %}
+                                Coupon <strong>{{ coupon_code }}</strong> applied successfully.
+                            {% endif %}
+                        </small>
                     </div>
 
                     <!-- ── REFERRAL CODE SECTION ────────────────── -->
@@ -362,96 +380,55 @@
 
 <script>
     const CSRF = '{{ csrf_token }}';
-    const grandTotal = () =>
-        parseFloat(document.getElementById('hGrandTotal').value) || 0;
-    const afterCoupon = () =>
-        parseFloat(document.getElementById('hAfterCoupon').value) || 0;
-    const afterReferral = () =>
-        parseFloat(document.getElementById('hAfterReferral').value) || 0;
-    const walletBalance = () =>
-        parseFloat(document.getElementById('hWalletBalance').value) || 0;
-    const walletUsedNow = () =>
-        parseFloat(document.getElementById('hWalletUsed').value) || 0;
+    const grandTotal    = () => parseFloat(document.getElementById('hGrandTotal').value)    || 0;
+    const afterCoupon   = () => parseFloat(document.getElementById('hAfterCoupon').value)   || 0;
+    const afterReferral = () => parseFloat(document.getElementById('hAfterReferral').value) || 0;
+    const walletBalance = () => parseFloat(document.getElementById('hWalletBalance').value) || 0;
+    const walletUsedNow = () => parseFloat(document.getElementById('hWalletUsed').value)    || 0;
 
-
-    function setAfterCoupon(v) {
-        v = parseFloat(v) || 0;
-        document.getElementById('hAfterCoupon').value = v;
-    }
-
-    function setAfterReferral(v) {
-        v = parseFloat(v) || 0;
-        document.getElementById('hAfterReferral').value = v;
-    }
-
-    function setWalletUsed(v) {
-        document.getElementById('hWalletUsed').value = v;
-    }
-
-    function setFinal(v) {
-        document.getElementById('finalTotalAmt').textContent =
-            Math.max(parseFloat(v), 0).toFixed(2);
-    }
+    function setAfterCoupon(v)   { document.getElementById('hAfterCoupon').value   = parseFloat(v) || 0; }
+    function setAfterReferral(v) { document.getElementById('hAfterReferral').value = parseFloat(v) || 0; }
+    function setGrandTotal(v)    { document.getElementById('hGrandTotal').value    = parseFloat(v) || 0; }
+    function setWalletUsed(v)    { document.getElementById('hWalletUsed').value    = v; }
+    function setFinal(v)         { document.getElementById('finalTotalAmt').textContent = Math.max(parseFloat(v), 0).toFixed(2); }
 
     function showMsg(id, text, isError) {
         const el = document.getElementById(id);
         el.textContent = text;
-        el.style.color = isError
-            ? '#dc3545'
-            : '#28a745';
+        el.style.color = isError ? '#dc3545' : '#28a745';
+    }
+
+    // Updates GST row and Grand Total row from server-returned values
+    function updateTaxAndGrand(tax, grand) {
+        document.getElementById('taxAmt').textContent       = parseFloat(tax).toFixed(2);
+        document.getElementById('grandTotalAmt').textContent = parseFloat(grand).toFixed(2);
+        setGrandTotal(grand);
     }
 
     // ── COUPON ─────────────────────────────────────────────
     function applyCoupon() {
-        const code = document.getElementById('couponCodeInput')
-            .value
-            .trim()
-            .toUpperCase();
-        if (!code) {
-            showMsg(
-                'couponMsg',
-                'Please enter a coupon code.',
-                true
-            );
-            return;
-        }
+        const code = document.getElementById('couponCodeInput').value.trim().toUpperCase();
+        if (!code) { showMsg('couponMsg', 'Please enter a coupon code.', true); return; }
+
         fetch('{% url "apply_coupon" %}', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': CSRF
-            },
-
-            body: JSON.stringify({code: code}),
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ code: code }),
         })
         .then(r => r.json())
         .then(d => {
             if (d.success) {
-                document.getElementById('rowCouponDiscount')
-                    .style.display = '';
-                document.getElementById('couponDiscountAmt')
-                    .textContent = parseFloat(d.discount).toFixed(2);
-                document.getElementById('appliedCouponCode')
-                    .textContent = code;
-                document.getElementById('couponBadgeCode')
-                    .textContent = code;
-                document.getElementById('couponInputGroup')
-                    .classList.add('d-none');
-                document.getElementById('couponAppliedBadge')
-                    .classList.remove('d-none');
-                // Update hidden values
+                document.getElementById('rowCouponDiscount').style.display   = '';
+                document.getElementById('couponDiscountAmt').textContent     = parseFloat(d.discount).toFixed(2);
+                document.getElementById('couponCodeInput').value    = code;
+                document.getElementById('couponCodeInput').readOnly = true;
+                document.getElementById('couponApplyBtn').disabled  = true;
+                document.getElementById('couponRemoveBtn').disabled = false;
+
                 setAfterCoupon(d.after_coup);
-                const referralDiscount =
-                    parseFloat(
-                        document.getElementById('referralDiscountAmt')
-                            .textContent || 0
-                    );
-                const afterReferral =
-                    parseFloat(d.after_coup) - referralDiscount;
-                setAfterReferral(afterReferral);
-                // Update final payment UI
-                document.getElementById('finalTotalAmt').textContent =
-                    parseFloat(d.final).toFixed(2);
+                setAfterReferral(d.after_coup);
+                updateTaxAndGrand(d.tax, d.grand_total);
+                setFinal(d.final);
                 showMsg('couponMsg', d.message, false);
             } else {
                 showMsg('couponMsg', d.message, true);
@@ -462,83 +439,51 @@
     function removeCoupon() {
         fetch('{% url "remove_coupon" %}', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': CSRF
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
             body: JSON.stringify({}),
         })
         .then(r => r.json())
         .then(d => {
             if (d.success) {
-                document.getElementById('rowCouponDiscount')
-                    .style.display = 'none';
-                document.getElementById('couponDiscountAmt')
-                    .textContent = '0';
-                document.getElementById('appliedCouponCode')
-                    .textContent = '';
-                document.getElementById('couponBadgeCode')
-                    .textContent = '';
-                document.getElementById('couponInputGroup')
-                    .classList.remove('d-none');
-                document.getElementById('couponAppliedBadge')
-                    .classList.add('d-none');
-                // Reset hidden values
+                document.getElementById('rowCouponDiscount').style.display   = 'none';
+                document.getElementById('couponDiscountAmt').textContent     = '0';
+                document.getElementById('couponCodeInput').value    = '';
+                document.getElementById('couponCodeInput').readOnly = false;
+                document.getElementById('couponApplyBtn').disabled  = false;
+                document.getElementById('couponRemoveBtn').disabled = true;
+
                 setAfterCoupon(d.after_coup);
                 setAfterReferral(d.after_coup);
-                // Update final payment UI
-                document.getElementById('finalTotalAmt').textContent =
-                    parseFloat(d.final).toFixed(2);
-
+                updateTaxAndGrand(d.tax, d.grand_total);
+                setFinal(d.final);
                 showMsg('couponMsg', '', false);
             }
         });
     }
-    
+
     // ── REFERRAL ───────────────────────────────────────────
     function applyReferral() {
-        const code = document.getElementById('referralCodeInput')
-            .value
-            .trim()
-            .toUpperCase();
-        if (!code) {
-            showMsg(
-                'referralMsg',
-                'Please enter a referral code.',
-                true
-            );
-            return;
-        }
+        const code = document.getElementById('referralCodeInput').value.trim().toUpperCase();
+        if (!code) { showMsg('referralMsg', 'Please enter a referral code.', true); return; }
+
         fetch('{% url "apply_referral" %}', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': CSRF
-            },
-            body: JSON.stringify({
-                code: code
-            }),
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ code: code }),
         })
         .then(r => r.json())
         .then(d => {
             if (d.success) {
-                document.getElementById('rowReferralDiscount')
-                    .style.display = 'flex';
-                document.getElementById('referralDiscountAmt')
-                    .textContent = parseFloat(d.discount).toFixed(2);
-                document.getElementById('appliedReferralCode')
-                    .textContent = code;
-                document.getElementById('referralBadgeCode')
-                    .textContent = code;
-                document.getElementById('referralInputGroup')
-                    .classList.add('d-none');
-                document.getElementById('referralAppliedBadge')
-                    .classList.remove('d-none');
-                // Update hidden values
+                document.getElementById('rowReferralDiscount').style.display  = 'flex';
+                document.getElementById('referralDiscountAmt').textContent    = parseFloat(d.discount).toFixed(2);
+                document.getElementById('appliedReferralCode').textContent    = code;
+                document.getElementById('referralBadgeCode').textContent      = code;
+                document.getElementById('referralInputGroup').classList.add('d-none');
+                document.getElementById('referralAppliedBadge').classList.remove('d-none');
+
                 setAfterReferral(d.after_referral);
-                // Update total payment UI
-                document.getElementById('finalTotalAmt').textContent =
-                    parseFloat(d.final).toFixed(2);
+                updateTaxAndGrand(d.tax, d.grand_total);
+                setFinal(d.final);
                 showMsg('referralMsg', d.message, false);
             } else {
                 showMsg('referralMsg', d.message, true);
@@ -549,38 +494,36 @@
     function removeReferral() {
         fetch('{% url "remove_referral" %}', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': CSRF
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
             body: JSON.stringify({}),
         })
         .then(r => r.json())
         .then(d => {
             if (d.success) {
                 document.getElementById('rowReferralDiscount').style.display = 'none';
-                document.getElementById('referralDiscountAmt').textContent = '0';
-                document.getElementById('appliedReferralCode').textContent = '';
-                document.getElementById('referralBadgeCode').textContent = '';
+                document.getElementById('referralDiscountAmt').textContent   = '0';
+                document.getElementById('appliedReferralCode').textContent   = '';
+                document.getElementById('referralBadgeCode').textContent     = '';
                 document.getElementById('referralInputGroup').classList.remove('d-none');
                 document.getElementById('referralAppliedBadge').classList.add('d-none');
-                // Reset referral hidden value
+
                 setAfterReferral(afterCoupon());
-                // Update final total UI
-                document.getElementById('finalTotalAmt').textContent =
-                    parseFloat(d.final).toFixed(2);
+                updateTaxAndGrand(d.tax, d.grand_total);
+                setFinal(d.final);
                 showMsg('referralMsg', '', false);
             }
         });
     }
 
-
     // ── WALLET ─────────────────────────────────────────────
     function applyWallet() {
         fetch('{% url "apply_wallet" %}', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
             body: JSON.stringify({}),
-        }).then(r => r.json()).then(d => {
+        })
+        .then(r => r.json())
+        .then(d => {
             if (d.success) {
                 document.getElementById('rowWalletDeduct').style.display = '';
                 document.getElementById('walletUsedAmt').textContent = parseFloat(d.wallet_used).toFixed(2);
@@ -591,15 +534,20 @@
                 btn.className = 'btn btn-sm btn-outline-danger';
                 btn.setAttribute('onclick', 'removeWallet()');
                 showMsg('walletMsg', d.message, false);
-            } else { showMsg('walletMsg', d.message, true); }
+            } else {
+                showMsg('walletMsg', d.message, true);
+            }
         });
     }
 
     function removeWallet() {
         fetch('{% url "remove_wallet" %}', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
             body: JSON.stringify({}),
-        }).then(r => r.json()).then(d => {
+        })
+        .then(r => r.json())
+        .then(d => {
             if (d.success) {
                 document.getElementById('rowWalletDeduct').style.display = 'none';
                 document.getElementById('walletUsedAmt').textContent = '0';
@@ -613,6 +561,6 @@
             }
         });
     }
-    
+
 </script>
 {% endblock %}

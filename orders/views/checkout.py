@@ -80,16 +80,17 @@ def checkout(request):
         request.session.pop("referral_id", None)
     totals = _compute_totals(cart_items_list, request.session)
     totals["subtotal"] = total
-    totals["tax"] = round(Decimal("0.18") * Decimal(str(total)), 2)
-    totals["grand_total"] = round(Decimal(str(total)) + totals["tax"], 2)
     totals["after_coupon"] = max(
-        totals["grand_total"] - totals["coupon_discount"], Decimal("0")
+        totals["subtotal"] - totals["coupon_discount"], Decimal("0")
     )
     totals["after_referral"] = max(
         totals["after_coupon"] - totals["referral_discount"], Decimal("0")
     )
+    totals["tax"] = round(Decimal("0.18") * totals["after_referral"], 2)
+    totals["grand_total"] = round(totals["after_referral"] + totals["tax"], 2)
+
     totals["final_total"] = max(
-        totals["after_referral"] - totals["wallet_used"], Decimal("0")
+        totals["grand_total"] - totals["wallet_used"], Decimal("0")
     )
     wallet = _get_wallet(request.user)
     addresses = UserAddress.objects.filter(user=request.user).order_by("-is_default")
