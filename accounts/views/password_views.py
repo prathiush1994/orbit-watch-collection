@@ -43,7 +43,7 @@ def forgot_password(request):
         verify_forgot_otp = (
             f"/user/orbit-watch/verify_forgot_otp/?{urlencode(params)}"
             )
-        return redirect(verify_forgot_otp)
+        return redirect("verify_forgot_otp")
 
     return render(request, "accounts/forgot_password.html")
 
