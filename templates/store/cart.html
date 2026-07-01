@@ -46,7 +46,9 @@
 
             <tbody>
             {% for cart_item in cart_items %}
-            <tr class="{% if cart_item.variant.inventory.quantity <= 0 %}text-muted{% endif %}">
+            <tr 
+                id = "cart-item-{{cart_item.variant.id}}"
+                class="{% if cart_item.variant.inventory.quantity <= 0 %}text-muted{% endif %}">
 
                 <!-- Product -->
                 <td>
@@ -257,11 +259,14 @@ document.querySelectorAll(".decrement-btn").forEach(btn => {
         .then(data => {
             console.log(data);
             if(data.success){
-                document.getElementById(`qty-${id}`).innerText =
-                    data.quantity;
-                document.getElementById(`subtotal-${id}`).innerHTML =
-                    `Subtotal: ₹${data.subtotal}`;
-
+                if (data.remove){
+                    document.getElementById(`cart-item-${id}`).remove(); 
+                } else {
+                    document.getElementById(`qty-${id}`).innerText =
+                        data.quantity;
+                    document.getElementById(`subtotal-${id}`).innerHTML =
+                        `Subtotal: ₹${data.subtotal}`;
+                }
                 document.getElementById("cart-subtotal").innerHTML =
                     `₹${data.cart_total}`;
 

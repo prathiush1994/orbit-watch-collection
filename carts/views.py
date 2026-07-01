@@ -294,9 +294,14 @@ def decrement_cart(request, variant_id):
     if cart_item.quantity > 1:
         cart_item.quantity -= 1
         cart_item.save()
-
-    effective_price = _effective_price(cart_item.variant)
-    subtotal = effective_price * cart_item.quantity
+        remove_cart = False
+        effective_price = _effective_price(cart_item.variant)
+        subtotal = effective_price * cart_item.quantity
+    else:
+        cart_item.delete()
+        print("Item removed from cart.")
+        remove_cart = True
+        subtotal = Decimal("0")
 
     cart_items = CartItem.objects.filter(cart=cart, is_active=True)
     total = 0
@@ -308,6 +313,7 @@ def decrement_cart(request, variant_id):
     grand_total = round(Decimal(str(total)) + tax, 2)
 
     return JsonResponse({
+        "remove": remove_cart,
         "success": True,
         "quantity": cart_item.quantity,
         "subtotal": float(subtotal),

@@ -210,3 +210,15 @@ def _compute_totals(cart_items, session):
         "wallet_applied": wallet_applied,
         "final_total": final_total,
     }
+
+
+def update_order_totals(order):
+    subtotal = Decimal("0")
+    tax = Decimal("0")
+    for item in order.items.all():
+        subtotal += item.product_price * item.active_qty()
+    tax = round(Decimal("0.18") * subtotal, 2)
+    grand_total = subtotal + tax
+    order.order_total = grand_total
+    order.tax = tax
+    order.save(update_fields=["order_total", "tax"])

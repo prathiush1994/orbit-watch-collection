@@ -25,19 +25,29 @@ def download_invoice(request, order_number):
         order_number=order_number,
         user=request.user,
     )
-    order_items = OrderProduct.objects.filter(order=order).exclude(
-        item_status__in=["Return Requested", "Returned", "Cancelled"]
-    )
-    if not order_items.exists():
-        messages.error(request, "No valid items to generate invoice.")
-        return redirect("order_detail", order_number=order_number)
+    order_items = [
+        item
+        for item in OrderProduct.objects.filter(order=order)
+        if item.active_qty() > 0
+    ]
 
-    if order.status == "Cancelled":
-        messages.error(request, "Invoice not available for cancelled orders.")
-        return redirect("order_detail", order_number=order_number)
+    if not order_items:
+        if order.status == "Cancelled":
+            messages.error(
+                request,
+                "All items in this order have been cancelled. Invoice is not available."
+            )
+        elif order.status == "Returned":
+            messages.error(
+                request,
+                "All items in this order have been returned. Invoice is not available."
+            )
+        else:
+            messages.error(
+                request,
+                "There are no active items available to generate an invoice."
+            )
 
-    if order.status == "Returned":
-        messages.error(request, "Invoice not available for returned orders.")
         return redirect("order_detail", order_number=order_number)
     try:
         buffer = io.BytesIO()
@@ -64,12 +74,20 @@ def download_invoice(request, order_number):
         story.append(Paragraph("Invoice", styles["Heading2"]))
         story.append(Spacer(1, 0.3 * cm))
 
+        payment_method = []
+
+        if order.wallet_used > 0:
+            payment_method.append("Wallet")
+
+        if order.payment:
+            payment_method.append(order.payment.payment_method)
+
         info_data = [
             ["Order Number:", f"#{order.order_number}"],
             ["Date:", order.created_at.strftime("%d %B %Y")],
             [
                 "Payment:",
-                order.payment.payment_method if order.payment else "COD",
+                " + ".join(payment_method) if payment_method else "COD"
             ],
             ["Status:", order.status],
         ]
@@ -108,11 +126,11 @@ def download_invoice(request, order_number):
                     Paragraph(item.product_name, styles["Normal"]),
                     Paragraph(item.color_name or "-", styles["Normal"]),
                     Paragraph(f"Rs.{item.product_price}", styles["Normal"]),
-                    Paragraph(str(item.quantity), styles["Normal"]),
+                    Paragraph(str(item.active_qty()), styles["Normal"]),
                     Paragraph(f"Rs.{item.sub_total()}", styles["Normal"]),
                 ]
             )
-
+ 
         item_table = Table(
             headers + item_rows,
             colWidths=[1 * cm, 6 * cm, 3 * cm, 2.5 * cm, 1.5 * cm, 2.5 * cm],
@@ -154,7 +172,7 @@ def download_invoice(request, order_number):
         story.append(Spacer(1, 0.4 * cm))
 
         subtotal = float(
-            sum(item.product_price * item.quantity for item in order_items)
+            sum(item.product_price * item.active_qty() for item in order_items)
         )
         tax = float(order.tax or 0)
         wallet_used = float(order.wallet_used or 0)
@@ -180,22 +198,6 @@ def download_invoice(request, order_number):
                 f"Rs.{actual_total:.2f}",
             ]
         )
-        if wallet_used > 0:
-            totals_data.append(
-                [
-                    "",
-                    "Paid via Wallet:",
-                    f"Rs.{wallet_used:.2f}",
-                ]
-            )
-        if order.payment and float(order.payment.amount_paid or 0) > 0:
-            totals_data.append(
-                [
-                    "",
-                    f"Paid via {order.payment.payment_method}:",
-                    f"Rs.{float(order.payment.amount_paid):.2f}",
-                ]
-            )
 
         totals_table = Table(totals_data, colWidths=[9 * cm, 4 * cm, 3.5 * cm])
         grand_total_row = 4 if discount > 0 else 3

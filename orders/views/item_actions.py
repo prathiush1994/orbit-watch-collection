@@ -4,12 +4,16 @@ from django.shortcuts import redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from ..models import Order, OrderProduct
-from .helpers import _get_wallet
+from .helpers import _get_wallet, update_order_totals
 
 
 @login_required(login_url="login")
 def cancel_order(request, order_number):
-    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    order = get_object_or_404(
+        Order,
+        order_number=order_number,
+        user=request.user
+        )
 
     if order.status not in ["Order Placed", "Accepted"]:
         messages.error(request, "This order cannot be cancelled.")
@@ -71,107 +75,7 @@ def cancel_order(request, order_number):
     order.status = "Cancelled"
     order.cancel_reason = reason
     order.save(update_fields=["status", "cancel_reason"])
-
-    return redirect("order_detail", order_number=order_number)
-
-
-@login_required(login_url="login")
-def return_order(request, order_number):
-    order = get_object_or_404(Order, order_number=order_number, user=request.user)
-
-    if order.status != "Delivered":
-        messages.error(request, "Only delivered orders can be returned.")
-        return redirect("order_detail", order_number=order_number)
-
-    if request.method != "POST":
-        return redirect("order_detail", order_number=order_number)
-
-    reason = request.POST.get("return_reason", "").strip()
-    if not reason:
-        messages.error(request, "Please select a return reason.")
-        return redirect("order_detail", order_number=order_number)
-
-    now = timezone.now()
-    for item in order.items.filter(item_status="Active"):
-        item.item_status = "Return Requested"
-        item.return_reason = reason
-        item.return_requested_at = now
-        item.save(update_fields=["item_status", "return_reason", "return_requested_at"])
-
-    order.status = "Return Requested"
-    order.return_reason = reason
-    order.save(update_fields=["status", "return_reason"])
-
-    messages.success(
-        request,
-        "Return request submitted. Once approved, your refund will be "
-        "credited to your wallet and stock will be restored automatically.",
-    )
-    return redirect("order_detail", order_number=order_number)
-
-
-@login_required(login_url="login")
-def return_item(request, order_number, item_id):
-    order = get_object_or_404(Order, order_number=order_number, user=request.user)
-    item = get_object_or_404(OrderProduct, id=item_id, order=order)
-
-    if order.status != "Delivered":
-        messages.error(request, "Only delivered orders can have items returned.")
-        return redirect("order_detail", order_number=order_number)
-
-    if item.item_status != "Active":
-        messages.error(
-            request,
-            "This item has already been cancelled or a return has been requested.",
-        )
-        return redirect("order_detail", order_number=order_number)
-
-    if request.method != "POST":
-        return redirect("order_detail", order_number=order_number)
-
-    try:
-        return_qty = int(request.POST.get("return_qty", item.active_qty()))
-    except (ValueError, TypeError):
-        return_qty = item.active_qty()
-
-    active_qty = item.active_qty()
-    if return_qty < 1 or return_qty > active_qty:
-        messages.error(
-            request, f"Invalid quantity. You can return 1 to {active_qty} unit(s)."
-        )
-        return redirect("order_detail", order_number=order_number)
-
-    reason = request.POST.get("return_reason", "").strip()
-    if not reason:
-        messages.error(request, "Please select a reason for return.")
-        return redirect("order_detail", order_number=order_number)
-
-    item.returned_qty += return_qty
-    item.return_reason = reason
-    item.return_requested_at = timezone.now()
-    if item.returned_qty >= item.active_qty() + return_qty:
-        item.item_status = "Return Requested"
-    else:
-        item.item_status = "Return Requested"
-    item.save(
-        update_fields=[
-            "returned_qty",
-            "return_reason",
-            "return_requested_at",
-            "item_status",
-        ]
-    )
-
-    active_non_returned = order.items.filter(item_status="Active").count()
-    if active_non_returned == 0:
-        order.status = "Return Requested"
-        order.save(update_fields=["status"])
-
-    messages.success(
-        request,
-        f'Return request submitted for {return_qty}x "{item.product_name}". '
-        "Refund will be credited to your wallet once admin approves.",
-    )
+    update_order_totals(order)
     return redirect("order_detail", order_number=order_number)
 
 
@@ -270,5 +174,107 @@ def cancel_item(request, order_number, item_id):
         ):
             payment.status = "Refunded"
             payment.save(update_fields=["status"])
+    update_order_totals(order)
+    return redirect("order_detail", order_number=order_number)
 
+
+@login_required(login_url="login")
+def return_order(request, order_number):
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+
+    if order.status != "Delivered":
+        messages.error(request, "Only delivered orders can be returned.")
+        return redirect("order_detail", order_number=order_number)
+
+    if request.method != "POST":
+        return redirect("order_detail", order_number=order_number)
+
+    reason = request.POST.get("return_reason", "").strip()
+    if not reason:
+        messages.error(request, "Please select a return reason.")
+        return redirect("order_detail", order_number=order_number)
+
+    now = timezone.now()
+    for item in order.items.filter(item_status="Active"):
+        item.item_status = "Return Requested"
+        item.return_reason = reason
+        item.return_requested_at = now
+        item.save(update_fields=["item_status", "return_reason", "return_requested_at"])
+
+    order.status = "Return Requested"
+    order.return_reason = reason
+    order.save(update_fields=["status", "return_reason"])
+
+    messages.success(
+        request,
+        "Return request submitted. Once approved, your refund will be "
+        "credited to your wallet and stock will be restored automatically.",
+    )
+    update_order_totals(order)
+    return redirect("order_detail", order_number=order_number)
+
+
+@login_required(login_url="login")
+def return_item(request, order_number, item_id):
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    item = get_object_or_404(OrderProduct, id=item_id, order=order)
+
+    if order.status != "Delivered":
+        messages.error(request, "Only delivered orders can have items returned.")
+        return redirect("order_detail", order_number=order_number)
+
+    if item.item_status != "Active":
+        messages.error(
+            request,
+            "This item has already been cancelled or a return has been requested.",
+        )
+        return redirect("order_detail", order_number=order_number)
+
+    if request.method != "POST":
+        return redirect("order_detail", order_number=order_number)
+
+    try:
+        return_qty = int(request.POST.get("return_qty", item.active_qty()))
+    except (ValueError, TypeError):
+        return_qty = item.active_qty()
+
+    active_qty = item.active_qty()
+    if return_qty < 1 or return_qty > active_qty:
+        messages.error(
+            request, f"Invalid quantity. You can return 1 to {active_qty} unit(s)."
+        )
+        return redirect("order_detail", order_number=order_number)
+
+    reason = request.POST.get("return_reason", "").strip()
+    if not reason:
+        messages.error(request, "Please select a reason for return.")
+        return redirect("order_detail", order_number=order_number)
+
+    item.returned_qty += return_qty
+    item.return_reason = reason
+    item.return_requested_at = timezone.now()
+    if item.returned_qty >= item.active_qty() + return_qty:
+        item.item_status = "Return Requested"
+    else:
+        item.item_status = "Return Requested"
+    item.save(
+        update_fields=[
+            "returned_qty",
+            "return_reason",
+            "return_requested_at",
+            "item_status",
+        ]
+    )
+
+    active_non_returned = order.items.filter(item_status="Active").count()
+    if active_non_returned == 0:
+        order.status = "Return Requested"
+        order.save(update_fields=["status"])
+
+    messages.success(
+        request,
+        f'Return request submitted for {return_qty}x "{item.product_name}". '
+        "Refund will be credited to your wallet once admin approves.",
+    )
+    update_order_totals(order)
     return redirect("order_detail", order_number=order_number)

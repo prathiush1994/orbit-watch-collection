@@ -60,11 +60,11 @@ class Order(models.Model):
     address_type = models.CharField(max_length=10, default="Home")
     order_number = models.CharField(max_length=20, unique=True)
     order_total = models.DecimalField(
-        max_digits=10, decimal_places=2, help_text="Final amount actually charged"
+        max_digits=10, decimal_places=2
     )
     tax = models.DecimalField(max_digits=10, decimal_places=2)
     discount = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0, help_text="Coupon discount applied"
+        max_digits=10, decimal_places=2, default=0
     )
     coupon_code = models.CharField(
         max_length=20, blank=True, help_text="Snapshot of coupon code used"
@@ -121,26 +121,30 @@ class OrderProduct(models.Model):
     product_name = models.CharField(max_length=250)
     color_name = models.CharField(max_length=100)
     product_price = models.DecimalField(max_digits=10, decimal_places=2)
-    quantity = models.IntegerField()  # original ordered qty
+    quantity = models.IntegerField()  
 
     item_status = models.CharField(
         max_length=20, choices=ITEM_STATUS_CHOICES, default="Active"
     )
     cancelled_qty = models.IntegerField(default=0)
-    returned_qty = models.IntegerField(default=0)
     cancel_reason = models.CharField(max_length=255, blank=True)
-    return_reason = models.CharField(max_length=255, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
+
+    returned_qty = models.IntegerField(default=0)
+    return_reason = models.CharField(max_length=255, blank=True)
     return_requested_at = models.DateTimeField(null=True, blank=True)
 
     ordered = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def sub_total(self):
-        return self.product_price * self.quantity
-
     def active_qty(self):
         return self.quantity - self.cancelled_qty - self.returned_qty
+    
+    def sub_total(self):
+        return self.product_price * self.active_qty()
+    
+    def removed_qty(self):
+        return self.returned_qty + self.cancelled_qty
 
     def __str__(self):
         return f"{self.product_name} ({self.color_name}) × {self.quantity}"

@@ -14,8 +14,8 @@ from .helpers import (
 )
 from ..models import Payment
 
-COD_MAX       = Decimal("20000")
-RAZORPAY_MAX  = Decimal("500000") 
+COD_MAX = Decimal("15000")
+RAZORPAY_MAX = Decimal("25000")
 
 
 @login_required(login_url="login")
@@ -48,21 +48,21 @@ def place_order(request):
     payment_method = request.POST.get("payment_method", "COD")
 
     final_total = totals["final_total"]
- 
+
     # ── Payment method limits ────────────────────────────────────────────────
     if payment_method == "COD" and final_total > COD_MAX:
         messages.error(
             request,
             f"Cash on Delivery is available only for orders up to ₹{COD_MAX:,.0f}. "
-            "Please choose Online Payment."
+            "Please choose Online Payment.",
         )
         return redirect("checkout")
- 
+
     if payment_method == "RAZORPAY" and final_total > RAZORPAY_MAX:
         messages.error(
             request,
             f"Online payment is available only for orders up to ₹{RAZORPAY_MAX:,.0f}. "
-            "Please contact support for large orders."
+            "Please contact support for large orders.",
         )
         return redirect("checkout")
 
@@ -90,45 +90,47 @@ def place_order(request):
         amount_paise = int(final_total * 100)
         rz_client = _razorpay_client()
         try:
-            rz_order = rz_client.order.create({
-                "amount":          amount_paise,
-                "currency":        "INR",
-                "payment_capture": 1,
-                "notes": {
-                    "user_id":    str(request.user.id),
-                    "address_id": str(address_id),
-                    "coupon_discount":   str(totals["coupon_discount"]),
-                    "coupon_code":       str(totals["coupon_code"]),
-                    "coupon_id":         str(totals["coupon_id"] or ""),
-                    "referral_discount": str(totals["referral_discount"]),
-                    "referral_code":     str(totals["referral_code"]),
-                    "referral_id":       str(totals["referral_id"] or ""),
-                    "wallet_used":       str(totals["wallet_used"]),
-                    "wallet_applied":    str(totals["wallet_applied"]),
-                },
-            })
+            rz_order = rz_client.order.create(
+                {
+                    "amount": amount_paise,
+                    "currency": "INR",
+                    "payment_capture": 1,
+                    "notes": {
+                        "user_id": str(request.user.id),
+                        "address_id": str(address_id),
+                        "coupon_discount": str(totals["coupon_discount"]),
+                        "coupon_code": str(totals["coupon_code"]),
+                        "coupon_id": str(totals["coupon_id"] or ""),
+                        "referral_discount": str(totals["referral_discount"]),
+                        "referral_code": str(totals["referral_code"]),
+                        "referral_id": str(totals["referral_id"] or ""),
+                        "wallet_used": str(totals["wallet_used"]),
+                        "wallet_applied": str(totals["wallet_applied"]),
+                    },
+                }
+            )
             print(rz_order)
         except Exception as e:
             print("RAZORPAY ERROR:", e)
             raise
         print("Final Total:", final_total)
         print("Amount Paise:", amount_paise)
-        
-        request.session["pending_address_id"]        = address_id
+
+        request.session["pending_address_id"] = address_id
         request.session["pending_razorpay_order_id"] = rz_order["id"]
 
         data = {
-            "razorpay_key_id":   settings.RAZORPAY_KEY_ID,
+            "razorpay_key_id": settings.RAZORPAY_KEY_ID,
             "razorpay_order_id": rz_order["id"],
-            "amount_paise":      amount_paise,
-            "final_total":       totals["final_total"],
-            "order_currency":    "INR",
+            "amount_paise": amount_paise,
+            "final_total": totals["final_total"],
+            "order_currency": "INR",
             "user_name": (
                 f"{request.user.first_name} {request.user.last_name}".strip()
                 or request.user.email
             ),
-            "user_email":  request.user.email,
-            "user_phone":  getattr(request.user, "phone_number", ""),
+            "user_email": request.user.email,
+            "user_phone": getattr(request.user, "phone_number", ""),
         }
         return render(request, "orders/razorpay_payment.html", data)
 

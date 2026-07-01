@@ -9,7 +9,7 @@ def order_detail(request, order_number):
     order_items = order.items.select_related(
         "variant", "variant__product").all()
     subtotal = sum(
-        item.product_price * item.quantity
+        item.product_price * item.active_qty()
         for item in order_items
     )
     return render(
