@@ -42,15 +42,6 @@ class Order(models.Model):
         ("Returned", "Returned"),
     )
     user = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True)
-    payment = models.ForeignKey(
-        Payment, on_delete=models.SET_NULL, blank=True, null=True
-    )
-    coupon = models.ForeignKey(
-        Coupon,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-    )
     full_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20)
     address_line = models.TextField(max_length=300)
@@ -62,23 +53,26 @@ class Order(models.Model):
     order_total = models.DecimalField(
         max_digits=10, decimal_places=2
     )
-    tax = models.DecimalField(max_digits=10, decimal_places=2)
-    discount = models.DecimalField(
+    payment = models.ForeignKey(
+        Payment, on_delete=models.SET_NULL, blank=True, null=True
+    )
+    coupon = models.ForeignKey(
+        Coupon, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    coupon_code = models.CharField(max_length=20, blank=True)
+    coupon_discount = models.DecimalField(
         max_digits=10, decimal_places=2, default=0
     )
-    coupon_code = models.CharField(
-        max_length=20, blank=True, help_text="Snapshot of coupon code used"
+    referral_code = models.CharField(max_length=50, blank=True)
+    referral_discount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0
     )
+    tax = models.DecimalField(max_digits=10, decimal_places=2)
     wallet_used = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0,
-        help_text="Amount paid from wallet balance",
+        max_digits=10, decimal_places=2, default=0
     )
     status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="Order Placed"
+        max_length=20, choices=STATUS_CHOICES, default="Order Placed"
     )
     is_ordered = models.BooleanField(default=False)
     cancel_reason = models.CharField(max_length=255, blank=True)
@@ -131,16 +125,20 @@ class OrderProduct(models.Model):
     cancelled_at = models.DateTimeField(null=True, blank=True)
 
     returned_qty = models.IntegerField(default=0)
+    pending_return_qty = models.IntegerField(default=0)
     return_reason = models.CharField(max_length=255, blank=True)
     return_requested_at = models.DateTimeField(null=True, blank=True)
 
     ordered = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def sub_total(self):
+        return self.product_price * self.quantity
+
     def active_qty(self):
         return self.quantity - self.cancelled_qty - self.returned_qty
     
-    def sub_total(self):
+    def active_sub_total(self):
         return self.product_price * self.active_qty()
     
     def removed_qty(self):

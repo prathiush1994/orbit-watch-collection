@@ -3,6 +3,9 @@ from django.shortcuts import redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from ..models import Order, OrderProduct
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
+import io
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import cm
@@ -13,9 +16,6 @@ from reportlab.platypus import (
     Paragraph,
     Spacer,
 )
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER
-import io
 
 
 @login_required(login_url="login")
@@ -25,29 +25,17 @@ def download_invoice(request, order_number):
         order_number=order_number,
         user=request.user,
     )
-    order_items = [
-        item
-        for item in OrderProduct.objects.filter(order=order)
-        if item.active_qty() > 0
-    ]
+    order_items = []
+        
+    for item in OrderProduct.objects.filter(order=order):
+        if item.active_qty() > 0:
+            order_items.append(item)
 
-    if not order_items:
-        if order.status == "Cancelled":
-            messages.error(
-                request,
-                "All items in this order have been cancelled. Invoice is not available."
-            )
-        elif order.status == "Returned":
-            messages.error(
-                request,
-                "All items in this order have been returned. Invoice is not available."
-            )
-        else:
-            messages.error(
-                request,
-                "There are no active items available to generate an invoice."
-            )
-
+    if len(order_items) == 0:
+        messages.error(
+            request,
+            "Invoice is not available because all items have been cancelled or returned."
+        )
         return redirect("order_detail", order_number=order_number)
     try:
         buffer = io.BytesIO()
@@ -79,8 +67,12 @@ def download_invoice(request, order_number):
         if order.wallet_used > 0:
             payment_method.append("Wallet")
 
-        if order.payment:
+        if order.payment and order.payment.payment_method.upper() != "WALLET":
             payment_method.append(order.payment.payment_method)
+
+        status = order.status
+        if status in ["Returned", "Return Requested"]:
+            status = "Delivered"
 
         info_data = [
             ["Order Number:", f"#{order.order_number}"],
@@ -89,7 +81,7 @@ def download_invoice(request, order_number):
                 "Payment:",
                 " + ".join(payment_method) if payment_method else "COD"
             ],
-            ["Status:", order.status],
+            ["Status:", status],
         ]
 
         info_table = Table(info_data, colWidths=[4 * cm, 10 * cm])

@@ -5,12 +5,12 @@ urlpatterns = [
     # Checkout
     path("checkout/", views.checkout, name="checkout"),
     path("place-order/", views.place_order, name="place_order"),
-    # Order management
-    path("my-orders/", views.my_orders, name="my_orders"),
-    path("detail/<str:order_number>/", views.order_detail, name="order_detail"),
+
     # Invoice
     path(
-        "invoice/<str:order_number>/", views.download_invoice, name="download_invoice"
+        "invoice/<str:order_number>/",
+        views.download_invoice,
+        name="download_invoice"
     ),
     # Result pages
     path("complete/<str:order_number>/", views.order_complete, name="order_complete"),

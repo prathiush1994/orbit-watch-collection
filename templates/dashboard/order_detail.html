@@ -4,25 +4,25 @@
 {% block content %}
 <section class="section-content padding-y bg">
     <div class="container">
-
-        <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h4 class="mb-0 font-weight-bold">
-                    Order <span style="color:#3167eb;">#{{ order.order_number }}</span>
-                </h4>
-                <small class="text-muted">Placed on {{ order.created_at|date:"d M Y, h:i A" }}</small>
-            </div>
-            <div class="d-flex" style="gap:8px;">
-                <a href="{% url 'download_invoice' order.order_number %}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fa fa-file-pdf mr-1"></i>Invoice
-                </a>
-                <a href="{% url 'my_orders' %}" class="btn btn-outline-primary btn-sm">
-                    <i class="fa fa-arrow-left mr-1"></i>All Orders
-                </a>
-            </div>
+            <a href="{% url 'dashboard_orders' %}" class="btn btn-outline-primary">
+                <i class="fa fa-arrow-left mr-2"></i>Back to Orders
+            </a>
+            <a href="{% url 'download_invoice' order.order_number %}" class="btn btn-primary px-4">
+                <i class="fa fa-file-pdf mr-2"></i>Download Invoice
+            </a>
         </div>
 
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h4 class="font-weight-bold mb-1">
+                    Order <span style="color:#3167eb;">#{{ order.order_number }}</span>
+                </h4>
+                <small class="text-muted">
+                    Placed on {{ order.created_at|date:"d M Y, h:i A" }}
+                </small>
+            </div>
+        </div>
 
         {% if messages %}
         {% for message in messages %}
@@ -34,32 +34,10 @@
 
             <div class="col-md-8">
 
-                <!-- Order status -->
-                <div class="card mb-3">
-                    <div class="card-body py-2 d-flex align-items-center justify-content-between">
-                        <span class="text-muted">Order Status:</span>
-                        {% if order.status == 'Order Placed' %}
-                        <span class="badge badge-info px-3 py-2">Order Placed</span>
-                        {% elif order.status == 'Accepted' %}
-                        <span class="badge badge-primary px-3 py-2">Accepted</span>
-                        {% elif order.status == 'Shipped' %}
-                        <span class="badge badge-warning text-dark px-3 py-2">Shipped</span>
-                        {% elif order.status == 'Delivered' %}
-                        <span class="badge badge-success px-3 py-2">Delivered</span>
-                        {% elif order.status == 'Cancelled' %}
-                        <span class="badge badge-danger px-3 py-2">Cancelled</span>
-                        {% elif order.status == 'Return Requested' %}
-                        <span class="badge badge-secondary px-3 py-2">Return Requested</span>
-                        {% elif order.status == 'Returned' %}
-                        <span class="badge badge-dark px-3 py-2">Returned</span>
-                        {% endif %}
-                    </div>
-                </div>
-
                 <!-- Items table -->
                 <div class="card mb-3">
                     <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                        <strong>Items ({{ order.items.count }})</strong>
+                        <strong>Items ({{ active_items }})</strong>
                         <!-- Cancel ALL button — only when New/Accepted and not all cancelled -->
                         {% if order.status == 'Order Placed' or order.status == 'Accepted' %}
                         {% if order.items.filter.is_active %}{% endif %}
@@ -97,18 +75,16 @@
                                     </td>
                                     <td class="text-center align-middle">&#8377;{{ item.product_price }}</td>
                                     <td class="text-center align-middle">
-                                        <small class="d-block">
-                                            Order: {{ item.active_qty }}
-                                        </small>
+                                        Ordered: {{ item.quantity }}
 
                                         {% if item.removed_qty > 0 %}
                                         <small class="text-danger d-block">
-                                            Cancelled: {{ item.removed_qty }}
+                                            Cancelled / Returned: {{ item.removed_qty }}
                                         </small>
                                         {% endif %}
                                     </td>
                                     <td class="text-center align-middle font-weight-bold">
-                                        &#8377;{{ item.sub_total }}
+                                        &#8377;{{ item.active_sub_total }}
                                     </td>
 
                                     <!-- Item status badge -->
@@ -183,11 +159,30 @@
             </div><!-- /left col -->
 
 
-            <!-- ════════════════════════════════════════════
+    <!-- ════════════════════════════════════════════
         RIGHT — Price summary + Payment + Address
     ════════════════════════════════════════════ -->
             <div class="col-md-4">
-
+                <div class="card mb-3">
+                    <div class="card-header bg-white d-flex justify-content-between">
+                        <strong>Order Status:</strong>
+                        {% if order.status == 'Order Placed' %}
+                            <span class="badge badge-info px-3 py-2">Order Placed</span>
+                        {% elif order.status == 'Accepted' %}
+                            <span class="badge badge-primary px-3 py-2">Accepted</span>
+                        {% elif order.status == 'Shipped' %}
+                            <span class="badge badge-warning text-dark px-3 py-2">Shipped</span>
+                        {% elif order.status == 'Delivered' %}
+                            <span class="badge badge-success px-3 py-2">Delivered</span>
+                        {% elif order.status == 'Cancelled' %}
+                            <span class="badge badge-danger px-3 py-2">Cancelled</span>
+                        {% elif order.status == 'Return Requested' %}
+                            <span class="badge badge-secondary px-3 py-2">Return Requested</span>
+                        {% elif order.status == 'Returned' %}
+                            <span class="badge badge-dark px-3 py-2">Returned</span>
+                        {% endif %}
+                    </div>
+                </div>
                 <div class="card mb-3">
                     <div class="card-header bg-white"><strong>Price Details</strong></div>
                     <div class="card-body">
@@ -256,6 +251,7 @@
                 </div>
             </div>
         </div>
+    </div>
 </section>
 
 

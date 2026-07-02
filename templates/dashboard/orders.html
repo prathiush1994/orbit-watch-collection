@@ -9,7 +9,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <strong>Order History</strong>
         <!-- Search -->
-        <form method="GET" action="{% url 'my_orders' %}" class="d-flex" style="gap:6px;">
+        <form method="GET" action="{% url 'dashboard_orders' %}" class="d-flex" style="gap:6px;">
             <input type="text" name="q" class="form-control form-control-sm"
                    placeholder="Search order ID..."
                    value="{{ q|default:'' }}" style="width:200px;">
@@ -17,7 +17,7 @@
                 <i class="fa fa-search"></i>
             </button>
             {% if q %}
-            <a href="{% url 'my_orders' %}" class="btn btn-sm btn-outline-secondary">
+            <a href="{% url 'dashboard_orders' %}" class="btn btn-sm btn-outline-secondary">
                 <i class="fa fa-times"></i>
             </a>
             {% endif %}
@@ -141,7 +141,7 @@
             </h5>
             <p class="text-muted small">
                 {% if q %}
-                    <a href="{% url 'my_orders' %}">Clear search</a>
+                    <a href="{% url 'dashboard_orders' %}">Clear search</a>
                 {% else %}
                     Start shopping and your orders will appear here.
                 {% endif %}

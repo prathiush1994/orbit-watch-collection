@@ -28,7 +28,7 @@ from .product_views import (
     product_variants,
 )
 from .admin_order_views import *
-from .adminpanel_approve_return import *
+from .adminpanel_approve_return import approve_return
 from .coupon_views import *
 from .admin_offer_views import *
 from .admin_sales_views import *
